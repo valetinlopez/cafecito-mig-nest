@@ -1,0 +1,1677 @@
+openapi: 3.1.0
+
+info:
+  title: CafecitoApp API — Contrato NestJS
+  version: 1.0.0
+  description: |
+    Contrato de la API de CafecitoApp para el backend NestJS (migración desde FastAPI).
+
+    **Ticket:** MIG-17 — Definir contrato de API rediseñado.
+    **Documento de decisiones y compatibilidad:** [`api-contract.md`](./api-contract.md).
+
+    Reglas transversales:
+    - Todos los paths usan el prefijo `/api/v1`, excepto el health check (`GET /`).
+    - Todo error responde `{ "detail": "mensaje" }`.
+    - Los errores de validación responden **422**.
+    - Montos y precios son **números JSON** (no strings).
+    - Fechas en **ISO-8601 UTC con `Z`**.
+    - Las colecciones aceptan con y sin barra final, sin redirect.
+  contact:
+    name: Equipo CafecitoApp
+  license:
+    name: Uso interno
+
+servers:
+  - url: http://localhost:3000
+    description: Backend NestJS (desarrollo)
+  - url: http://localhost:8000
+    description: Backend legacy FastAPI (referencia)
+
+tags:
+  - name: Auth
+    description: Autenticación y perfil del usuario.
+  - name: Mesas
+    description: Mesas del local y su estado.
+  - name: Productos
+    description: Catálogo de productos.
+  - name: Categorías
+    description: Categorías de productos (solo lectura).
+  - name: Pedidos
+    description: Pedidos y cobro.
+  - name: Caja
+    description: Apertura, cierre, historial y movimientos de caja.
+  - name: Dashboard
+    description: KPIs del dashboard.
+  - name: Empleados
+    description: Gestión de empleados (usuarios).
+  - name: Reportes
+    description: Reporte de ventas por rango de fechas.
+  - name: Health
+    description: Health check.
+
+paths:
+  # ============================================================
+  # AUTH
+  # ============================================================
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Iniciar sesión
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Token JWT y datos del usuario.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Registrar usuario (admin)
+      description: Requiere rol `admin`.
+      operationId: register
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioCreate'
+      responses:
+        '201':
+          description: Usuario creado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Obtener usuario autenticado
+      operationId: getMe
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Usuario autenticado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Auth]
+      summary: Actualizar perfil propio
+      operationId: updateMe
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UsuarioUpdateProfile'
+      responses:
+        '200':
+          description: Usuario actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Cambiar contraseña
+      operationId: changePassword
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+      responses:
+        '200':
+          description: Contraseña actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/forgot-password:
+    post:
+      tags: [Auth]
+      summary: Solicitar recuperación de contraseña
+      description: |
+        Siempre responde `200` para no revelar si el email existe.
+        En `development` incluye `reset_token`; en otros entornos es `null`.
+      operationId: forgotPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '200':
+          description: Mensaje genérico (y token de reseteo en desarrollo).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ForgotPasswordResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/reset-password:
+    post:
+      tags: [Auth]
+      summary: Restablecer contraseña
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: Contraseña restablecida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # MESAS
+  # ============================================================
+  /api/v1/mesas/:
+    get:
+      tags: [Mesas]
+      summary: Listar mesas
+      description: Acepta también `/api/v1/mesas` (sin barra final), con respuesta equivalente y sin redirect.
+      operationId: listMesas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de mesas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Mesa'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Mesas]
+      summary: Crear mesa (admin)
+      description: Requiere rol `admin`.
+      operationId: createMesa
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MesaCreate'
+      responses:
+        '201':
+          description: Mesa creada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mesa'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/mesas/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Mesas]
+      summary: Obtener mesa por ID
+      operationId: getMesa
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Mesa encontrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mesa'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Mesas]
+      summary: Actualizar estado de mesa
+      operationId: updateMesa
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MesaUpdate'
+      responses:
+        '200':
+          description: Mesa actualizada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Mesa'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # PRODUCTOS
+  # ============================================================
+  /api/v1/productos/:
+    get:
+      tags: [Productos]
+      summary: Listar productos
+      description: Acepta también `/api/v1/productos` (sin barra final), sin redirect.
+      operationId: listProductos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de productos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Producto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Productos]
+      summary: Crear producto (admin)
+      description: Requiere rol `admin`.
+      operationId: createProducto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoCreate'
+      responses:
+        '201':
+          description: Producto creado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/productos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Productos]
+      summary: Obtener producto por ID
+      operationId: getProducto
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Producto encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Productos]
+      summary: Actualizar producto (admin)
+      description: Requiere rol `admin`.
+      operationId: updateProducto
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductoUpdate'
+      responses:
+        '200':
+          description: Producto actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Producto'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    delete:
+      tags: [Productos]
+      summary: Eliminar producto (admin)
+      description: Requiere rol `admin`. Responde `204` sin body.
+      operationId: deleteProducto
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Producto eliminado (sin contenido).
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # CATEGORÍAS
+  # ============================================================
+  /api/v1/categorias/:
+    get:
+      tags: [Categorías]
+      summary: Listar categorías
+      description: Acepta también `/api/v1/categorias` (sin barra final), sin redirect.
+      operationId: listCategorias
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de categorías.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Categoria'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # PEDIDOS
+  # ============================================================
+  /api/v1/pedidos/:
+    get:
+      tags: [Pedidos]
+      summary: Listar pedidos activos
+      description: Devuelve los pedidos que no están `pagado` ni `cancelado`. Acepta también `/api/v1/pedidos` (sin barra final), sin redirect.
+      operationId: listPedidos
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de pedidos activos.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pedido'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Pedidos]
+      summary: Crear pedido
+      description: |
+        Reglas: la mesa debe existir y no tener pedido activo; cada producto debe existir,
+        estar disponible y tener stock; se descuenta stock y la mesa pasa a `ocupada`.
+      operationId: createPedido
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoCreate'
+      responses:
+        '201':
+          description: Pedido creado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pedido'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/pedidos/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Pedidos]
+      summary: Obtener pedido por ID
+      operationId: getPedido
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Pedido encontrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pedido'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    patch:
+      tags: [Pedidos]
+      summary: Actualizar estado de pedido
+      operationId: updatePedido
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoUpdate'
+      responses:
+        '200':
+          description: Pedido actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pedido'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/pedidos/{id}/pago:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    post:
+      tags: [Pedidos]
+      summary: Cobrar pedido (admin)
+      description: |
+        Requiere rol `admin`, que el pedido esté `entregado` y que haya una caja abierta.
+        Crea el pago por el total, marca el pedido como `pagado` y libera la mesa.
+        Responde `200` (no `201`).
+      operationId: pagarPedido
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PedidoPagoRequest'
+      responses:
+        '200':
+          description: Pedido cobrado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pedido'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # CAJA
+  # ============================================================
+  /api/v1/caja/:
+    get:
+      tags: [Caja]
+      summary: Estado de la caja abierta (admin)
+      description: |
+        Requiere rol `admin`. Devuelve la caja abierta o `null` (JSON literal)
+        si no hay ninguna abierta. Acepta también `/api/v1/caja` sin barra final.
+      operationId: getCajaAbierta
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Caja abierta o `null`.
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Caja'
+                  - type: 'null'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/caja/historial:
+    get:
+      tags: [Caja]
+      summary: Historial de cajas (admin)
+      description: Requiere rol `admin`. Más reciente primero.
+      operationId: getHistorialCajas
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Historial de cajas.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Caja'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/caja/{id}/movimientos:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    get:
+      tags: [Caja]
+      summary: Movimientos de una caja (admin)
+      description: Requiere rol `admin`.
+      operationId: getMovimientosCaja
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Cobros registrados en el período de la caja.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovimientoCaja'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/caja/apertura:
+    post:
+      tags: [Caja]
+      summary: Abrir caja (admin)
+      description: Requiere rol `admin`. Falla si ya hay una caja abierta.
+      operationId: abrirCaja
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CajaApertura'
+      responses:
+        '201':
+          description: Caja abierta.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Caja'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/caja/cierre:
+    post:
+      tags: [Caja]
+      summary: Cerrar caja (admin)
+      description: Requiere rol `admin`. Falla si no hay caja abierta.
+      operationId: cerrarCaja
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CajaCierre'
+      responses:
+        '200':
+          description: Caja cerrada.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Caja'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # DASHBOARD
+  # ============================================================
+  /api/v1/dashboard/resumen:
+    get:
+      tags: [Dashboard]
+      summary: Resumen del dashboard (admin)
+      description: Requiere rol `admin`.
+      operationId: getDashboardResumen
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: KPIs del dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResumen'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # EMPLEADOS
+  # ============================================================
+  /api/v1/empleados/:
+    get:
+      tags: [Empleados]
+      summary: Listar empleados (admin)
+      description: Requiere rol `admin`. Acepta también `/api/v1/empleados` sin barra final.
+      operationId: listEmpleados
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de empleados.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Usuario'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+    post:
+      tags: [Empleados]
+      summary: Crear empleado (admin)
+      description: Requiere rol `admin`. Siempre se crea con rol `mozo`.
+      operationId: createEmpleado
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmpleadoCreate'
+      responses:
+        '201':
+          description: Empleado creado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/empleados/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IdPath'
+    patch:
+      tags: [Empleados]
+      summary: Actualizar empleado (admin)
+      description: Requiere rol `admin`. No permite cambiar el rol ni desactivar el propio usuario.
+      operationId: updateEmpleado
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmpleadoUpdate'
+      responses:
+        '200':
+          description: Empleado actualizado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # REPORTES
+  # ============================================================
+  /api/v1/reportes/ventas:
+    get:
+      tags: [Reportes]
+      summary: Reporte de ventas (admin)
+      description: Requiere rol `admin`. Rango inclusivo por fecha.
+      operationId: getReporteVentas
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: desde
+          in: query
+          required: true
+          description: Fecha inicial (inclusive), formato `YYYY-MM-DD`.
+          schema:
+            type: string
+            format: date
+            example: '2026-10-01'
+        - name: hasta
+          in: query
+          required: true
+          description: Fecha final (inclusive), formato `YYYY-MM-DD`.
+          schema:
+            type: string
+            format: date
+            example: '2026-10-19'
+      responses:
+        '200':
+          description: Reporte de ventas.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReporteVentasResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # ============================================================
+  # HEALTH
+  # ============================================================
+  /:
+    get:
+      tags: [Health]
+      summary: Health check
+      description: Público, fuera de `/api/v1`.
+      operationId: healthCheck
+      security: []
+      responses:
+        '200':
+          description: Servicio operativo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+          headers:
+            X-Response-Time-ms:
+              description: Tiempo de respuesta en milisegundos (opcional).
+              schema:
+                type: string
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT emitido por `POST /api/v1/auth/login`.
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      description: Identificador entero del recurso.
+      schema:
+        type: integer
+        minimum: 1
+
+  responses:
+    BadRequest:
+      description: Error de negocio (transición inválida, estado incompatible, duplicado, etc.).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: No se puede cambiar el estado de 'pagado' a 'cancelado'
+    Unauthorized:
+      description: Token ausente, inválido o expirado; usuario inactivo.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: Token inválido o expirado
+    Forbidden:
+      description: Autenticado sin permisos suficientes.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: Se requiere rol de administrador
+    NotFound:
+      description: Recurso inexistente.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: Mesa no encontrada
+    UnprocessableEntity:
+      description: Validación de datos (422, igual que el legacy).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: "Campo 'precio': debe ser mayor a 0"
+    InternalServerError:
+      description: Error inesperado del servidor.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: Error interno del servidor
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          description: Mensaje legible en español.
+      example:
+        detail: Mesa no encontrada
+
+    MessageResponse:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+
+    HealthStatus:
+      type: object
+      required: [status, service, version, timestamp, uptime]
+      properties:
+        status:
+          type: string
+          const: ok
+        service:
+          type: string
+          example: backend-nest
+        version:
+          type: string
+          example: 0.0.1
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-10-19T23:00:00.000Z'
+        uptime:
+          type: integer
+          example: 12
+
+    # ---------------- AUTH / USUARIOS ----------------
+    Rol:
+      type: string
+      enum: [admin, mozo]
+
+    Usuario:
+      type: object
+      required: [id, nombre, email, rol, activo]
+      properties:
+        id:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: Valentín López
+        email:
+          type: string
+          format: email
+          example: valentin@cafecito.com
+        rol:
+          $ref: '#/components/schemas/Rol'
+        activo:
+          type: boolean
+          example: true
+
+    UsuarioCreate:
+      type: object
+      required: [nombre, email, password, rol]
+      properties:
+        nombre:
+          type: string
+          example: Valentín López
+        email:
+          type: string
+          format: email
+          example: valentin@cafecito.com
+        password:
+          type: string
+          minLength: 6
+          example: secreto123
+        rol:
+          $ref: '#/components/schemas/Rol'
+
+    UsuarioUpdateProfile:
+      type: object
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: admin@cafecito.com
+        password:
+          type: string
+          example: '123456'
+
+    TokenResponse:
+      type: object
+      required: [access_token, token_type, usuario]
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: bearer
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+
+    ChangePasswordRequest:
+      type: object
+      required: [password_actual, password_nueva]
+      properties:
+        password_actual:
+          type: string
+        password_nueva:
+          type: string
+          minLength: 6
+
+    ForgotPasswordRequest:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+
+    ForgotPasswordResponse:
+      type: object
+      required: [message, reset_token]
+      properties:
+        message:
+          type: string
+        reset_token:
+          type: [string, 'null']
+          description: Solo se completa en `development`.
+
+    ResetPasswordRequest:
+      type: object
+      required: [token, password_nueva]
+      properties:
+        token:
+          type: string
+        password_nueva:
+          type: string
+          minLength: 6
+
+    EmpleadoCreate:
+      type: object
+      required: [nombre, email, password]
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+
+    EmpleadoUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+        email:
+          type: string
+          format: email
+        activo:
+          type: boolean
+
+    # ---------------- CATEGORÍAS / PRODUCTOS ----------------
+    Categoria:
+      type: object
+      required: [id, nombre]
+      properties:
+        id:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: Bebidas
+
+    Producto:
+      type: object
+      required: [id, nombre, precio, stock, stock_minimo, disponible, categoria]
+      properties:
+        id:
+          type: integer
+        nombre:
+          type: string
+        descripcion:
+          type: [string, 'null']
+        precio:
+          type: number
+          description: Número JSON, 2 decimales.
+          example: 850.0
+        stock:
+          type: integer
+        stock_minimo:
+          type: integer
+        disponible:
+          type: boolean
+        categoria:
+          $ref: '#/components/schemas/Categoria'
+
+    ProductoCreate:
+      type: object
+      required: [nombre, precio, categoria_id]
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+        descripcion:
+          type: [string, 'null']
+        precio:
+          type: number
+          exclusiveMinimum: 0
+        stock:
+          type: integer
+          minimum: 0
+          default: 0
+        stock_minimo:
+          type: integer
+          minimum: 0
+          default: 5
+        disponible:
+          type: boolean
+          default: true
+        categoria_id:
+          type: integer
+
+    ProductoUpdate:
+      type: object
+      properties:
+        nombre:
+          type: string
+          minLength: 1
+        descripcion:
+          type: [string, 'null']
+        precio:
+          type: number
+          exclusiveMinimum: 0
+        stock:
+          type: integer
+          minimum: 0
+        stock_minimo:
+          type: integer
+          minimum: 0
+        disponible:
+          type: boolean
+        categoria_id:
+          type: integer
+
+    # ---------------- MESAS ----------------
+    MesaEstado:
+      type: string
+      enum: [libre, ocupada, reservada, pendiente_cobro, en_limpieza]
+
+    Mesa:
+      type: object
+      required: [id, numero, estado]
+      properties:
+        id:
+          type: integer
+        numero:
+          type: integer
+        estado:
+          $ref: '#/components/schemas/MesaEstado'
+
+    MesaCreate:
+      type: object
+      required: [numero]
+      properties:
+        numero:
+          type: integer
+          minimum: 1
+
+    MesaUpdate:
+      type: object
+      required: [estado]
+      properties:
+        estado:
+          $ref: '#/components/schemas/MesaEstado'
+
+    # ---------------- PEDIDOS / PAGOS ----------------
+    PedidoEstado:
+      type: string
+      enum: [pendiente, en_preparacion, listo, entregado, pagado, cancelado]
+
+    MetodoPago:
+      type: string
+      enum: [efectivo, debito, credito, transferencia, mercado_pago]
+
+    DetallePedido:
+      type: object
+      required: [id, producto_id, cantidad, subtotal]
+      properties:
+        id:
+          type: integer
+        producto_id:
+          type: integer
+        cantidad:
+          type: integer
+        subtotal:
+          type: number
+          description: Número JSON, 2 decimales.
+
+    DetallePedidoCreate:
+      type: object
+      required: [producto_id, cantidad]
+      properties:
+        producto_id:
+          type: integer
+        cantidad:
+          type: integer
+          minimum: 1
+
+    Pedido:
+      type: object
+      required: [id, estado, total, fecha, mesa, usuario, detalles]
+      properties:
+        id:
+          type: integer
+        estado:
+          $ref: '#/components/schemas/PedidoEstado'
+        total:
+          type: number
+          description: Número JSON, 2 decimales.
+        fecha:
+          type: string
+          format: date-time
+          example: '2026-10-19T20:24:10.000Z'
+        mesa:
+          $ref: '#/components/schemas/Mesa'
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+        detalles:
+          type: array
+          items:
+            $ref: '#/components/schemas/DetallePedido'
+
+    PedidoCreate:
+      type: object
+      required: [mesa_id, detalles]
+      properties:
+        mesa_id:
+          type: integer
+        detalles:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/DetallePedidoCreate'
+
+    PedidoUpdate:
+      type: object
+      required: [estado]
+      properties:
+        estado:
+          $ref: '#/components/schemas/PedidoEstado'
+
+    PedidoPagoRequest:
+      type: object
+      required: [metodo_pago]
+      properties:
+        metodo_pago:
+          $ref: '#/components/schemas/MetodoPago'
+
+    # ---------------- CAJA ----------------
+    CajaEstado:
+      type: string
+      enum: [abierta, cerrada]
+
+    Caja:
+      type: object
+      required: [id, fecha_apertura, fecha_cierre, monto_inicial, monto_final, estado, total_ventas]
+      properties:
+        id:
+          type: integer
+        fecha_apertura:
+          type: string
+          format: date-time
+        fecha_cierre:
+          type: [string, 'null']
+          format: date-time
+        monto_inicial:
+          type: number
+        monto_final:
+          type: [number, 'null']
+        estado:
+          $ref: '#/components/schemas/CajaEstado'
+        total_ventas:
+          type: number
+
+    CajaApertura:
+      type: object
+      required: [monto_inicial]
+      properties:
+        monto_inicial:
+          type: number
+
+    CajaCierre:
+      type: object
+      required: [monto_final]
+      properties:
+        monto_final:
+          type: number
+
+    MovimientoCaja:
+      type: object
+      required: [id, fecha, pedido_id, mesa_numero, monto, metodo_pago, usuario_nombre]
+      properties:
+        id:
+          type: integer
+        fecha:
+          type: string
+          format: date-time
+        pedido_id:
+          type: integer
+        mesa_numero:
+          type: integer
+        monto:
+          type: number
+        metodo_pago:
+          $ref: '#/components/schemas/MetodoPago'
+        usuario_nombre:
+          type: [string, 'null']
+
+    # ---------------- DASHBOARD ----------------
+    DashboardVentasDia:
+      type: object
+      required: [total, pagos]
+      properties:
+        total:
+          type: number
+        pagos:
+          type: integer
+
+    DashboardMesasResumen:
+      type: object
+      required: [total, libres, ocupadas, pendientes_cobro]
+      properties:
+        total:
+          type: integer
+        libres:
+          type: integer
+        ocupadas:
+          type: integer
+        pendientes_cobro:
+          type: integer
+
+    DashboardPedidosActivos:
+      type: object
+      required: [total, pendientes, en_preparacion, listos, entregados]
+      properties:
+        total:
+          type: integer
+        pendientes:
+          type: integer
+        en_preparacion:
+          type: integer
+        listos:
+          type: integer
+        entregados:
+          type: integer
+
+    DashboardCajaEstado:
+      type: object
+      required: [estado]
+      properties:
+        estado:
+          type: string
+          example: abierta
+        monto_inicial:
+          type: [number, 'null']
+        fecha_apertura:
+          type: [string, 'null']
+          format: date-time
+
+    DashboardUltimoPedido:
+      type: object
+      required: [id, mesa, items, total, estado]
+      properties:
+        id:
+          type: integer
+        mesa:
+          type: integer
+        items:
+          type: integer
+        total:
+          type: number
+        estado:
+          $ref: '#/components/schemas/PedidoEstado'
+
+    DashboardResumen:
+      type: object
+      required: [ventas_dia, mesas, pedidos_activos, caja, ultimos_pedidos]
+      properties:
+        ventas_dia:
+          $ref: '#/components/schemas/DashboardVentasDia'
+        mesas:
+          $ref: '#/components/schemas/DashboardMesasResumen'
+        pedidos_activos:
+          $ref: '#/components/schemas/DashboardPedidosActivos'
+        caja:
+          $ref: '#/components/schemas/DashboardCajaEstado'
+        ultimos_pedidos:
+          type: array
+          items:
+            $ref: '#/components/schemas/DashboardUltimoPedido'
+
+    # ---------------- REPORTES ----------------
+    ReportePeriodo:
+      type: object
+      required: [desde, hasta]
+      properties:
+        desde:
+          type: string
+          format: date
+        hasta:
+          type: string
+          format: date
+
+    ReporteResumen:
+      type: object
+      required: [total_vendido, cantidad_cobros, pedidos_cobrados, ticket_promedio]
+      properties:
+        total_vendido:
+          type: number
+        cantidad_cobros:
+          type: integer
+        pedidos_cobrados:
+          type: integer
+        ticket_promedio:
+          type: number
+
+    ReporteVentasMetodo:
+      type: object
+      required: [metodo_pago, cantidad, total]
+      properties:
+        metodo_pago:
+          type: string
+        cantidad:
+          type: integer
+        total:
+          type: number
+
+    ReporteProductoVendido:
+      type: object
+      required: [producto_id, nombre, cantidad, total]
+      properties:
+        producto_id:
+          type: integer
+        nombre:
+          type: string
+        cantidad:
+          type: integer
+        total:
+          type: number
+
+    ReporteMesaUtilizada:
+      type: object
+      required: [mesa_id, numero, cantidad_pedidos, total]
+      properties:
+        mesa_id:
+          type: integer
+        numero:
+          type: integer
+        cantidad_pedidos:
+          type: integer
+        total:
+          type: number
+
+    ReporteCajaDetalle:
+      type: object
+      required: [caja_id, estado, fecha_apertura, fecha_cierre, monto_inicial, ventas_efectivo, monto_final, diferencia]
+      properties:
+        caja_id:
+          type: integer
+        estado:
+          type: string
+        fecha_apertura:
+          type: string
+          format: date-time
+        fecha_cierre:
+          type: [string, 'null']
+          format: date-time
+        monto_inicial:
+          type: number
+        ventas_efectivo:
+          type: number
+        monto_final:
+          type: [number, 'null']
+        diferencia:
+          type: [number, 'null']
+
+    ReporteVentasResponse:
+      type: object
+      required: [periodo, resumen, ventas_por_metodo, productos_mas_vendidos, mesas_utilizadas, cajas]
+      properties:
+        periodo:
+          $ref: '#/components/schemas/ReportePeriodo'
+        resumen:
+          $ref: '#/components/schemas/ReporteResumen'
+        ventas_por_metodo:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReporteVentasMetodo'
+        productos_mas_vendidos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReporteProductoVendido'
+        mesas_utilizadas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReporteMesaUtilizada'
+        cajas:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReporteCajaDetalle'
