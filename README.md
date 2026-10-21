@@ -153,6 +153,31 @@ $env:E2E_DATABASE='true'; $env:DATABASE_URL='postgresql://...'; npm run test:e2e
 - [`docs/openapi.yaml`](docs/openapi.yaml) — especificación OpenAPI 3.1 del contrato.
 - [`docs/conventions.md`](docs/conventions.md) — convenciones de código (MIG-18) y módulo de referencia `src/categorias` para el resto de los módulos.
 
+## Harness de trabajo
+
+Guía para trabajar en el repositorio sin contexto previo (humanos y agentes):
+
+| Documento                                                 | Contenido                                                                       |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| [`AGENTS.md`](AGENTS.md)                                  | Punto de entrada: orden de lectura, comandos y reglas duras.                    |
+| [`docs/harness.md`](docs/harness.md)                      | Explicación del esquema de trabajo: qué se aplicó y por qué.                    |
+| [`docs/constitution.md`](docs/constitution.md)            | Principios no negociables y cómo enmendarlos.                                   |
+| [`docs/architecture.md`](docs/architecture.md)            | Componentes, módulos, dependencias y flujo de una request.                      |
+| [`docs/glossary.md`](docs/glossary.md)                    | Roles, enums, transiciones de estado y vocabulario.                             |
+| [`docs/adr/`](docs/adr/README.md)                         | Decisiones de arquitectura (422, `{ detail }`, fechas, decimales, barra final). |
+| [`docs/workflows/`](docs/workflows/definition-of-done.md) | Definition of Done y receta para crear módulos.                                 |
+| [`.agents/agent.md`](.agents/agent.md)                    | Cómo opera un agente en este repositorio.                                       |
+| [`.agents/memory.md`](.agents/memory.md)                  | Estado vivo del proyecto y próximo paso.                                        |
+
+Cada módulo de `src/` lleva su propia documentación junto al código:
+
+| Archivo        | Rol                                                                                      |
+| -------------- | ---------------------------------------------------------------------------------------- |
+| `AGENTS.md`    | Shim local (≤ 40 líneas): por dónde empezar, reglas no obvias y comando de verificación. |
+| `README.md`    | Responsabilidad, capas, modelo y estado del módulo.                                      |
+| `CONTRACT.md`  | Endpoints, shapes y errores que expone.                                                  |
+| `DECISIONS.md` | Decisiones locales, motivos, riesgos y pendientes.                                       |
+
 ## Scripts
 
 | Script                       | Descripción                                     |
