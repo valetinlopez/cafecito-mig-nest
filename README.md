@@ -42,6 +42,7 @@ El servidor queda disponible en `http://localhost:3000` y el health check respon
 
 - [`docs/api-contract.md`](docs/api-contract.md) — contrato de API (MIG-17): decisiones de diseño, inventario de los 32 endpoints + health check y matriz de compatibilidad con el frontend.
 - [`docs/openapi.yaml`](docs/openapi.yaml) — especificación OpenAPI 3.1 del contrato.
+- [`docs/conventions.md`](docs/conventions.md) — convenciones de código (MIG-18) y módulo de referencia `src/categorias` para el resto de los módulos.
 
 ## Scripts
 

@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module.js';
 import { CajaModule } from './caja/caja.module.js';
-import { CategoriasModule } from './categorias/categorias.module.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
 import { EmpleadosModule } from './empleados/empleados.module.js';
 import { HealthModule } from './health/health.module.js';
@@ -24,7 +23,8 @@ import { UsersModule } from './users/users.module.js';
     UsersModule,
     EmpleadosModule,
     MesasModule,
-    CategoriasModule,
+    // CategoriasModule (MIG-18) se registra acá cuando MIG-19 configure
+    // TypeOrmModule.forRoot(): forFeature necesita un DataSource global.
     ProductosModule,
     PedidosModule,
     PagosModule,
