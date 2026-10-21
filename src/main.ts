@@ -1,3 +1,4 @@
+import 'reflect-metadata';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module.js';
@@ -6,7 +7,7 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
-  const port = Number(configService.get('PORT') ?? 3000);
+  const port = configService.getOrThrow<number>('PORT');
 
   await app.listen(port);
 }
