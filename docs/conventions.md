@@ -341,30 +341,16 @@ Para crear `Mesas`, `Productos`, etc.:
 
 El módulo de referencia está completo, pero su ejecución end-to-end depende de tickets posteriores. Esta tabla evita que cada dev lo resuelva distinto:
 
-| Dependencia                                           | Ticket | Efecto si falta                                                           |
-| ----------------------------------------------------- | ------ | ------------------------------------------------------------------------- |
-| `TypeOrmModule.forRoot()` en `AppModule`              | MIG-19 | `forFeature` no resuelve el `DataSource`; el módulo no se puede registrar |
-| `ValidationPipe` global con 422 y filtro `{ detail }` | MIG-20 | Los errores no respetan el contrato                                       |
-| Utilidades de test / mocks compartidos                | MIG-21 | Cada módulo duplica mocks de repositorio                                  |
-| `JwtAuthGuard` + `RolesGuard`                         | MIG-24 | El endpoint queda sin protección (hoy no existe auth en el scaffold)      |
-| `SwaggerModule` en `main.ts`                          | MIG-40 | Las anotaciones no se publican en `/docs`                                 |
+| Dependencia                                           | Ticket | Efecto si falta                                                      |
+| ----------------------------------------------------- | ------ | -------------------------------------------------------------------- |
+| `TypeOrmModule.forRoot()` en `AppModule`              | MIG-19 | ✅ Resuelto: `DatabaseModule` registra el `DataSource` global        |
+| `ValidationPipe` global con 422 y filtro `{ detail }` | MIG-20 | Los errores no respetan el contrato                                  |
+| Utilidades de test / mocks compartidos                | MIG-21 | Cada módulo duplica mocks de repositorio                             |
+| `JwtAuthGuard` + `RolesGuard`                         | MIG-24 | El endpoint queda sin protección (hoy no existe auth en el scaffold) |
+| `SwaggerModule` en `main.ts`                          | MIG-40 | Las anotaciones no se publican en `/docs`                            |
 
-**Activación de `CategoriasModule`:** cuando MIG-19 esté mergeado, agregar en `src/app.module.ts`:
-
-```ts
-import { CategoriasModule } from './categorias/categorias.module.js';
-
-@Module({
-  imports: [
-    // ...
-    CategoriasModule,
-  ],
-})
-export class AppModule {}
-```
-
-Hasta entonces el módulo no se importa para que `npm run start:dev` y `npm run test:e2e` funcionen sin base de datos.
+**Activación de `CategoriasModule`:** queda registrado en `src/app.module.ts` desde MIG-19. El health check no consulta la base, así que su e2e corre sin PostgreSQL; los e2e que necesitan conexión real se corren con `E2E_DATABASE=true` (ver `README.md`).
 
 ---
 
-_Última actualización: MIG-18 (Sprint S0)._
+_Última actualización: MIG-19 (Sprint S0)._

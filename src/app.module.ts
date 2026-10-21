@@ -2,7 +2,13 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module.js';
 import { CajaModule } from './caja/caja.module.js';
+import { CategoriasModule } from './categorias/categorias.module.js';
+import appConfig from './config/app.config.js';
+import authConfig from './config/auth.config.js';
+import databaseConfig from './config/database.config.js';
+import { validateEnvironment } from './config/env.validation.js';
 import { DashboardModule } from './dashboard/dashboard.module.js';
+import { DatabaseModule } from './database/database.module.js';
 import { EmpleadosModule } from './empleados/empleados.module.js';
 import { HealthModule } from './health/health.module.js';
 import { MesasModule } from './mesas/mesas.module.js';
@@ -17,14 +23,20 @@ import { UsersModule } from './users/users.module.js';
     ConfigModule.forRoot({
       isGlobal: true,
       cache: true,
+      envFilePath: ['.env.local', '.env'],
+      // En producción las variables vienen del entorno del deploy, no de un
+      // archivo que pueda quedar en la imagen.
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
+      load: [appConfig, authConfig, databaseConfig],
+      validate: validateEnvironment,
     }),
+    DatabaseModule.forRoot(),
     HealthModule,
     AuthModule,
     UsersModule,
     EmpleadosModule,
     MesasModule,
-    // CategoriasModule (MIG-18) se registra acá cuando MIG-19 configure
-    // TypeOrmModule.forRoot(): forFeature necesita un DataSource global.
+    CategoriasModule,
     ProductosModule,
     PedidosModule,
     PagosModule,
