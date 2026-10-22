@@ -1,11 +1,11 @@
 # Módulo `auth`
 
-| Campo        | Valor                                                    |
-| ------------ | -------------------------------------------------------- |
-| Estado       | **Scaffold** (módulo registrado, sin controller/service) |
-| Endpoints    | 7 (ver [`CONTRACT.md`](./CONTRACT.md))                   |
-| Dependencias | `users` (entity `Usuario`), `config/auth`                |
-| Tests        | Pendientes (llegan con la implementación)                |
+| Campo        | Valor                                                                      |
+| ------------ | -------------------------------------------------------------------------- |
+| Estado       | **Implementado parcial** (DTOs; controller/service/guards en MIG-23/24/25) |
+| Endpoints    | 7 (ver [`CONTRACT.md`](./CONTRACT.md))                                     |
+| Dependencias | `users` (entity `Usuario`), `config/auth`                                  |
+| Tests        | DTOs en verde; e2e llega con los endpoints                                 |
 
 ---
 
@@ -24,11 +24,20 @@ datos viven en `users`; `auth` los consume.
 
 ```
 src/auth/
-└── auth.module.ts     # @Module({}) — vacío
+├── auth.module.ts          # @Module({}) — sin controller/service
+└── dto/
+    ├── login.dto.ts
+    ├── register.dto.ts
+    ├── update-profile.dto.ts
+    ├── change-password.dto.ts
+    ├── forgot-password.dto.ts
+    ├── reset-password.dto.ts
+    └── auth-dtos.spec.ts
 ```
 
-No hay controller, service, DTOs, guards ni estrategia Passport. **Ningún
-endpoint de auth está disponible todavía.**
+MIG-22 entregó los DTOs de entrada con `class-validator` y sus tests. No hay
+controller, service, estrategia Passport ni guards: **ningún endpoint de auth
+está disponible todavía** (MIG-23/24/25).
 
 ---
 
@@ -95,7 +104,15 @@ matriz de roles del contrato §4.
 
 ---
 
-## 7. Tests esperados
+## 7. Tests
+
+**Implementados (MIG-22):**
+
+- `dto/auth-dtos.spec.ts`: validaciones por DTO y contrato `422` con `detail`
+  en español (`Campo 'email': debe ser un email válido`).
+- `UpdateProfileDto` descarta `rol` si el cliente lo envía.
+
+**Pendientes (MIG-23/25):**
 
 - Login OK devuelve `access_token`, `token_type: "bearer"` y `usuario`.
 - Login con password incorrecta → `401`.

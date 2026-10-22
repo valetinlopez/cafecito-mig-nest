@@ -1,12 +1,12 @@
 # Módulo `empleados`
 
-| Campo        | Valor                                               |
-| ------------ | --------------------------------------------------- |
-| Estado       | **Scaffold** (módulo registrado, sin código propio) |
-| Entity       | `Usuario` (compartida con `users`)                  |
-| Endpoints    | 3 (ver [`CONTRACT.md`](./CONTRACT.md))              |
-| Dependencias | `users`                                             |
-| Tests        | Pendientes                                          |
+| Campo        | Valor                                           |
+| ------------ | ----------------------------------------------- |
+| Estado       | **Implementado parcial** (DTOs; CRUD en MIG-26) |
+| Entity       | `Usuario` (compartida con `users`)              |
+| Endpoints    | 3 (ver [`CONTRACT.md`](./CONTRACT.md))          |
+| Dependencias | `users`                                         |
+| Tests        | DTOs en verde; service/controller pendientes    |
 
 ---
 
@@ -24,8 +24,15 @@ cambiar el rol.
 
 ```
 src/empleados/
-└── empleados.module.ts    # @Module({}) — vacío
+├── empleados.module.ts    # @Module({}) — sin service/controller
+└── dto/
+    ├── create-empleado.dto.ts
+    ├── update-empleado.dto.ts
+    └── empleado-dtos.spec.ts
 ```
+
+MIG-22 entregó los DTOs de entrada (sin `rol`) y sus tests. El CRUD, el
+`EmpleadosService` y los guards llegan con MIG-26.
 
 ---
 
@@ -39,12 +46,13 @@ src/empleados/
 ├── empleados.service.spec.ts
 ├── dto/
 │   ├── create-empleado.dto.ts
-│   ├── update-empleado.dto.ts
-│   └── empleado-response.dto.ts
+│   └── update-empleado.dto.ts
 ├── README.md · CONTRACT.md · DECISIONS.md
 ```
 
-Sin `entities/`: la entity vive en `users`.
+Sin `entities/` ni `empleado-response.dto.ts`: la entity vive en `users` y la
+respuesta reusa `UsuarioResponseDto` (`users/dto/`), porque los tres endpoints
+devuelven el schema `Usuario` del contrato.
 
 ---
 
@@ -71,9 +79,17 @@ users (entity + service)  →  empleados (controller + reglas de personal)
 
 ---
 
-## 6. Tests esperados
+## 6. Tests
 
-- Lista de empleados ordenada (definir criterio: nombre o id) y mapeo a DTO.
+**Implementados (MIG-22):**
+
+- `dto/empleado-dtos.spec.ts`: validaciones de alta y edición.
+- `rol` enviado por el cliente se descarta en ambos DTOs (CFB-112).
+
+**Pendientes (MIG-26):**
+
+- Lista de empleados ordenada (definir criterio: nombre o id) y mapeo a
+  `UsuarioResponseDto`.
 - Alta fuerza `rol = mozo` aunque el body no lo incluya.
 - Alta con email duplicado → `400`.
 - Baja lógica: `PATCH { activo: false }` devuelve el usuario actualizado.

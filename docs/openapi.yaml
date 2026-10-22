@@ -1104,10 +1104,12 @@ components:
           example: 1
         nombre:
           type: string
+          maxLength: 100
           example: Valentín López
         email:
           type: string
           format: email
+          maxLength: 150
           example: valentin@cafecito.com
         rol:
           $ref: '#/components/schemas/Rol'
@@ -1121,14 +1123,17 @@ components:
       properties:
         nombre:
           type: string
+          maxLength: 100
           example: Valentín López
         email:
           type: string
           format: email
+          maxLength: 150
           example: valentin@cafecito.com
         password:
           type: string
           minLength: 6
+          format: password
           example: secreto123
         rol:
           $ref: '#/components/schemas/Rol'
@@ -1138,9 +1143,11 @@ components:
       properties:
         nombre:
           type: string
+          maxLength: 100
         email:
           type: string
           format: email
+          maxLength: 150
 
     LoginRequest:
       type: object
@@ -1152,6 +1159,7 @@ components:
           example: admin@cafecito.com
         password:
           type: string
+          format: password
           example: '123456'
 
     TokenResponse:
@@ -1172,9 +1180,11 @@ components:
       properties:
         password_actual:
           type: string
+          format: password
         password_nueva:
           type: string
           minLength: 6
+          format: password
 
     ForgotPasswordRequest:
       type: object
@@ -1203,6 +1213,7 @@ components:
         password_nueva:
           type: string
           minLength: 6
+          format: password
 
     EmpleadoCreate:
       type: object
@@ -1210,21 +1221,26 @@ components:
       properties:
         nombre:
           type: string
+          maxLength: 100
         email:
           type: string
           format: email
+          maxLength: 150
         password:
           type: string
           minLength: 6
+          format: password
 
     EmpleadoUpdate:
       type: object
       properties:
         nombre:
           type: string
+          maxLength: 100
         email:
           type: string
           format: email
+          maxLength: 150
         activo:
           type: boolean
 

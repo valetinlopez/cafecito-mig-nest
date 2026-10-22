@@ -53,10 +53,77 @@ historial y las FKs.
 
 ---
 
-## D-06 — La entity se crea cuando se confirma el esquema
+## D-06 — La entity nace del modelo legacy y se valida con `schema:log`
 
-**Decisión:** no crear `usuario.entity.ts` hasta validar nombres y tipos reales
-contra la base (MIG-44).
+**Decisión:** crear `usuario.entity.ts` en MIG-22 a partir del modelo
+`usuario.py` y de la tabla de columnas del ticket, y validar el mapeo contra la
+base con `npm run schema:log` en MIG-44 antes de habilitar `synchronize` local.
 
-**Motivo:** una entity incorrecta con `synchronize` local puede alterar la tabla
-compartida (constitución §4).
+**Motivo:** MIG-22 es la base bloqueante de `auth`/`empleados`; sin entity no se
+puede avanzar. El riesgo de una entity incorrecta se controla con la validación
+posterior, no postergando el ticket. `synchronize` sigue apagado salvo dev +
+host local (`database.config.ts`).
+
+**Riesgo:** si `schema:log` reporta diferencias, se corrigen acá y se documenta;
+no se ejecuta `synchronize` contra Neon.
+
+---
+
+## D-07 — `email` es `varchar(150)`
+
+**Decisión:** mapear `email` como `varchar(150)`, no 255.
+
+**Motivo:** el modelo legacy (`usuario.py`) y la tabla de columnas de MIG-22
+declaran 150. El README de `users` decía 255 por inferencia; se corrigió.
+
+**Verificación:** `usuario.entity.spec.ts` fija el largo y MIG-44 lo compara
+contra PostgreSQL.
+
+---
+
+## D-08 — Nombres de DTO alineados al módulo
+
+**Decisión:** usar `RegisterDto`, `UpdateProfileDto`, `CreateEmpleadoDto`,
+`UpdateEmpleadoDto` y `UsuarioResponseDto`.
+
+**Motivo:** el ticket MIG-22 los nombra `CreateUserDto`, `UpdateUserProfileDto`,
+`EmpleadoCreateDto`, `EmpleadoUpdateDto` y `UserResponseDto`. El repositorio
+nombra por operación (`auth/README.md` §3), por recurso en español
+(`empleados`) y por entity (`<Entity>ResponseDto`, como `CategoriaResponseDto`).
+Los campos, validaciones y shapes son idénticos; solo cambia el identificador
+interno de la clase, que no cruza el contrato HTTP.
+
+---
+
+## D-09 — Doble barrera para `password_hash`
+
+**Decisión:** el hash no existe en `UsuarioResponseDto` y la columna de la
+entity lleva `@Exclude()`.
+
+**Motivo:** constitución §8. El DTO es la garantía real porque el borde HTTP
+nunca serializa entities; `@Exclude()` cubre el caso de una serialización
+accidental con `class-transformer`.
+
+**Verificación:** ambos specs comprueban que el hash no aparece en el JSON.
+
+---
+
+## D-10 — `Rol` como unión literal centralizada
+
+**Decisión:** `rol.ts` exporta `ROLES` y `type Rol = 'admin' | 'mozo'`; el DTO lo
+usa con `@IsIn(ROLES)` y Swagger con `enum`.
+
+**Motivo:** constitución §10 (nada de `string` libre) y una sola fuente de
+verdad para validación, documentación y tests. La columna sigue siendo
+`varchar(20)`, sin `enum` de PostgreSQL: cambiar el tipo alteraría una tabla
+compartida con producción.
+
+---
+
+## D-11 — `@MaxLength` refleja el largo de la columna
+
+**Decisión:** `nombre` valida 100 y `email` 150 en todos los DTOs de entrada.
+
+**Motivo:** PostgreSQL rechaza el excedente con un error de query (`500` vía
+filtro global). Validarlo antes devuelve `422` con el formato del contrato. No
+es una restricción nueva: el dato tampoco entraba antes.

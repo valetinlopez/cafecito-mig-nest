@@ -130,23 +130,23 @@ Puntos de borde:
 
 ## 5. Mapa de módulos
 
-| Módulo     | Directorio       | Estado                     | Dominio                                | Depende de                                     |
-| ---------- | ---------------- | -------------------------- | -------------------------------------- | ---------------------------------------------- |
-| Health     | `src/health`     | **Implementado**           | `GET /` (fuera de `/api/v1`)           | —                                              |
-| Config     | `src/config`     | **Implementado**           | Validación de entorno + config tipada  | —                                              |
-| Database   | `src/database`   | **Implementado**           | DataSource, pool, migraciones          | `config`                                       |
-| Categorías | `src/categorias` | **Implementado (lectura)** | `GET /categorias/`                     | `database`                                     |
-| Auth       | `src/auth`       | Scaffold (módulo vacío)    | Login, registro, perfil, password      | `users`, `config/auth`                         |
-| Users      | `src/users`      | Scaffold (módulo vacío)    | Entity/gestión de usuarios             | `database`                                     |
-| Empleados  | `src/empleados`  | Scaffold (módulo vacío)    | ABM de empleados (`rol = mozo`)        | `users`                                        |
-| Mesas      | `src/mesas`      | Scaffold (módulo vacío)    | Estados y ABM de mesas                 | `pedidos` (efectos de estado)                  |
-| Productos  | `src/productos`  | Scaffold (módulo vacío)    | Catálogo, stock, precios               | `categorias`                                   |
-| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)    | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
-| Pagos      | `src/pagos`      | Scaffold (módulo vacío)    | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
-| Caja       | `src/caja`       | Scaffold (módulo vacío)    | Apertura, cierre, movimientos          | `pagos`                                        |
-| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)    | KPIs de solo lectura                   | `mesas`, `pedidos`, `pagos`, `caja`            |
-| Reportes   | `src/reportes`   | Scaffold (módulo vacío)    | Reporte de ventas por período          | `pagos`, `caja`, `pedidos`                     |
-| Common     | `src/common`     | **Implementado**           | Filtros, pipes, interceptores y CORS   | —                                              |
+| Módulo     | Directorio       | Estado                        | Dominio                                | Depende de                                     |
+| ---------- | ---------------- | ----------------------------- | -------------------------------------- | ---------------------------------------------- |
+| Health     | `src/health`     | **Implementado**              | `GET /` (fuera de `/api/v1`)           | —                                              |
+| Config     | `src/config`     | **Implementado**              | Validación de entorno + config tipada  | —                                              |
+| Database   | `src/database`   | **Implementado**              | DataSource, pool, migraciones          | `config`                                       |
+| Categorías | `src/categorias` | **Implementado (lectura)**    | `GET /categorias/`                     | `database`                                     |
+| Auth       | `src/auth`       | Implementado parcial (DTOs)   | Login, registro, perfil, password      | `users`, `config/auth`                         |
+| Users      | `src/users`      | Implementado parcial (entity) | Entity/gestión de usuarios             | `database`                                     |
+| Empleados  | `src/empleados`  | Implementado parcial (DTOs)   | ABM de empleados (`rol = mozo`)        | `users`                                        |
+| Mesas      | `src/mesas`      | Scaffold (módulo vacío)       | Estados y ABM de mesas                 | `pedidos` (efectos de estado)                  |
+| Productos  | `src/productos`  | Scaffold (módulo vacío)       | Catálogo, stock, precios               | `categorias`                                   |
+| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)       | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
+| Pagos      | `src/pagos`      | Scaffold (módulo vacío)       | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
+| Caja       | `src/caja`       | Scaffold (módulo vacío)       | Apertura, cierre, movimientos          | `pagos`                                        |
+| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)       | KPIs de solo lectura                   | `mesas`, `pedidos`, `pagos`, `caja`            |
+| Reportes   | `src/reportes`   | Scaffold (módulo vacío)       | Reporte de ventas por período          | `pagos`, `caja`, `pedidos`                     |
+| Common     | `src/common`     | **Implementado**              | Filtros, pipes, interceptores y CORS   | —                                              |
 
 **Leyenda:** _Implementado_ = código + tests + doc. _Scaffold_ = el módulo
 existe registrado en `AppModule` pero sin controller/service/entity; su contrato
@@ -201,20 +201,21 @@ Reglas de dependencia:
 
 ## 7. Modelo de datos (estado conocido)
 
-Solo `categorias` tiene entity implementada. El resto se infiere del contrato y
-del legacy, y debe validarse contra la base en MIG-44 antes de crear entities.
+Solo `categorias` y `usuarios` tienen entity implementada. El resto se infiere
+del contrato y del legacy, y debe validarse contra la base en MIG-44 antes de
+crear entities.
 
-| Tabla legacy (a confirmar) | Entity           | Módulo     | Estado       |
-| -------------------------- | ---------------- | ---------- | ------------ |
-| `categorias`               | `Categoria`      | categorias | Implementada |
-| `usuarios`                 | `Usuario`        | users      | Pendiente    |
-| `mesas`                    | `Mesa`           | mesas      | Pendiente    |
-| `productos`                | `Producto`       | productos  | Pendiente    |
-| `pedidos`                  | `Pedido`         | pedidos    | Pendiente    |
-| `detalle_pedidos`          | `DetallePedido`  | pedidos    | Pendiente    |
-| `pagos`                    | `Pago`           | pagos      | Pendiente    |
-| `cajas`                    | `Caja`           | caja       | Pendiente    |
-| `movimientos_caja`*        | `MovimientoCaja` | caja       | Pendiente    |
+| Tabla legacy (a confirmar) | Entity           | Módulo     | Estado                |
+| -------------------------- | ---------------- | ---------- | --------------------- |
+| `categorias`               | `Categoria`      | categorias | Implementada          |
+| `usuarios`                 | `Usuario`        | users      | Implementada (MIG-22) |
+| `mesas`                    | `Mesa`           | mesas      | Pendiente             |
+| `productos`                | `Producto`       | productos  | Pendiente             |
+| `pedidos`                  | `Pedido`         | pedidos    | Pendiente             |
+| `detalle_pedidos`          | `DetallePedido`  | pedidos    | Pendiente             |
+| `pagos`                    | `Pago`           | pagos      | Pendiente             |
+| `cajas`                    | `Caja`           | caja       | Pendiente             |
+| `movimientos_caja`*        | `MovimientoCaja` | caja       | Pendiente             |
 
 \* El contrato expone movimientos derivados de pagos; la tabla real se confirma
 en MIG-44.
