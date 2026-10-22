@@ -63,6 +63,17 @@ DatabaseModule.forRoot(),
 | `extra.keepAlive`         | `true`                                        |
 | `poolErrorHandler`        | loguea y no tumba el proceso                  |
 
+### 4.1 Zona horaria y columnas `timestamp`
+
+La base es compartida con el backend FastAPI, que guarda las fechas como
+`timestamp without time zone` con UTC _naive_. `pg` interpreta esas columnas con
+la zona **del proceso**, por eso:
+
+- `main.ts` y `data-source.ts` llaman a `pinProcessTimezone()` antes de crear la
+  conexión: el proceso queda en UTC o el arranque falla (ADR 0007).
+- Las entities usan `utcTimestampTransformer` en esas columnas.
+- No se cambia el tipo de columna: el esquema compartido no se toca.
+
 ---
 
 ## 5. Migraciones

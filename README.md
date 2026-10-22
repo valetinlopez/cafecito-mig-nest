@@ -74,6 +74,12 @@ La configuración es global y se lee con `@nestjs/config`. La fuente de verdad d
 
 Los valores de ejemplo de autenticación (`SECRET_KEY=dev-only-secret-...`) son solo para desarrollo: la validación los rechaza con `NODE_ENV=production`.
 
+**Zona horaria:** el proceso se fija en **UTC** al arrancar
+(`pinProcessTimezone()`, [ADR 0007](docs/adr/0007-zona-horaria-proceso.md)). No
+hace falta definir `TZ`: si el entorno trae otra zona, el backend la reemplaza
+y deja una advertencia en el log. Es obligatorio para interpretar las columnas
+`timestamp without time zone` que comparte con el backend FastAPI.
+
 ### Configuración tipada
 
 - `appConfig` → `environment`, `isProduction`, `port`, `corsOrigins`.
@@ -93,6 +99,8 @@ Cableado definido en `src/app.setup.ts` y `src/common` (MIG-20):
 - **Performance:** cada response lleva `X-Response-Time-ms` (D-11).
 - **CORS:** solo los orígenes de `CORS_ORIGINS`, con credenciales. Sin la variable se
   usa `http://localhost:3000`; `*` se refleja con una advertencia en el log.
+- **Fechas:** ISO-8601 UTC con `Z` (`2026-10-19T20:24:10.794Z`); el proceso corre
+  en UTC y las columnas compartidas usan `utcTimestampTransformer` (ADR 0007).
 
 ```bash
 curl -i http://localhost:3000/api/v1/categorias/

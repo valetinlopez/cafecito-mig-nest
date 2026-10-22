@@ -56,9 +56,11 @@ Sin controller ni DTOs de request: la entrada es el DTO de `pedidos`.
 | `usuarioId`  | `usuario_id`  | `int`           | FK a `usuarios` (quién cobró) |
 | `monto`      | `monto`       | `numeric(10,2)` | `> 0`, transformer a `number` |
 | `metodoPago` | `metodo_pago` | enum/varchar    | 5 valores del glosario        |
-| `fecha`      | `fecha`       | `timestamptz`   | default now                   |
+| `fecha`      | `fecha`       | `timestamp`     | default now, UTC naive        |
 
-> Nombres y tipos exactos a confirmar contra la base (MIG-44).
+> Nombres y tipos exactos a confirmar contra la base (MIG-44). `fecha` es
+> `timestamp without time zone` en el legacy: usar `utcTimestampTransformer` y
+> serializar con `toIsoUtc()` (ADR 0007).
 
 ---
 

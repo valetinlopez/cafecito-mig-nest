@@ -1,4 +1,9 @@
 import 'reflect-metadata';
+import { pinProcessTimezone } from '../src/common/time/process-timezone.js';
+
+// Mismo eje temporal que producción: `pg` lee las columnas
+// `timestamp without time zone` con la zona del proceso (ADR 0003, MIG-43).
+pinProcessTimezone();
 
 /**
  * Variables mínimas para correr los tests.

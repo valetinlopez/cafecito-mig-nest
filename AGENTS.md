@@ -68,20 +68,20 @@ estar en verde. El detalle está en
 
 ## 3. Reglas duras (resumen ejecutable)
 
-| Regla                                                                    | Dónde se explica  |
-| ------------------------------------------------------------------------ | ----------------- |
-| El contrato manda: paths, campos y códigos no se renombran.              | Constitución §1   |
-| JSON en `snake_case`; paths en `kebab-case`.                             | Constitución §2   |
-| Todo import relativo lleva `.js` (ESM + `nodenext`).                     | Constitución §9   |
-| Controller = HTTP · Service = negocio · Entity = tabla · DTO = contrato. | Constitución §3   |
-| Nunca serializar una entity: siempre DTO con `fromEntity()`.             | Constitución §8   |
-| Toda lista/orden/filtro se resuelve en la base, no en memoria.           | Convenciones §6.3 |
-| Los decimales salen como `number`; las fechas como ISO-8601 UTC con `Z`. | ADR 0003, 0004    |
-| Errores siempre `{ "detail": "..." }`; validación siempre `422`.         | ADR 0001, 0002    |
-| Las colecciones aceptan con y sin barra final, sin redirect.             | ADR 0005          |
-| Ningún módulo entra sin `*.spec.ts` en verde.                            | Constitución §5   |
-| Prohibido `any`, `console.log` y `TODO` sin ticket.                      | Constitución §7   |
-| Ninguna entity se crea a medias sobre la base compartida.                | Constitución §4   |
+| Regla                                                                    | Dónde se explica     |
+| ------------------------------------------------------------------------ | -------------------- |
+| El contrato manda: paths, campos y códigos no se renombran.              | Constitución §1      |
+| JSON en `snake_case`; paths en `kebab-case`.                             | Constitución §2      |
+| Todo import relativo lleva `.js` (ESM + `nodenext`).                     | Constitución §9      |
+| Controller = HTTP · Service = negocio · Entity = tabla · DTO = contrato. | Constitución §3      |
+| Nunca serializar una entity: siempre DTO con `fromEntity()`.             | Constitución §8      |
+| Toda lista/orden/filtro se resuelve en la base, no en memoria.           | Convenciones §6.3    |
+| Los decimales salen como `number`; las fechas como ISO-8601 UTC con `Z`. | ADR 0003, 0004, 0007 |
+| Errores siempre `{ "detail": "..." }`; validación siempre `422`.         | ADR 0001, 0002       |
+| Las colecciones aceptan con y sin barra final, sin redirect.             | ADR 0005             |
+| Ningún módulo entra sin `*.spec.ts` en verde.                            | Constitución §5      |
+| Prohibido `any`, `console.log` y `TODO` sin ticket.                      | Constitución §7      |
+| Ninguna entity se crea a medias sobre la base compartida.                | Constitución §4      |
 
 ---
 

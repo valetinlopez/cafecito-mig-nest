@@ -1,5 +1,6 @@
 import { join } from 'node:path';
 import { DataSource } from 'typeorm';
+import { pinProcessTimezone } from '../common/time/process-timezone.js';
 import { loadDatabaseConfig } from '../config/database.config.js';
 import { createDataSourceOptions } from './typeorm-options.js';
 
@@ -13,6 +14,8 @@ import { createDataSourceOptions } from './typeorm-options.js';
  *
  *   npm run migration:generate -- src/database/migrations/Nombre -d dist/database/data-source.js
  */
+pinProcessTimezone();
+
 const config = loadDatabaseConfig();
 
 export default new DataSource({

@@ -1083,6 +1083,8 @@ components:
         timestamp:
           type: string
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+          description: ISO-8601 UTC con sufijo `Z` (ADR 0003, ADR 0007).
           example: '2026-10-19T23:00:00.000Z'
         uptime:
           type: integer
@@ -1387,6 +1389,8 @@ components:
         fecha:
           type: string
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+          description: ISO-8601 UTC con sufijo `Z` (ADR 0003, ADR 0007).
           example: '2026-10-19T20:24:10.000Z'
         mesa:
           $ref: '#/components/schemas/Mesa'
@@ -1437,9 +1441,13 @@ components:
         fecha_apertura:
           type: string
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+          description: ISO-8601 UTC con sufijo `Z` (ADR 0003, ADR 0007).
         fecha_cierre:
           type: [string, 'null']
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+          description: ISO-8601 UTC con sufijo `Z` (ADR 0003, ADR 0007).
         monto_inicial:
           type: number
         monto_final:
@@ -1472,6 +1480,8 @@ components:
         fecha:
           type: string
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+          description: ISO-8601 UTC con sufijo `Z` (ADR 0003, ADR 0007).
         pedido_id:
           type: integer
         mesa_numero:
@@ -1533,6 +1543,8 @@ components:
         fecha_apertura:
           type: [string, 'null']
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+          description: ISO-8601 UTC con sufijo `Z` (ADR 0003, ADR 0007).
 
     DashboardUltimoPedido:
       type: object
@@ -1639,9 +1651,13 @@ components:
         fecha_apertura:
           type: string
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+          description: ISO-8601 UTC con sufijo `Z` (ADR 0003, ADR 0007).
         fecha_cierre:
           type: [string, 'null']
           format: date-time
+          pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$'
+          description: ISO-8601 UTC con sufijo `Z` (ADR 0003, ADR 0007).
         monto_inicial:
           type: number
         ventas_efectivo:
