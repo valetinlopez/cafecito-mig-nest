@@ -88,7 +88,35 @@ Nunca devuelve `NaN` para valores válidos de PostgreSQL (ADR 0004).
 
 ---
 
-## 5. `X-Response-Time-ms`
+## 5. Fechas y zona horaria
+
+Garantías:
+
+- El proceso de Node queda en **UTC** al arrancar (`pinProcessTimezone()`),
+  antes de crear la conexión. Si el runtime no acepta el cambio, el arranque
+  falla con un mensaje explícito.
+- Las columnas `timestamp without time zone` del legacy se leen y escriben
+  como UTC mediante `utcTimestampTransformer`.
+- Un DTO nunca devuelve un `Date`: expone un `string` ISO-8601 UTC con `Z` y
+  milisegundos (`toIsoUtc()`).
+- Un campo nullable se emite como `null`, no se omite (`toIsoUtcOrNull()`).
+- Una fecha inválida (`Invalid Date`) lanza `TypeError`; nunca llega
+  `"Invalid Date"` al contrato.
+
+| Entrada                                | Función              | Salida                     |
+| -------------------------------------- | -------------------- | -------------------------- |
+| `new Date('2026-10-19T20:24:10.794Z')` | `toIsoUtc`           | `2026-10-19T20:24:10.794Z` |
+| `null` / `undefined`                   | `toIsoUtcOrNull`     | `null`                     |
+| `Date`                                 | `formatUtcTimestamp` | `2026-10-19 20:24:10.794`  |
+| `2026-10-19 20:24:10.794`              | `parseUtcTimestamp`  | `2026-10-19T20:24:10.794Z` |
+
+> El eje es fijo: UTC. Un cálculo de "día del negocio" debe convertir
+> explícitamente a `America/Argentina/Buenos_Aires` en el módulo que lo
+> necesite (reportes y dashboard).
+
+---
+
+## 6. `X-Response-Time-ms`
 
 Header numérico en milisegundos (hasta dos decimales) en **todas** las
 respuestas de la aplicación, incluidas las de error. No altera el body ni el
@@ -104,7 +132,7 @@ status (D-11).
 
 ---
 
-## 6. Prefijo y CORS
+## 7. Prefijo y CORS
 
 ### Prefijo
 
@@ -125,7 +153,7 @@ status (D-11).
 
 ---
 
-## 7. Garantías transversales
+## 8. Garantías transversales
 
 | Garantía                                  | Pieza                     |
 | ----------------------------------------- | ------------------------- |
@@ -135,5 +163,6 @@ status (D-11).
 | Ningún endpoint protegido queda sin guard | `JwtAuthGuard`            |
 | Los roles se validan en un solo lugar     | `RolesGuard`              |
 | Los decimales llegan como `number`        | `numericTransformer`      |
+| Las fechas salen ISO-8601 UTC con `Z`     | `toIsoUtc` + proceso UTC  |
 | Los paths viven bajo `/api/v1`            | `app.setup.ts`            |
 | Solo los orígenes configurados consumen   | `buildCorsOptions`        |

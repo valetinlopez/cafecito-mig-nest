@@ -2,10 +2,10 @@
 
 | Campo         | Valor                                               |
 | ------------- | --------------------------------------------------- |
-| Estado        | **Implementado** (MIG-20)                           |
+| Estado        | **Implementado** (MIG-20; fechas UTC en MIG-43)     |
 | Tipo          | Infraestructura transversal, sin endpoints          |
 | Consumido por | Todos los feature modules                           |
-| Tests         | 39 unitarios + `test/common.e2e-spec.ts` (18 casos) |
+| Tests         | 70 unitarios + `test/common.e2e-spec.ts` (18 casos) |
 
 ---
 
@@ -40,6 +40,14 @@ src/common/
 │   ├── validation.pipe.spec.ts
 │   ├── validation-messages.ts       # TRADUCCIONES_PYDANTIC → class-validator
 │   └── validation-messages.spec.ts
+├── time/
+│   ├── process-timezone.ts          # proceso en UTC antes de conectar (MIG-43)
+│   ├── process-timezone.spec.ts
+│   ├── utc-date.ts                  # toIsoUtc + literales de timestamp
+│   └── utc-date.spec.ts
+├── transformers/
+│   ├── utc-timestamp.transformer.ts # timestamp without time zone ↔ Date
+│   └── utc-timestamp.transformer.spec.ts
 ├── decorators/.gitkeep              # MIG-24
 ├── guards/.gitkeep                  # MIG-24
 ├── README.md · CONTRACT.md · DECISIONS.md · AGENTS.md
@@ -61,8 +69,6 @@ src/common/
 ├── guards/
 │   ├── jwt-auth.guard.ts
 │   └── roles.guard.ts
-├── transformers/
-│   └── numeric.transformer.ts     # numeric → number (ADR 0004)
 └── (lo ya implementado en §2)
 ```
 
@@ -76,7 +82,8 @@ src/common/
 | `ValidationPipe` con `exceptionFactory`   | DTOs de un recurso                   |
 | `JwtAuthGuard`, `RolesGuard`, `@Public()` | Entities                             |
 | `numericTransformer`                      | Reglas de transición de estados      |
-| CORS y prefijo (`app.setup.ts`)           | Helpers usados por un solo módulo    |
+| `utcTimestampTransformer`, `toIsoUtc()`   | Helpers usados por un solo módulo    |
+| CORS y prefijo (`app.setup.ts`)           | Fechas de negocio con zona local     |
 
 ---
 
@@ -84,9 +91,10 @@ src/common/
 
 ```
 MIG-20  →  prefijo /api/v1 + ValidationPipe 422 + AllExceptionsFilter + CORS ✅
-MIG-21  →  utilidades de test / mocks de repositorio
+MIG-21  →  utilidades de test / mocks de repositorio ✅
 MIG-24  →  JwtAuthGuard + RolesGuard + @Public/@Roles
-MIG-44  →  numericTransformer + serialización de fechas
+MIG-43  →  zona horaria UTC + transformer de fechas + `toIsoUtc()` ✅
+MIG-44  →  numericTransformer + validación de esquema real
 ```
 
 `CommonModule` registra los `APP_*` una sola vez en `AppModule`. Los e2e lo
@@ -96,20 +104,23 @@ importan directamente para probar el cableado real sin PostgreSQL.
 
 ## 6. Tests
 
-| Pieza                     | Test esperado                                           |
-| ------------------------- | ------------------------------------------------------- |
-| `AllExceptionsFilter`     | Cada status produce `{ detail }` y nada más.            |
-| `ValidationPipe`          | Body inválido → `422` con `Campo '<campo>': ...`.       |
-| `validation-messages`     | Defaults, parámetros y mensajes propios del DTO.        |
-| `buildCorsOptions`        | Lista, default legacy, wildcard y headers expuestos.    |
-| `response-time`           | Reloj compartido, header único y orden de las capas.    |
-| `ResponseTimeInterceptor` | El header existe, es numérico y también aparece en 4xx. |
-| `test/common.e2e-spec.ts` | Prefijo, CORS, header, 422, 400, 404 y 500.             |
+| Pieza                            | Test esperado                                           |
+| -------------------------------- | ------------------------------------------------------- |
+| `AllExceptionsFilter`            | Cada status produce `{ detail }` y nada más.            |
+| `ValidationPipe`                 | Body inválido → `422` con `Campo '<campo>': ...`.       |
+| `validation-messages`            | Defaults, parámetros y mensajes propios del DTO.        |
+| `buildCorsOptions`               | Lista, default legacy, wildcard y headers expuestos.    |
+| `response-time`                  | Reloj compartido, header único y orden de las capas.    |
+| `ResponseTimeInterceptor`        | El header existe, es numérico y también aparece en 4xx. |
+| `pinProcessTimezone`             | El proceso queda en UTC aunque el sistema esté en ART.  |
+| `toIsoUtc` / `parseUtcTimestamp` | Instante conocido con `Z`, round-trip y zonas.          |
+| `utcTimestampTransformer`        | Escritura UTC, lectura UTC y nulos explícitos.          |
+| `test/common.e2e-spec.ts`        | Prefijo, CORS, header, 422, 400, 404 y 500.             |
 
 ---
 
 ## 7. Referencias
 
 - [`CONTRACT.md`](./CONTRACT.md) · [`DECISIONS.md`](./DECISIONS.md)
-- `docs/adr/0001` y `0002`
+- `docs/adr/0001`, `0002` y `0007` (fechas UTC)
 - `docs/api-contract.md` §5 y §9

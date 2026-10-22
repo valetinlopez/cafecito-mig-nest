@@ -167,3 +167,35 @@ contrato ni el body.
 no matchean el router. Sin el middleware, esos `4xx` quedarían sin header. La
 medición es "first wins" y el header se escribe una sola vez, así que no hay
 valores pisados ni lógica duplicada.
+
+---
+
+## D-15 — El proceso se fija en UTC desde el código
+
+**Decisión:** `pinProcessTimezone()` fija `process.env.TZ = 'UTC'` al arrancar
+(`main.ts` y el `DataSource` del CLI) y **falla el arranque** si el runtime no
+quedó en UTC.
+
+**Motivo:** `pg` interpreta las columnas `timestamp without time zone` con la
+zona del proceso. La base es compartida con FastAPI, que guardó UTC _naive_; si
+el proceso corre en `America/Argentina/Buenos_Aires`, las fechas salen 3 horas
+adelantadas. Confiar solo en `TZ=UTC` del proveedor deja el bug latente en
+cualquier entorno que olvide la variable.
+
+**Alternativa descartada:** cambiar las columnas a `timestamptz`. Toca el
+esquema de producción y rompe al backend legacy (ADR 0007).
+
+---
+
+## D-16 — Serialización de fechas explícita en el DTO
+
+**Decisión:** cada DTO de response convierte sus fechas con `toIsoUtc()` (o
+`toIsoUtcOrNull()`) y declara el campo como `string`.
+
+**Motivo:** un interceptor global que recorra el body convierte cualquier `Date`
+sin que el contrato lo declare, recorre estructuras anidadas sin tipo y oculta
+el olvido de un campo. Con el campo tipado como `string`, TypeScript rechaza
+devolver un `Date` crudo en `fromEntity()`.
+
+**Verificación:** test con un instante conocido que compara el string exacto y
+comprueba que el campo no es un `Date`.

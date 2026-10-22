@@ -110,7 +110,7 @@ Resumen para revisión rápida:
 - **Decisión:** todas las fechas (`fecha`, `fecha_apertura`, `fecha_cierre`) se serializan como ISO-8601 UTC con sufijo `Z` y milisegundos, p. ej. `2026-10-19T20:24:10.000Z`.
 - **Justificación:** el legacy guarda `datetime.utcnow` (UTC naive) y lo devuelve sin zona; el navegador lo interpreta como hora local y muestra las fechas **3 h adelantadas** en `America/Argentina/Buenos_Aires` (UTC-3). Con `Z`, `new Date(...)` interpreta correctamente y el render se corrige.
 - **Impacto:** es un **cambio de formato intencional**; el front no requiere cambios de código (ya usa `new Date(...)`), pero **sí requiere QA visual** porque los horarios mostrarán 3 h menos (el valor correcto).
-- **Implementación:** columnas `timestamptz` y serialización a ISO con `Date.toISOString()` (o interceptor global). Ver [§9](#9-guía-de-implementación-en-nestjs).
+- **Implementación:** las columnas compartidas con el legacy siguen siendo `timestamp without time zone`, el proceso de Node se fija en UTC y la serialización usa `toIsoUtc()` en el DTO. Ver [ADR 0007](adr/0007-zona-horaria-proceso.md) y [§9](#9-guía-de-implementación-en-nestjs).
 
 ### D-07 — Códigos de estado
 - **Decisión:** crear → `201`; eliminar → `204` (sin body); leer/actualizar/acciones → `200`. `POST /pedidos/{id}/pago` se mantiene en `200` (el legacy no devuelve 201).
@@ -1215,9 +1215,31 @@ precio!: number;
 
 ### 9.5 Fechas ISO-8601 con `Z`
 
-1. Modelar las columnas como `timestamptz` (`@Column({ type: 'timestamptz' })`).
-2. Serializar con `toISOString()` (incluye `Z` y milisegundos).
-3. Si se usa `class-transformer`, `@Transform(({ value }) => value?.toISOString())`; o un interceptor global que recorra el body y convierta `Date` a ISO.
+El proceso corre en UTC y las columnas compartidas con el legacy son
+`timestamp without time zone` ([ADR 0007](adr/0007-zona-horaria-proceso.md)).
+
+1. Fijar el proceso en UTC antes de conectar (`pinProcessTimezone()`).
+2. Mapear las columnas del legacy con el transformer explícito:
+
+   ```ts
+   @Column({ type: 'timestamp', transformer: utcTimestampTransformer })
+   fecha!: Date;
+   ```
+
+3. Serializar en el DTO con `toIsoUtc()` (incluye `Z` y milisegundos) y tipar
+   el campo como `string`:
+
+   ```ts
+   dto.fecha = toIsoUtc(pago.fecha);
+   dto.fecha_cierre = toIsoUtcOrNull(caja.fechaCierre);
+   ```
+
+4. No serializar una entity ni devolver un `Date` crudo. Si un campo es
+   nullable, usar `toIsoUtcOrNull()` para emitir `null` explícito.
+
+```json
+{ "fecha": "2026-10-19T20:24:10.794Z", "fecha_cierre": null }
+```
 
 ### 9.6 `GET /caja/` con `null` literal
 

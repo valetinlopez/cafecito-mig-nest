@@ -25,10 +25,12 @@ src/<modulo>/entities/<recurso>.entity.ts
 
 - `@Entity('<tabla>')` explícito, `snake_case`, igual al legacy.
 - Columnas con tipo PostgreSQL real (`varchar(n)`, `numeric(10,2)`,
-  `timestamptz`, `boolean`, `int`).
+  `timestamp`, `timestamptz`, `boolean`, `int`).
 - Restricciones con el nombre real (`@Unique('categorias_nombre_key', [...])`).
 - Relaciones solo si ambas entities existen; sin `eager: true`.
 - Decimales con `numericTransformer` (ADR 0004).
+- Fechas del legacy (`timestamp without time zone`) con
+  `utcTimestampTransformer` (ADR 0007).
 
 ---
 

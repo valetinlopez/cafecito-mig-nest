@@ -54,13 +54,16 @@ src/caja/
 | Propiedad       | Columna          | Tipo            | Restricción            |
 | --------------- | ---------------- | --------------- | ---------------------- |
 | `id`            | `id`             | `serial`        | PK                     |
-| `fechaApertura` | `fecha_apertura` | `timestamptz`   | not null               |
-| `fechaCierre`   | `fecha_cierre`   | `timestamptz`   | nullable               |
+| `fechaApertura` | `fecha_apertura` | `timestamp`     | not null, UTC naive    |
+| `fechaCierre`   | `fecha_cierre`   | `timestamp`     | nullable, UTC naive    |
 | `montoInicial`  | `monto_inicial`  | `numeric(10,2)` | `>= 0`                 |
 | `montoFinal`    | `monto_final`    | `numeric(10,2)` | nullable               |
 | `estado`        | `estado`         | enum/varchar    | `abierta` \| `cerrada` |
 
 `total_ventas` **no es columna**: se calcula sumando los pagos de la caja.
+
+> Las columnas de fecha son `timestamp without time zone` en el legacy: usar
+> `utcTimestampTransformer` y serializar con `toIsoUtc()` (ADR 0007).
 
 ---
 

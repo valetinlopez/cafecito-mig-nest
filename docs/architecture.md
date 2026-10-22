@@ -224,7 +224,7 @@ Reglas transversales de persistencia:
 - `@Entity('<tabla>')` explícito y `snake_case`.
 - Restricciones (`@Unique`, `@Index`) con el nombre real de PostgreSQL.
 - `numeric` → transformer a `number` (ADR 0004).
-- `timestamptz` → ISO-8601 UTC con `Z` (ADR 0003).
+- Fechas `timestamp without time zone` → `utcTimestampTransformer` + proceso en UTC; ISO-8601 con `Z` en el DTO (ADR 0003, ADR 0007).
 - Sin `eager: true`; las relaciones se piden explícitamente.
 
 ---
@@ -251,30 +251,30 @@ local. Contra Neon (aunque sea un `.env` de desarrollo), queda en `false`.
 
 ## 9. Piezas transversales (estado y destino)
 
-| Pieza                            | Estado           | Destino | Doc                   |
-| -------------------------------- | ---------------- | ------- | --------------------- |
-| Prefijo global `/api/v1`         | **Implementado** | MIG-20  | Contrato D-01         |
-| `ValidationPipe` 422             | **Implementado** | MIG-20  | ADR 0001              |
-| `AllExceptionsFilter` `{detail}` | **Implementado** | MIG-20  | ADR 0002              |
-| CORS configurable                | **Implementado** | MIG-20  | Contrato D-16         |
-| `numericTransformer`             | Pendiente        | MIG-44  | ADR 0004              |
-| Serialización de fechas `Z`      | Pendiente        | MIG-44  | ADR 0003              |
-| `JwtAuthGuard` + `RolesGuard`    | Pendiente        | MIG-24  | Contrato §4           |
-| Swagger en `/docs`               | Pendiente        | MIG-40  | Convenciones §9       |
-| Header `X-Response-Time-ms`      | **Implementado** | MIG-20  | Contrato D-11         |
+| Pieza                            | Estado           | Destino | Doc                    |
+| -------------------------------- | ---------------- | ------- | ---------------------- |
+| Prefijo global `/api/v1`         | **Implementado** | MIG-20  | Contrato D-01          |
+| `ValidationPipe` 422             | **Implementado** | MIG-20  | ADR 0001               |
+| `AllExceptionsFilter` `{detail}` | **Implementado** | MIG-20  | ADR 0002               |
+| CORS configurable                | **Implementado** | MIG-20  | Contrato D-16          |
+| `numericTransformer`             | Pendiente        | MIG-44  | ADR 0004               |
+| Serialización de fechas `Z`      | **Implementado** | MIG-43  | ADR 0003 + 0007        |
+| `JwtAuthGuard` + `RolesGuard`    | Pendiente        | MIG-24  | Contrato §4            |
+| Swagger en `/docs`               | Pendiente        | MIG-40  | Convenciones §9        |
+| Header `X-Response-Time-ms`      | **Implementado** | MIG-20  | Contrato D-11          |
 | Utilidades de test compartidas   | **Implementado** | MIG-21  | test/README + ADR 0006 |
 
 ---
 
 ## 10. Tests y verificación
 
-| Nivel    | Ubicación                   | Alcance                                          |
-| -------- | --------------------------- | ------------------------------------------------ |
-| Unitario | `src/<modulo>/*.spec.ts`    | Services con repositorio mockeado. Sin DB.       |
-| Config   | `src/config/*.spec.ts`      | Resolución de entorno y defaults.                |
-| e2e      | `test/*.e2e-spec.ts`        | Contrato HTTP, sin PostgreSQL por defecto.       |
-| Smoke DB | `test/database.e2e-spec.ts` | Solo con `E2E_DATABASE=true`.                    |
-| Helpers  | `test/utils/*.ts`           | Mocks tipados de `Repository` y `QueryBuilder`.  |
+| Nivel    | Ubicación                   | Alcance                                         |
+| -------- | --------------------------- | ----------------------------------------------- |
+| Unitario | `src/<modulo>/*.spec.ts`    | Services con repositorio mockeado. Sin DB.      |
+| Config   | `src/config/*.spec.ts`      | Resolución de entorno y defaults.               |
+| e2e      | `test/*.e2e-spec.ts`        | Contrato HTTP, sin PostgreSQL por defecto.      |
+| Smoke DB | `test/database.e2e-spec.ts` | Solo con `E2E_DATABASE=true`.                   |
+| Helpers  | `test/utils/*.ts`           | Mocks tipados de `Repository` y `QueryBuilder`. |
 
 Los unitarios usan los helpers de `test/utils/` y se documentan en
 [`test/README.md`](../test/README.md). La cobertura se ejecuta con
@@ -316,6 +316,8 @@ El detalle de criterios está en
 | 0003 | Fechas ISO-8601 UTC con `Z`            | Aceptado |
 | 0004 | Decimales como `number` en JSON        | Aceptado |
 | 0005 | Barra final equivalente en colecciones | Aceptado |
+| 0006 | Vitest como runner único de tests      | Aceptado |
+| 0007 | Zona horaria del proceso y `timestamp` | Aceptado |
 
 ---
 

@@ -60,7 +60,9 @@ describe('HealthController (e2e)', () => {
           status: 'ok',
           service: 'backend-nest',
         });
-        expect(body.timestamp).toBeDefined();
+        expect(body.timestamp).toMatch(
+          /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/,
+        );
         expect(typeof body.uptime).toBe('number');
       });
   });

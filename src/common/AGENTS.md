@@ -25,6 +25,8 @@
 - No incluir utilidades de test en `src/` (van en `test/`).
 - El 422 se arma en `validation-messages.ts`: no duplicar traducciones en DTOs.
 - El envelope `{ detail }` se garantiza en el filtro, no en cada controller.
+- Fechas: `timestamp without time zone` + `utcTimestampTransformer`; el DTO
+  serializa con `toIsoUtc()` (ADR 0007). Nunca devolver un `Date` crudo.
 
 ## Verificación
 

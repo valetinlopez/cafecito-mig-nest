@@ -156,9 +156,9 @@ export class Categoria {
 
 - `@Entity('<tabla>')` **siempre** explícito: nunca delegar en el nombre de la clase.
 - Las restricciones (`@Unique`, `@Index`) llevan **nombre explícito igual al de PostgreSQL** (`categorias_nombre_key`). Sin eso, TypeORM genera `UQ_<hash>` y `schema:log` (MIG-44) propone recrear la restricción.
-- Tipos alineados con PostgreSQL: `varchar(n)`, `numeric(10,2)`, `timestamptz`, `boolean`, `int`.
+- Tipos alineados con PostgreSQL: `varchar(n)`, `numeric(10,2)`, `timestamp`, `timestamptz`, `boolean`, `int`.
 - Decimales (`numeric`) se leen como `string` desde `pg`; usar el transformer compartido y convertir a `number` en el DTO de salida (D-05).
-- Fechas: `timestamptz` + serialización ISO-8601 con `Z` (D-06).
+- Fechas: las columnas compartidas con el legacy son `timestamp without time zone` y se mapean con `utcTimestampTransformer`; el proceso corre en UTC y el DTO serializa con `toIsoUtc()` (D-06, [ADR 0007](./adr/0007-zona-horaria-proceso.md)). `timestamptz` solo para tablas nuevas.
 - **Relaciones:** se declaran cuando existen ambas entities. Nunca se crea una entity parcial solo para satisfacer una relación: con `synchronize` en desarrollo, TypeORM podría alterar la tabla compartida. `Categoria` agrega su `@OneToMany` en MIG-29.
 - No usar `eager: true` (dispara queries implícitas); las relaciones se piden explícitamente con `relations` o `QueryBuilder`.
 
