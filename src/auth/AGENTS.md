@@ -4,7 +4,7 @@
 
 | Campo      | Valor                                          |
 | ---------- | ---------------------------------------------- |
-| Estado     | Scaffold (módulo vacío)                        |
+| Estado     | Implementado parcial (DTOs, MIG-22)            |
 | Contrato   | [`./CONTRACT.md`](./CONTRACT.md) · global §6.1 |
 | Decisiones | [`./DECISIONS.md`](./DECISIONS.md)             |
 | Depende de | `users` (entity `Usuario`), `config/auth`      |
@@ -14,7 +14,8 @@
 1. [`README.md`](./README.md) — piezas y orden de implementación.
 2. [`CONTRACT.md`](./CONTRACT.md) — 7 endpoints y shapes.
 3. [`DECISIONS.md`](./DECISIONS.md) — JWT, bcrypt y mensajes exactos.
-4. `src/users/` — de ahí sale la entity y `UsersService`.
+4. `src/users/` — de ahí sale la entity y `UsersService` (MIG-25).
+5. `src/auth/dto/` — los DTOs ya existen, no redefinirlos en el controller.
 
 ## Reglas locales
 
@@ -25,6 +26,7 @@
 - Mensajes de error literales del contrato; no reescribirlos.
 - `POST /auth/register` requiere `admin`.
 - No crear un `APP_GUARD` global sin marcar antes las rutas públicas.
+- Validaciones nuevas: en el DTO; traducciones, en `common/pipes`.
 
 ## Verificación
 

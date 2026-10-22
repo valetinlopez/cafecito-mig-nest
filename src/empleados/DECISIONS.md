@@ -23,6 +23,10 @@ operación administrativa que no existe en el legacy; si se necesita, va por
 `forbidNonWhitelisted: false` (D-03 del contrato) e ignorar el campo, para no
 romper clientes que lo envíen.
 
+**Implementado (MIG-22):** `CreateEmpleadoDto` y `UpdateEmpleadoDto` no declaran
+`rol`. Con `whitelist: true`, el `ValidationPipe` global lo elimina antes de
+llegar al service. `empleado-dtos.spec.ts` lo verifica con el pipe real.
+
 ---
 
 ## D-03 — Baja lógica
@@ -60,3 +64,14 @@ desde auth y alta desde empleados.
 **Motivo:** la UI muestra una tabla de personal; un orden estable evita saltos
 entre renders. Si el legacy ordena por `id`, se ajusta al implementar y se
 actualiza este documento.
+
+---
+
+## D-07 — DTOs de entrada propios, response de `users`
+
+**Decisión:** `empleados` define `CreateEmpleadoDto` y `UpdateEmpleadoDto`
+(MIG-22) y reutiliza `UsuarioResponseDto` de `users` para las respuestas.
+
+**Motivo:** los tres endpoints devuelven el schema `Usuario` del contrato, no un
+`Empleado`. Duplicar el DTO de response crearía dos shapes que podrían
+divergir; el de `users` ya garantiza que `password_hash` no salga.

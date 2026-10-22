@@ -92,3 +92,32 @@ el sistema inaccesible.
 **Decisión:** hashing y verificación viven en `AuthService`.
 
 **Motivo:** constitución §3. El controller solo traduce HTTP.
+
+---
+
+## D-10 — DTOs replican los schemas del legacy, en `snake_case`
+
+**Decisión:** cada operación tiene su DTO en `src/auth/dto/` con los campos y
+validaciones del schema `usuario.py`. Los mensajes de error no se escriben en
+el DTO: los traduce `src/common/pipes/validation-messages.ts`.
+
+**Motivo:** el contrato congela `password_actual`, `password_nueva` y
+`reset_token` en `snake_case` (D-13). Duplicar traducciones en cada DTO
+desincroniza los `422`; el pipe global ya garantiza el formato
+`Campo '<campo>': <mensaje>` (ADR 0001).
+
+**Alcance MIG-22:** solo DTOs y tests. `TokenResponseDto` y el controller llegan
+con MIG-23.
+
+---
+
+## D-11 — El login no exige mínimo de 6
+
+**Decisión:** `LoginDto.password` solo valida `@IsString()`; el mínimo de 6 se
+aplica en `RegisterDto`, `ChangePasswordDto`, `ResetPasswordDto` y
+`CreateEmpleadoDto`.
+
+**Motivo:** el login debe aceptar la contraseña que el usuario tenga guardada,
+incluidas las de usuarios migrados del legacy. Validar longitud en el login
+transformaría un `401` de credenciales en un `422` engañoso y podría bloquear
+cuentas existentes.
