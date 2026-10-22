@@ -3,12 +3,12 @@
 > Estado vivo, no documentación de diseño. Se actualiza en cada sesión y en cada
 > PR. Si algo no está acá ni en la documentación del módulo, se asume **no hecho**.
 
-| Campo       | Valor                                |
-| ----------- | ------------------------------------ |
-| Actualizado | 2026-10-21                           |
-| Sprint      | S0 — Bootcamp                        |
-| Epic        | MIG-1                                |
-| Foco actual | MIG-20 en revisión; siguiente MIG-21 |
+| Campo       | Valor                            |
+| ----------- | -------------------------------- |
+| Actualizado | 2026-10-21                       |
+| Sprint      | S0 — Bootcamp                    |
+| Epic        | MIG-1                            |
+| Foco actual | MIG-21 cerrado; siguiente MIG-22 |
 
 ---
 
@@ -16,6 +16,7 @@
 
 | Módulo     | Estado                      | Tests | Doc | Próximo paso                                        |
 | ---------- | --------------------------- | ----- | --- | --------------------------------------------------- |
+| test       | Implementado (MIG-21)       | ✅    | ✅  | Ampliar helpers cuando aparezcan nuevas operaciones |
 | health     | Implementado                | ✅    | ✅  | —                                                   |
 | config     | Implementado                | ✅    | ✅  | —                                                   |
 | database   | Implementado                | ✅    | ✅  | Validar tablas en MIG-44                            |
@@ -42,6 +43,7 @@
 | MIG-18 | Convenciones + módulo de referencia `categorias`                       | Cerrado     |
 | MIG-19 | Config tipada + validación de entorno + `DatabaseModule`               | Cerrado     |
 | MIG-20 | CORS, prefijo `/api/v1`, `ValidationPipe` 422 y filtro `{ detail }`    | En revisión |
+| MIG-21 | Vitest + `test/utils/` (mocks de Repository/QueryBuilder) + cobertura  | Cerrado     |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs) | Cerrado     |
 
 ---
@@ -54,7 +56,6 @@
 | Sin `SwaggerModule`                    | `/docs` no disponible       | MIG-40 |
 | Sin `numericTransformer`               | `numeric` llega como string | MIG-44 |
 | Sin serialización de fechas `Z`        | Fechas sin zona horaria     | MIG-44 |
-| Mocks de repositorio duplicados        | Repetición en cada spec     | MIG-21 |
 | Nombres reales de tablas sin confirmar | Riesgo al crear entities    | MIG-44 |
 
 ---
@@ -63,6 +64,7 @@
 
 | Fecha      | Decisión                                                              | Registro                  |
 | ---------- | --------------------------------------------------------------------- | ------------------------- |
+| 2026-10-21 | Vitest como runner único + helpers de mock en `test/utils/`           | ADR 0006                  |
 | 2026-10-21 | Un solo `AllExceptionsFilter`; CORS en `app.setup.ts`; prefijo global | `src/common/DECISIONS.md` |
 | 2026-10-21 | Harness híbrido: `AGENTS.md` fino por módulo + 3 docs de contenido    | `docs/harness.md`         |
 | 2026-10-20 | Harness con docs por módulo en `src/<modulo>/`                        | Este archivo              |
@@ -89,9 +91,8 @@
 1. Confirmar esquema real contra la base (MIG-44) antes de crear entities.
 2. `common` transversal cerrado en MIG-20: filtro `{ detail }`, `ValidationPipe`
    422, prefijo `/api/v1`, CORS y header de tiempo.
-3. Utilidades de test compartidas: mocks de repositorio (MIG-21).
-4. `users` + `auth`: entity `Usuario`, hash con bcrypt, login JWT (MIG-22/23).
-5. `mesas` y `categorias` cerradas → `productos` → `pedidos`.
+3. `users` + `auth`: entity `Usuario`, hash con bcrypt, login JWT (MIG-22/23).
+4. `mesas` y `categorias` cerradas → `productos` → `pedidos`.
 
 ---
 
@@ -103,3 +104,4 @@
 | 2026-10-21 | Se completan los documentos de los 15 directorios de `src/` y se enlaza el harness desde el `README.md`.                                                            |
 | 2026-10-21 | Se agrega `AGENTS.md` fino en cada módulo (shim de auto-load) y `docs/harness.md` con la explicación para el equipo.                                                |
 | 2026-10-21 | MIG-20: `CommonModule` con `{ detail }`, 422 en español, `X-Response-Time-ms`; prefijo `/api/v1`, CORS y fallback 404 en `app.setup.ts`. 77 unit + 23 e2e en verde. |
+| 2026-10-21 | MIG-21: `test/utils/` con mocks de `Repository`/`QueryBuilder`, helper de `TestingModule` y cobertura V8 con umbrales. 86 unit en verde.                            |

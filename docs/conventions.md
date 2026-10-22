@@ -272,19 +272,33 @@ Errores de negocio → `400`. Recurso inexistente → `404`. Sin permisos → `4
 
 - Un archivo por service: `<recurso>.service.spec.ts`.
 - **Sin base de datos**: se mockea el repositorio con `getRepositoryToken(Entity)`.
+- Los mocks compartidos viven en `test/utils/` (ver [`test/README.md`](../test/README.md)); no se copian factories por spec. Runner y equivalencias con Jest: [ADR 0006](./adr/0006-vitest-runner-tests.md).
 - Casos mínimos: lista con datos (verificando orden y mapeo a DTO) y lista vacía. Los módulos con escritura agregan error de negocio y transición inválida.
 - Se verifica la llamada al repositorio (`toHaveBeenCalledWith`), no solo el resultado.
 
 ```ts
-const module = await Test.createTestingModule({
-  providers: [
-    CategoriasService,
-    { provide: getRepositoryToken(Categoria), useValue: { find } },
-  ],
-}).compile();
+import { createMockRepository } from '../../test/utils/mock-repository.js';
+import {
+  createServiceTestModule,
+  provideMockRepository,
+} from '../../test/utils/test-module.helper.js';
+
+const repository = createMockRepository<Categoria>();
+const { module, service } = await createServiceTestModule(CategoriasService, [
+  provideMockRepository(Categoria, repository),
+]);
+
+repository.find.mockResolvedValue([{ id: 1, nombre: 'Bebidas' }]);
+const categorias = await service.getAllCategorias();
+
+expect(repository.find).toHaveBeenCalledWith({ order: { nombre: 'ASC' } });
+await module.close();
 ```
 
 - Nombres de tests en español, en presente: `devuelve las categorías ordenadas por nombre`.
+- Para queries con `SELECT ... FOR UPDATE`, configurar
+  `repository.queryBuilder.getOne` y verificar
+  `expect(repository.queryBuilder.setLock).toHaveBeenCalledWith('pessimistic_write')`.
 
 ### 8.2 e2e (`test/*.e2e-spec.ts`)
 
@@ -345,7 +359,7 @@ El módulo de referencia está completo, pero su ejecución end-to-end depende d
 | ----------------------------------------------------- | ------ | -------------------------------------------------------------------- |
 | `TypeOrmModule.forRoot()` en `AppModule`              | MIG-19 | ✅ Resuelto: `DatabaseModule` registra el `DataSource` global        |
 | `ValidationPipe` global con 422 y filtro `{ detail }` | MIG-20 | ✅ Resuelto: `CommonModule` + `app.setup.ts`                         |
-| Utilidades de test / mocks compartidos                | MIG-21 | Cada módulo duplica mocks de repositorio                             |
+| Utilidades de test / mocks compartidos                | MIG-21 | ✅ Resuelto: `test/utils/` + ADR 0006                                |
 | `JwtAuthGuard` + `RolesGuard`                         | MIG-24 | El endpoint queda sin protección (hoy no existe auth en el scaffold) |
 | `SwaggerModule` en `main.ts`                          | MIG-40 | Las anotaciones no se publican en `/docs`                            |
 
@@ -353,4 +367,4 @@ El módulo de referencia está completo, pero su ejecución end-to-end depende d
 
 ---
 
-_Última actualización: MIG-19 (Sprint S0)._
+_Última actualización: MIG-21 (Sprint S0)._

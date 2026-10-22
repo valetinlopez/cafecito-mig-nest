@@ -13,6 +13,7 @@ lo reemplaza y se marca el anterior como `Reemplazado por NNNN`.
 | 0003 | [Fechas ISO-8601 UTC con `Z`](0003-fechas-iso-utc-z.md)                   | Aceptado | 2026-10-20 |
 | 0004 | [Decimales como `number` en JSON](0004-decimales-number.md)               | Aceptado | 2026-10-20 |
 | 0005 | [Barra final equivalente en colecciones](0005-barra-final-colecciones.md) | Aceptado | 2026-10-20 |
+| 0006 | [Vitest como runner único de tests](0006-vitest-runner-tests.md)          | Aceptado | 2026-10-21 |
 
 ## Estados posibles
 

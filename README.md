@@ -150,9 +150,15 @@ En el deploy, lo ideal es `npm run migration:run` como paso previo a levantar la
 ## Tests
 
 ```bash
-npm test          # unitarios (Vitest)
-npm run test:e2e  # contrato HTTP, sin base de datos
+npm test           # unitarios (Vitest)
+npm run test:watch # unitarios en watch
+npm run test:cov   # unitarios + cobertura
+npm run test:e2e   # contrato HTTP, sin base de datos
 ```
+
+Los unitarios mockean repositorios y QueryBuilder con los helpers de
+`test/utils/` (ver [`test/README.md`](test/README.md)); no se conectan a
+PostgreSQL. El runner único es Vitest ([ADR 0006](docs/adr/0006-vitest-runner-tests.md)).
 
 Los e2e no requieren PostgreSQL: `test/setup-env.ts` inyecta variables descartables y el health check se prueba sin `DatabaseModule`. Para correr el smoke test real contra una base (nunca la de producción):
 
@@ -208,6 +214,8 @@ Cada módulo de `src/` lleva su propia documentación junto al código:
 | `npm run format`             | Prettier (escribe)                              |
 | `npm run format:check`       | Prettier (verifica)                             |
 | `npm test`                   | Tests unitarios (Vitest)                        |
+| `npm run test:watch`         | Tests unitarios en watch                        |
+| `npm run test:cov`           | Tests unitarios + cobertura                     |
 | `npm run test:e2e`           | Tests end-to-end                                |
 | `npm run migration:create`   | Crea una migración vacía                        |
 | `npm run migration:generate` | Genera una migración comparando entities y base |
