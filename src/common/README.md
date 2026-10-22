@@ -1,18 +1,18 @@
 # Módulo `common`
 
-| Campo         | Valor                                      |
-| ------------- | ------------------------------------------ |
-| Estado        | **Scaffolding** (solo `.gitkeep`)          |
-| Tipo          | Infraestructura transversal, sin endpoints |
-| Consumido por | Todos los feature modules                  |
-| Tests         | Los tendrá cada pieza al implementarse     |
+| Campo         | Valor                                               |
+| ------------- | --------------------------------------------------- |
+| Estado        | **Implementado** (MIG-20)                           |
+| Tipo          | Infraestructura transversal, sin endpoints          |
+| Consumido por | Todos los feature modules                           |
+| Tests         | 39 unitarios + `test/common.e2e-spec.ts` (18 casos) |
 
 ---
 
 ## 1. Responsabilidad
 
 Concentrar las piezas que cruzan todos los módulos: filtros de excepción, pipes
-de validación, guards, interceptores, decoradores y transformers de TypeORM.
+de validación, guards, interceptores, decoradores y configuración HTTP.
 
 Regla: **si se usa en dos o más módulos y no tiene reglas de negocio, va acá.**
 
@@ -22,15 +22,31 @@ Regla: **si se usa en dos o más módulos y no tiene reglas de negocio, va acá.
 
 ```
 src/common/
-├── decorators/.gitkeep
-├── filters/.gitkeep
-├── guards/.gitkeep
-├── interceptors/.gitkeep
-└── pipes/.gitkeep
+├── common.module.ts                 # APP_FILTER + APP_PIPE + APP_INTERCEPTOR
+├── filters/
+│   ├── all-exceptions.filter.ts     # { detail } para todo no-2xx (ADR 0002)
+│   └── all-exceptions.filter.spec.ts
+├── http/
+│   ├── cors-options.ts              # CORS_ORIGINS → enableCors (D-16)
+│   ├── cors-options.spec.ts
+│   ├── headers.ts                   # X-Response-Time-ms
+│   ├── response-time.ts             # reloj compartido + middleware
+│   └── response-time.spec.ts
+├── interceptors/
+│   ├── response-time.interceptor.ts # header de tiempo (D-11)
+│   └── response-time.interceptor.spec.ts
+├── pipes/
+│   ├── validation.pipe.ts           # 422 + mensaje en español (ADR 0001)
+│   ├── validation.pipe.spec.ts
+│   ├── validation-messages.ts       # TRADUCCIONES_PYDANTIC → class-validator
+│   └── validation-messages.spec.ts
+├── decorators/.gitkeep              # MIG-24
+├── guards/.gitkeep                  # MIG-24
+├── README.md · CONTRACT.md · DECISIONS.md · AGENTS.md
 ```
 
-No hay implementaciones. Las piezas llegan con los tickets transversales
-(MIG-20, MIG-21, MIG-24).
+El prefijo `/api/v1` y el CORS no son providers: se aplican en
+`src/app.setup.ts`, compartido por `main.ts` y los e2e.
 
 ---
 
@@ -42,18 +58,12 @@ src/common/
 │   ├── public.decorator.ts        # @Public() para rutas sin auth
 │   ├── roles.decorator.ts         # @Roles('admin')
 │   └── current-user.decorator.ts  # @CurrentUser()
-├── filters/
-│   └── all-exceptions.filter.ts   # { detail } (ADR 0002)
 ├── guards/
 │   ├── jwt-auth.guard.ts
 │   └── roles.guard.ts
-├── interceptors/
-│   └── response-time.interceptor.ts # X-Response-Time-ms (D-11, opcional)
-├── pipes/
-│   └── validation.pipe.ts         # 422 + mensaje en español (ADR 0001)
 ├── transformers/
 │   └── numeric.transformer.ts     # numeric → number (ADR 0004)
-├── README.md · CONTRACT.md · DECISIONS.md
+└── (lo ya implementado en §2)
 ```
 
 ---
@@ -66,40 +76,40 @@ src/common/
 | `ValidationPipe` con `exceptionFactory`   | DTOs de un recurso                   |
 | `JwtAuthGuard`, `RolesGuard`, `@Public()` | Entities                             |
 | `numericTransformer`                      | Reglas de transición de estados      |
-| Utilidades de test compartidas (MIG-21)   | Helpers usados por un solo módulo    |
+| CORS y prefijo (`app.setup.ts`)           | Helpers usados por un solo módulo    |
 
 ---
 
 ## 5. Orden de implementación
 
 ```
-MIG-20  →  prefijo /api/v1 + ValidationPipe 422 + AllExceptionsFilter + CORS
+MIG-20  →  prefijo /api/v1 + ValidationPipe 422 + AllExceptionsFilter + CORS ✅
 MIG-21  →  utilidades de test / mocks de repositorio
 MIG-24  →  JwtAuthGuard + RolesGuard + @Public/@Roles
 MIG-44  →  numericTransformer + serialización de fechas
 ```
 
-Cada pieza se registra globalmente en `AppModule` (`APP_FILTER`, `APP_PIPE`,
-`APP_GUARD`, `APP_INTERCEPTOR`) salvo los guards por controller, que se aplican
-con `@UseGuards`.
+`CommonModule` registra los `APP_*` una sola vez en `AppModule`. Los e2e lo
+importan directamente para probar el cableado real sin PostgreSQL.
 
 ---
 
 ## 6. Tests
 
-| Pieza                      | Test esperado                                     |
-| -------------------------- | ------------------------------------------------- |
-| `AllExceptionsFilter`      | Cada status produce `{ detail }` y nada más.      |
-| `ValidationPipe`           | Body inválido → `422` con `Campo '<campo>': ...`. |
-| `JwtAuthGuard`             | Sin token / token inválido / expirado → `401`.    |
-| `RolesGuard`               | Rol insuficiente → `403`.                         |
-| `numericTransformer`       | `from('850.00') === 850`; `null` se preserva.     |
-| `response-time` (opcional) | El header existe y es numérico.                   |
+| Pieza                     | Test esperado                                           |
+| ------------------------- | ------------------------------------------------------- |
+| `AllExceptionsFilter`     | Cada status produce `{ detail }` y nada más.            |
+| `ValidationPipe`          | Body inválido → `422` con `Campo '<campo>': ...`.       |
+| `validation-messages`     | Defaults, parámetros y mensajes propios del DTO.        |
+| `buildCorsOptions`        | Lista, default legacy, wildcard y headers expuestos.    |
+| `response-time`           | Reloj compartido, header único y orden de las capas.    |
+| `ResponseTimeInterceptor` | El header existe, es numérico y también aparece en 4xx. |
+| `test/common.e2e-spec.ts` | Prefijo, CORS, header, 422, 400, 404 y 500.             |
 
 ---
 
 ## 7. Referencias
 
 - [`CONTRACT.md`](./CONTRACT.md) · [`DECISIONS.md`](./DECISIONS.md)
-- `docs/adr/0001` a `0005`
-- `docs/architecture.md` §9
+- `docs/adr/0001` y `0002`
+- `docs/api-contract.md` §5 y §9

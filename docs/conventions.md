@@ -344,7 +344,7 @@ El módulo de referencia está completo, pero su ejecución end-to-end depende d
 | Dependencia                                           | Ticket | Efecto si falta                                                      |
 | ----------------------------------------------------- | ------ | -------------------------------------------------------------------- |
 | `TypeOrmModule.forRoot()` en `AppModule`              | MIG-19 | ✅ Resuelto: `DatabaseModule` registra el `DataSource` global        |
-| `ValidationPipe` global con 422 y filtro `{ detail }` | MIG-20 | Los errores no respetan el contrato                                  |
+| `ValidationPipe` global con 422 y filtro `{ detail }` | MIG-20 | ✅ Resuelto: `CommonModule` + `app.setup.ts`                         |
 | Utilidades de test / mocks compartidos                | MIG-21 | Cada módulo duplica mocks de repositorio                             |
 | `JwtAuthGuard` + `RolesGuard`                         | MIG-24 | El endpoint queda sin protección (hoy no existe auth en el scaffold) |
 | `SwaggerModule` en `main.ts`                          | MIG-40 | Las anotaciones no se publican en `/docs`                            |

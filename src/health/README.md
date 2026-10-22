@@ -54,8 +54,8 @@ se ejecuta fuera de npm.
 
 ## 5. Consideraciones
 
-- Ruta **fuera** de `/api/v1`: al implementar el prefijo global en MIG-20 debe
-  excluirse con `exclude: ['/']`.
+- Ruta **fuera** de `/api/v1`: `configureApp()` la excluye con `exclude: ['/']`
+  (MIG-20).
 - No debe depender de PostgreSQL: el front no lo consume y los e2e corren sin
   base.
 - Si en el futuro se agrega un health profundo (DB, memoria), debe ser un

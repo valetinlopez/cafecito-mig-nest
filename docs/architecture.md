@@ -94,7 +94,9 @@ por capas obligaría a saltar entre cuatro carpetas para un solo cambio.
 ```
 HTTP
  │
- ├─ main.ts ............ bootstrap, ConfigService, (pendiente: prefijo, pipes, filtros, CORS)
+ ├─ main.ts ............ bootstrap, ConfigService, configureApp (prefijo + CORS)
+ │
+ ├─ CommonModule ....... ValidationPipe (422), AllExceptionsFilter, ResponseTime
  │
  ├─ Controller ......... valida entrada (DTO), delega, elige código HTTP
  │
@@ -111,38 +113,40 @@ HTTP
 
 Puntos de borde:
 
-- **Errores:** un filtro global transforma toda excepción en `{ detail }`
-  (ADR 0002). Hoy no está registrado; se implementa en MIG-20.
-- **Validación:** `ValidationPipe` global con `422` y mensaje en español
-  (ADR 0001). Hoy `main.ts` no lo configura.
+- **Errores:** `AllExceptionsFilter` global transforma toda excepción en
+  `{ detail }` (ADR 0002), registrado en `CommonModule`.
+- **Validación:** `AppValidationPipe` global responde `422` con el mensaje en
+  español (ADR 0001).
 - **Serialización:** no hay interceptor global; los DTOs controlan el shape.
-- **Prefijo:** `/api/v1` con exclusión de `/` para el health. Hoy no está
-  aplicado en `main.ts` (MIG-20).
+- **Prefijo:** `/api/v1` con exclusión de `/` para el health, en `app.setup.ts`.
+- **CORS:** orígenes de `CORS_ORIGINS`; fuera del prefijo, un fallback JSON
+  reemplaza el 404 HTML de Express.
 
-> Estado real: `src/main.ts` solo crea la app y escucha el puerto. Las piezas
-> transversales son deuda planificada, no implementación existente.
+> Estado real: `src/main.ts` crea la app, lee la config y delega el cableado HTTP
+> en `src/app.setup.ts`. Las piezas transversales viven en `src/common` y se
+> registran con `CommonModule` (MIG-20).
 
 ---
 
 ## 5. Mapa de módulos
 
-| Módulo     | Directorio       | Estado                        | Dominio                                                          | Depende de                                     |
-| ---------- | ---------------- | ----------------------------- | ---------------------------------------------------------------- | ---------------------------------------------- |
-| Health     | `src/health`     | **Implementado**              | `GET /` (fuera de `/api/v1`)                                     | —                                              |
-| Config     | `src/config`     | **Implementado**              | Validación de entorno + config tipada                            | —                                              |
-| Database   | `src/database`   | **Implementado**              | DataSource, pool, migraciones                                    | `config`                                       |
-| Categorías | `src/categorias` | **Implementado (lectura)**    | `GET /categorias/`                                               | `database`                                     |
-| Auth       | `src/auth`       | Scaffold (módulo vacío)       | Login, registro, perfil, password                                | `users`, `config/auth`                         |
-| Users      | `src/users`      | Scaffold (módulo vacío)       | Entity/gestión de usuarios                                       | `database`                                     |
-| Empleados  | `src/empleados`  | Scaffold (módulo vacío)       | ABM de empleados (`rol = mozo`)                                  | `users`                                        |
-| Mesas      | `src/mesas`      | Scaffold (módulo vacío)       | Estados y ABM de mesas                                           | `pedidos` (efectos de estado)                  |
-| Productos  | `src/productos`  | Scaffold (módulo vacío)       | Catálogo, stock, precios                                         | `categorias`                                   |
-| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)       | Comandas y transiciones                                          | `mesas`, `productos`, `users`, `caja`, `pagos` |
-| Pagos      | `src/pagos`      | Scaffold (módulo vacío)       | Persistencia de cobros (sin endpoints)                           | `pedidos`, `caja`, `users`                     |
-| Caja       | `src/caja`       | Scaffold (módulo vacío)       | Apertura, cierre, movimientos                                    | `pagos`                                        |
-| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)       | KPIs de solo lectura                                             | `mesas`, `pedidos`, `pagos`, `caja`            |
-| Reportes   | `src/reportes`   | Scaffold (módulo vacío)       | Reporte de ventas por período                                    | `pagos`, `caja`, `pedidos`                     |
-| Common     | `src/common`     | Scaffolding (solo `.gitkeep`) | Guards, pipes, filtros, interceptores, decoradores, transformers | —                                              |
+| Módulo     | Directorio       | Estado                     | Dominio                                | Depende de                                     |
+| ---------- | ---------------- | -------------------------- | -------------------------------------- | ---------------------------------------------- |
+| Health     | `src/health`     | **Implementado**           | `GET /` (fuera de `/api/v1`)           | —                                              |
+| Config     | `src/config`     | **Implementado**           | Validación de entorno + config tipada  | —                                              |
+| Database   | `src/database`   | **Implementado**           | DataSource, pool, migraciones          | `config`                                       |
+| Categorías | `src/categorias` | **Implementado (lectura)** | `GET /categorias/`                     | `database`                                     |
+| Auth       | `src/auth`       | Scaffold (módulo vacío)    | Login, registro, perfil, password      | `users`, `config/auth`                         |
+| Users      | `src/users`      | Scaffold (módulo vacío)    | Entity/gestión de usuarios             | `database`                                     |
+| Empleados  | `src/empleados`  | Scaffold (módulo vacío)    | ABM de empleados (`rol = mozo`)        | `users`                                        |
+| Mesas      | `src/mesas`      | Scaffold (módulo vacío)    | Estados y ABM de mesas                 | `pedidos` (efectos de estado)                  |
+| Productos  | `src/productos`  | Scaffold (módulo vacío)    | Catálogo, stock, precios               | `categorias`                                   |
+| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)    | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
+| Pagos      | `src/pagos`      | Scaffold (módulo vacío)    | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
+| Caja       | `src/caja`       | Scaffold (módulo vacío)    | Apertura, cierre, movimientos          | `pagos`                                        |
+| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)    | KPIs de solo lectura                   | `mesas`, `pedidos`, `pagos`, `caja`            |
+| Reportes   | `src/reportes`   | Scaffold (módulo vacío)    | Reporte de ventas por período          | `pagos`, `caja`, `pedidos`                     |
+| Common     | `src/common`     | **Implementado**           | Filtros, pipes, interceptores y CORS   | —                                              |
 
 **Leyenda:** _Implementado_ = código + tests + doc. _Scaffold_ = el módulo
 existe registrado en `AppModule` pero sin controller/service/entity; su contrato
@@ -247,18 +251,18 @@ local. Contra Neon (aunque sea un `.env` de desarrollo), queda en `false`.
 
 ## 9. Piezas transversales (estado y destino)
 
-| Pieza                            | Estado    | Destino | Doc             |
-| -------------------------------- | --------- | ------- | --------------- |
-| Prefijo global `/api/v1`         | Pendiente | MIG-20  | Contrato D-01   |
-| `ValidationPipe` 422             | Pendiente | MIG-20  | ADR 0001        |
-| `AllExceptionsFilter` `{detail}` | Pendiente | MIG-20  | ADR 0002        |
-| CORS configurable                | Pendiente | MIG-20  | Contrato D-16   |
-| `numericTransformer`             | Pendiente | MIG-44  | ADR 0004        |
-| Serialización de fechas `Z`      | Pendiente | MIG-44  | ADR 0003        |
-| `JwtAuthGuard` + `RolesGuard`    | Pendiente | MIG-24  | Contrato §4     |
-| Swagger en `/docs`               | Pendiente | MIG-40  | Convenciones §9 |
-| Header `X-Response-Time-ms`      | Opcional  | —       | Contrato D-11   |
-| Utilidades de test compartidas   | Pendiente | MIG-21  | Convenciones §8 |
+| Pieza                            | Estado           | Destino | Doc             |
+| -------------------------------- | ---------------- | ------- | --------------- |
+| Prefijo global `/api/v1`         | **Implementado** | MIG-20  | Contrato D-01   |
+| `ValidationPipe` 422             | **Implementado** | MIG-20  | ADR 0001        |
+| `AllExceptionsFilter` `{detail}` | **Implementado** | MIG-20  | ADR 0002        |
+| CORS configurable                | **Implementado** | MIG-20  | Contrato D-16   |
+| `numericTransformer`             | Pendiente        | MIG-44  | ADR 0004        |
+| Serialización de fechas `Z`      | Pendiente        | MIG-44  | ADR 0003        |
+| `JwtAuthGuard` + `RolesGuard`    | Pendiente        | MIG-24  | Contrato §4     |
+| Swagger en `/docs`               | Pendiente        | MIG-40  | Convenciones §9 |
+| Header `X-Response-Time-ms`      | **Implementado** | MIG-20  | Contrato D-11   |
+| Utilidades de test compartidas   | Pendiente        | MIG-21  | Convenciones §8 |
 
 ---
 
