@@ -251,31 +251,35 @@ local. Contra Neon (aunque sea un `.env` de desarrollo), queda en `false`.
 
 ## 9. Piezas transversales (estado y destino)
 
-| Pieza                            | Estado           | Destino | Doc             |
-| -------------------------------- | ---------------- | ------- | --------------- |
-| Prefijo global `/api/v1`         | **Implementado** | MIG-20  | Contrato D-01   |
-| `ValidationPipe` 422             | **Implementado** | MIG-20  | ADR 0001        |
-| `AllExceptionsFilter` `{detail}` | **Implementado** | MIG-20  | ADR 0002        |
-| CORS configurable                | **Implementado** | MIG-20  | Contrato D-16   |
-| `numericTransformer`             | Pendiente        | MIG-44  | ADR 0004        |
-| Serialización de fechas `Z`      | Pendiente        | MIG-44  | ADR 0003        |
-| `JwtAuthGuard` + `RolesGuard`    | Pendiente        | MIG-24  | Contrato §4     |
-| Swagger en `/docs`               | Pendiente        | MIG-40  | Convenciones §9 |
-| Header `X-Response-Time-ms`      | **Implementado** | MIG-20  | Contrato D-11   |
-| Utilidades de test compartidas   | Pendiente        | MIG-21  | Convenciones §8 |
+| Pieza                            | Estado           | Destino | Doc                   |
+| -------------------------------- | ---------------- | ------- | --------------------- |
+| Prefijo global `/api/v1`         | **Implementado** | MIG-20  | Contrato D-01         |
+| `ValidationPipe` 422             | **Implementado** | MIG-20  | ADR 0001              |
+| `AllExceptionsFilter` `{detail}` | **Implementado** | MIG-20  | ADR 0002              |
+| CORS configurable                | **Implementado** | MIG-20  | Contrato D-16         |
+| `numericTransformer`             | Pendiente        | MIG-44  | ADR 0004              |
+| Serialización de fechas `Z`      | Pendiente        | MIG-44  | ADR 0003              |
+| `JwtAuthGuard` + `RolesGuard`    | Pendiente        | MIG-24  | Contrato §4           |
+| Swagger en `/docs`               | Pendiente        | MIG-40  | Convenciones §9       |
+| Header `X-Response-Time-ms`      | **Implementado** | MIG-20  | Contrato D-11         |
+| Utilidades de test compartidas   | **Implementado** | MIG-21  | test/README + ADR 0006 |
 
 ---
 
 ## 10. Tests y verificación
 
-| Nivel    | Ubicación                   | Alcance                                    |
-| -------- | --------------------------- | ------------------------------------------ |
-| Unitario | `src/<modulo>/*.spec.ts`    | Services con repositorio mockeado. Sin DB. |
-| Config   | `src/config/*.spec.ts`      | Resolución de entorno y defaults.          |
-| e2e      | `test/*.e2e-spec.ts`        | Contrato HTTP, sin PostgreSQL por defecto. |
-| Smoke DB | `test/database.e2e-spec.ts` | Solo con `E2E_DATABASE=true`.              |
+| Nivel    | Ubicación                   | Alcance                                          |
+| -------- | --------------------------- | ------------------------------------------------ |
+| Unitario | `src/<modulo>/*.spec.ts`    | Services con repositorio mockeado. Sin DB.       |
+| Config   | `src/config/*.spec.ts`      | Resolución de entorno y defaults.                |
+| e2e      | `test/*.e2e-spec.ts`        | Contrato HTTP, sin PostgreSQL por defecto.       |
+| Smoke DB | `test/database.e2e-spec.ts` | Solo con `E2E_DATABASE=true`.                    |
+| Helpers  | `test/utils/*.ts`           | Mocks tipados de `Repository` y `QueryBuilder`.  |
 
-Los e2e no levantan base: `test/setup-env.ts` inyecta variables descartables.
+Los unitarios usan los helpers de `test/utils/` y se documentan en
+[`test/README.md`](../test/README.md). La cobertura se ejecuta con
+`npm run test:cov` (Vitest + V8, ADR 0006). Los e2e no levantan base:
+`test/setup-env.ts` inyecta variables descartables.
 El detalle de criterios está en
 [`workflows/definition-of-done.md`](./workflows/definition-of-done.md).
 

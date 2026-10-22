@@ -1,32 +1,35 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import type { Mock } from 'vitest';
+import type { TestingModule } from '@nestjs/testing';
+import {
+  createMockRepository,
+  type MockRepository,
+} from '../../test/utils/mock-repository.js';
+import {
+  createServiceTestModule,
+  provideMockRepository,
+} from '../../test/utils/test-module.helper.js';
 import { CategoriasService } from './categorias.service.js';
 import { CategoriaResponseDto } from './dto/categoria-response.dto.js';
 import { Categoria } from './entities/categoria.entity.js';
 
 describe('CategoriasService', () => {
+  let module: TestingModule;
   let service: CategoriasService;
-  let find: Mock<() => Promise<Categoria[]>>;
+  let repository: MockRepository<Categoria>;
 
   beforeEach(async () => {
-    find = vi.fn<() => Promise<Categoria[]>>();
+    repository = createMockRepository<Categoria>();
 
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        CategoriasService,
-        {
-          provide: getRepositoryToken(Categoria),
-          useValue: { find },
-        },
-      ],
-    }).compile();
+    ({ module, service } = await createServiceTestModule(CategoriasService, [
+      provideMockRepository(Categoria, repository),
+    ]));
+  });
 
-    service = module.get(CategoriasService);
+  afterEach(async () => {
+    await module.close();
   });
 
   it('devuelve las categorías ordenadas por nombre', async () => {
-    find.mockResolvedValue([
+    repository.find.mockResolvedValue([
       { id: 1, nombre: 'Bebidas' },
       { id: 2, nombre: 'Comida' },
       { id: 3, nombre: 'Postres' },
@@ -34,8 +37,8 @@ describe('CategoriasService', () => {
 
     const categorias = await service.getAllCategorias();
 
-    expect(find).toHaveBeenCalledTimes(1);
-    expect(find).toHaveBeenCalledWith({ order: { nombre: 'ASC' } });
+    expect(repository.find).toHaveBeenCalledTimes(1);
+    expect(repository.find).toHaveBeenCalledWith({ order: { nombre: 'ASC' } });
     expect(categorias).toHaveLength(3);
     expect(categorias.map((categoria) => categoria.nombre)).toEqual([
       'Bebidas',
@@ -47,11 +50,11 @@ describe('CategoriasService', () => {
   });
 
   it('devuelve un array vacío cuando no hay categorías', async () => {
-    find.mockResolvedValue([]);
+    repository.find.mockResolvedValue([]);
 
     const categorias = await service.getAllCategorias();
 
-    expect(find).toHaveBeenCalledTimes(1);
+    expect(repository.find).toHaveBeenCalledTimes(1);
     expect(categorias).toEqual([]);
   });
 });
