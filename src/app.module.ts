@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module.js';
 import { CajaModule } from './caja/caja.module.js';
 import { CategoriasModule } from './categorias/categorias.module.js';
+import { CommonModule } from './common/common.module.js';
 import appConfig from './config/app.config.js';
 import authConfig from './config/auth.config.js';
 import databaseConfig from './config/database.config.js';
@@ -31,6 +32,7 @@ import { UsersModule } from './users/users.module.js';
       validate: validateEnvironment,
     }),
     DatabaseModule.forRoot(),
+    CommonModule,
     HealthModule,
     AuthModule,
     UsersModule,

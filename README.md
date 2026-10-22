@@ -47,28 +47,28 @@ El health check no consulta la base: la conexión se valida al arrancar y `GET /
 
 La configuración es global y se lee con `@nestjs/config`. La fuente de verdad del esquema es `src/config/env.validation.ts`; los valores por defecto y la resolución de aliases viven en `src/config/env.helpers.ts`.
 
-| Variable                      | Obligatoria | Default       | Descripción                                                             |
-| ----------------------------- | ----------- | ------------- | ----------------------------------------------------------------------- |
-| `NODE_ENV`                    | No          | `development` | `development`, `test` o `production`.                                   |
-| `ENVIRONMENT`                 | No          | —             | Alias legacy del backend Python. `NODE_ENV` tiene prioridad.            |
-| `PORT`                        | No          | `3000`        | Puerto HTTP.                                                            |
-| `DATABASE_URL`                | Sí\*        | —             | URL completa de PostgreSQL. Tiene prioridad sobre las `DB_*`.           |
-| `DB_HOST`                     | Sí\*        | —             | Host local cuando no se usa `DATABASE_URL`.                             |
-| `DB_PORT`                     | No          | `5432`        | Puerto de PostgreSQL.                                                   |
-| `DB_USERNAME`                 | Sí\*        | —             | Usuario.                                                                |
-| `DB_PASSWORD`                 | No          | vacío         | Password (puede quedar vacío en un PostgreSQL local con `trust`).       |
-| `DB_NAME`                     | Sí\*        | —             | Nombre de la base.                                                      |
-| `DB_SSL`                      | No          | auto          | `true` fuerza TLS. Si la URL trae `sslmode`, decide `pg`.               |
-| `DB_POOL_MAX`                 | No          | `10`          | Conexiones máximas del pool.                                            |
-| `DB_IDLE_TIMEOUT_MS`          | No          | `240000`      | Descarta clientes ociosos antes del autosuspend de Neon (5 min).        |
-| `DB_CONNECT_TIMEOUT_MS`       | No          | `10000`       | Timeout de conexión.                                                    |
-| `DB_SYNCHRONIZE`              | No          | auto          | `true`/`false`. Si se omite: solo en `development` y contra host local. |
-| `DB_LOGGING`                  | No          | `false`       | `true` loguea queries; por defecto solo errores (CFB-145).              |
-| `DB_MIGRATIONS_RUN`           | No          | `false`       | Corre migraciones al arrancar. Preferir el CLI en el deploy.            |
-| `SECRET_KEY`                  | Sí          | —             | Firma de JWT, mínimo 16 caracteres.                                     |
-| `ALGORITHM`                   | No          | `HS256`       | `HS256`, `HS384` o `HS512`.                                             |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | No          | `480`         | Vigencia del access token (D-08 del contrato).                          |
-| `CORS_ORIGINS`                | No          | vacío         | Orígenes separados por coma. MIG-20 los consume.                        |
+| Variable                      | Obligatoria | Default                 | Descripción                                                             |
+| ----------------------------- | ----------- | ----------------------- | ----------------------------------------------------------------------- |
+| `NODE_ENV`                    | No          | `development`           | `development`, `test` o `production`.                                   |
+| `ENVIRONMENT`                 | No          | —                       | Alias legacy del backend Python. `NODE_ENV` tiene prioridad.            |
+| `PORT`                        | No          | `3000`                  | Puerto HTTP.                                                            |
+| `DATABASE_URL`                | Sí\*        | —                       | URL completa de PostgreSQL. Tiene prioridad sobre las `DB_*`.           |
+| `DB_HOST`                     | Sí\*        | —                       | Host local cuando no se usa `DATABASE_URL`.                             |
+| `DB_PORT`                     | No          | `5432`                  | Puerto de PostgreSQL.                                                   |
+| `DB_USERNAME`                 | Sí\*        | —                       | Usuario.                                                                |
+| `DB_PASSWORD`                 | No          | vacío                   | Password (puede quedar vacío en un PostgreSQL local con `trust`).       |
+| `DB_NAME`                     | Sí\*        | —                       | Nombre de la base.                                                      |
+| `DB_SSL`                      | No          | auto                    | `true` fuerza TLS. Si la URL trae `sslmode`, decide `pg`.               |
+| `DB_POOL_MAX`                 | No          | `10`                    | Conexiones máximas del pool.                                            |
+| `DB_IDLE_TIMEOUT_MS`          | No          | `240000`                | Descarta clientes ociosos antes del autosuspend de Neon (5 min).        |
+| `DB_CONNECT_TIMEOUT_MS`       | No          | `10000`                 | Timeout de conexión.                                                    |
+| `DB_SYNCHRONIZE`              | No          | auto                    | `true`/`false`. Si se omite: solo en `development` y contra host local. |
+| `DB_LOGGING`                  | No          | `false`                 | `true` loguea queries; por defecto solo errores (CFB-145).              |
+| `DB_MIGRATIONS_RUN`           | No          | `false`                 | Corre migraciones al arrancar. Preferir el CLI en el deploy.            |
+| `SECRET_KEY`                  | Sí          | —                       | Firma de JWT, mínimo 16 caracteres.                                     |
+| `ALGORITHM`                   | No          | `HS256`                 | `HS256`, `HS384` o `HS512`.                                             |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | No          | `480`                   | Vigencia del access token (D-08 del contrato).                          |
+| `CORS_ORIGINS`                | No          | `http://localhost:3000` | Orígenes permitidos por CORS, separados por coma. MIG-20.               |
 
 \* Definí `DATABASE_URL` **o** `DB_HOST` + `DB_USERNAME` + `DB_NAME`.
 
@@ -81,6 +81,23 @@ Los valores de ejemplo de autenticación (`SECRET_KEY=dev-only-secret-...`) son 
 - `databaseConfig` → `url`, `ssl`, `synchronize`, `logQueries`, `migrationsRun`, `pool`.
 
 Se inyectan por token (`@Inject(databaseConfig.KEY)`) o se leen con `ConfigService.get('database.pool.max')`.
+
+## API HTTP transversal
+
+Cableado definido en `src/app.setup.ts` y `src/common` (MIG-20):
+
+- **Prefijo:** todos los recursos viven bajo `/api/v1`; el health queda en `GET /`.
+- **Errores:** toda respuesta no-2xx usa el envelope `{ "detail": "..." }` (ADR 0002);
+  los mensajes de negocio van en español.
+- **Validación:** un DTO inválido responde `422` con `Campo 'x': mensaje` (ADR 0001).
+- **Performance:** cada response lleva `X-Response-Time-ms` (D-11).
+- **CORS:** solo los orígenes de `CORS_ORIGINS`, con credenciales. Sin la variable se
+  usa `http://localhost:3000`; `*` se refleja con una advertencia en el log.
+
+```bash
+curl -i http://localhost:3000/api/v1/categorias/
+# X-Response-Time-ms: 3.42
+```
 
 ## Base de datos
 
