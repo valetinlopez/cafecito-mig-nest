@@ -8,7 +8,7 @@
 | Actualizado | 2026-10-26                                                   |
 | Sprint      | S1 — Auth & Usuarios                                         |
 | Epic        | MIG-4 — E3: Autenticación, Usuarios & Empleados              |
-| Foco actual | MIG-25: cierre de AuthService y compatibilidad de tokens     |
+| Foco actual | MIG-26: CRUD administrativo del módulo empleados             |
 
 ---
 
@@ -22,9 +22,9 @@
 | database   | Implementado                          | ✅    | ✅  | Validar tablas en MIG-44                            |
 | categorias | Implementado (solo lectura + JWT)     | ✅    | ✅  | Relación `OneToMany` en MIG-29                     |
 | common     | Implementado (MIG-20 + guards MIG-23) | ✅    | ✅  | Aplicar a futuros controllers                      |
-| auth       | Implementado (MIG-23; MIG-25 en revisión) | ✅ | ✅  | Revisar claims y compatibilidad antes del PR       |
+| auth       | Implementado (MIG-23/25)                 | ✅    | ✅  | —                                                   |
 | users      | Implementado (MIG-22/25)              | ✅    | ✅  | Consumido por `empleados` (MIG-26)                  |
-| empleados  | DTOs implementados (MIG-22)           | ✅    | ✅  | CRUD + service (MIG-26)                             |
+| empleados  | Implementado en rama MIG-26             | ✅    | ✅  | Revisión e integración                             |
 | mesas      | Scaffold (módulo vacío)               | ❌    | ✅  | Entity + transiciones                               |
 | productos  | Scaffold (módulo vacío)               | ❌    | ✅  | Depende de `categorias`                             |
 | pedidos    | Scaffold (módulo vacío)               | ❌    | ✅  | Depende de mesas/productos/caja                     |
@@ -47,6 +47,7 @@
 | MIG-22 | Entity `Usuario` + DTOs con `class-validator` + tests                  | Integrado en develop |
 | MIG-23 | 7 endpoints de auth + `AuthService` + `UsersService` + guards          | Integrado en develop |
 | MIG-24 | JWT aplicado a endpoints disponibles de `categorias`                    | Integrado en develop |
+| MIG-25 | Claims JWT y reset tokens alineados; bcrypt Passlib probado              | Integrado en develop |
 | MIG-43 | Fechas UTC: proceso en UTC, transformer y `toIsoUtc()`                 | En revisión  |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs) | Cerrado      |
 
@@ -101,12 +102,11 @@
 
 ## 6. Próximo paso
 
-1. MIG-24 está integrado en `develop`; `categorias` requiere JWT.
-2. **MIG-25:** revisar y validar la alineación de AuthService con los criterios
-   del ticket antes de preparar commit/push.
-3. **MIG-26:** `empleados` sobre `UsersService` con regla CFB-112 (siempre
-   `mozo`, sin cambio de rol, sin auto-desactivación).
-4. **MIG-44:** validar el mapeo de `usuarios` (y las tablas restantes) con
+1. MIG-24 y MIG-25 están integrados en `develop`; auth emite `sub` string y
+   reset tokens con `password_reset`.
+2. **MIG-26:** CRUD `empleados` implementado y validado en rama; pendiente de
+   revisión e integración. CFB-112: rol `mozo`, sin cambio de rol ni auto-desactivación.
+3. **MIG-44:** validar el mapeo de `usuarios` (y las tablas restantes) con
    `npm run schema:log` antes de crear más entities.
 
 ---
@@ -125,3 +125,6 @@
 | 2026-10-26 | MIG-23: `AuthController` con los 7 endpoints, `AuthService`, `UsersService`, `JwtStrategy`, `JwtAuthGuard`/`RolesGuard` y `@Public/@Roles/@CurrentUser`. 202 unit + 50 e2e en verde; cobertura 93.6% stmts. |
 | 2026-10-26 | MIG-24 en curso: `categorias` protegido con JWT; e2e cubre token ausente, inválido, usuario inactivo y acceso autenticado.                                                                                 |
 | 2026-10-26 | MIG-25 en implementación: access/reset emiten `sub` string; reset usa `password_reset`/900s; `JwtStrategy` mantiene `sub` numérico legacy; agregado fixture bcrypt sintético Passlib. Validación pendiente. |
+| 2026-10-26 | MIG-25 mergeado en develop como PR #10: claims JWT corregidos y compatibilidad legacy validada. |
+| 2026-10-26 | MIG-26 CRUD de empleados implementado y validado en `feature/MIG-26-empleados`; falta revisión e integración. |
+| 2026-10-26 | MIG-26 iniciado en `feature/MIG-26-empleados` desde `develop` actualizado tras pull; decisión: bcrypt en EmpleadosService, lista completa ordenada por nombre ASC. |

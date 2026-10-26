@@ -49,21 +49,23 @@ no una validación de DTO.
 
 ## D-05 — Consumir `UsersService`, no el repositorio
 
-**Decisión:** `EmpleadosService` inyecta `UsersService`.
+**Decisión:** `EmpleadosService` inyecta `UsersService`; el hash se calcula
+con bcrypt en `EmpleadosService` y `UsersService.create()` recibe únicamente
+`passwordHash`.
 
-**Motivo:** el hash de password, la normalización de email y la unicidad deben
-vivir en un solo lugar (`users`). Duplicarlos genera inconsistencias entre alta
-desde auth y alta desde empleados.
+**Motivo:** `users` es dueño de la persistencia, normalización de email y
+consulta de unicidad. El hashing es responsabilidad del módulo que recibe el
+password en claro; mantener el contrato actual de `UsersService.create()` evita
+ampliar el alcance de MIG-26 y cualquier duplicación del repositorio.
 
 ---
 
 ## D-06 — Orden de la lista
 
-**Decisión:** ordenar por `nombre ASC` (a confirmar con el legacy).
+**Decisión:** ordenar por `nombre ASC` en la consulta de `UsersService`.
 
 **Motivo:** la UI muestra una tabla de personal; un orden estable evita saltos
-entre renders. Si el legacy ordena por `id`, se ajusta al implementar y se
-actualiza este documento.
+entre renders. El usuario confirmó mantener el criterio documentado.
 
 ---
 

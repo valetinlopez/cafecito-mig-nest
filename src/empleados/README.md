@@ -2,11 +2,11 @@
 
 | Campo        | Valor                                           |
 | ------------ | ----------------------------------------------- |
-| Estado       | **Implementado parcial** (DTOs; CRUD en MIG-26) |
+| Estado       | **Implementado en rama** (MIG-26; pendiente revisión) |
 | Entity       | `Usuario` (compartida con `users`)              |
 | Endpoints    | 3 (ver [`CONTRACT.md`](./CONTRACT.md))          |
 | Dependencias | `users`                                         |
-| Tests        | DTOs en verde; service/controller pendientes    |
+| Tests        | DTOs, service y e2e                              |
 
 ---
 
@@ -24,15 +24,19 @@ cambiar el rol.
 
 ```
 src/empleados/
-├── empleados.module.ts    # @Module({}) — sin service/controller
+├── empleados.module.ts
+├── empleados.controller.ts
+├── empleados.service.ts
+├── empleados.service.spec.ts
 └── dto/
     ├── create-empleado.dto.ts
     ├── update-empleado.dto.ts
     └── empleado-dtos.spec.ts
 ```
 
-MIG-22 entregó los DTOs de entrada (sin `rol`) y sus tests. El CRUD, el
-`EmpleadosService` y los guards llegan con MIG-26.
+MIG-22 entregó los DTOs de entrada (sin `rol`) y sus tests. MIG-26 implementa
+el CRUD sobre `UsersService`, con autorización admin y hashing bcrypt en el
+service que recibe el password.
 
 ---
 
@@ -86,15 +90,9 @@ users (entity + service)  →  empleados (controller + reglas de personal)
 - `dto/empleado-dtos.spec.ts`: validaciones de alta y edición.
 - `rol` enviado por el cliente se descarta en ambos DTOs (CFB-112).
 
-**Pendientes (MIG-26):**
-
-- Lista de empleados ordenada (definir criterio: nombre o id) y mapeo a
-  `UsuarioResponseDto`.
-- Alta fuerza `rol = mozo` aunque el body no lo incluya.
-- Alta con email duplicado → `400`.
-- Baja lógica: `PATCH { activo: false }` devuelve el usuario actualizado.
-- Desactivarse a sí mismo → `400`.
-- e2e de `403` con token de mozo.
+**Implementado (MIG-26):** lista ordenada desde DB, alta con rol `mozo`,
+hash bcrypt, actualización, baja lógica, auto-desactivación, errores de
+duplicado/no encontrado, guards por rol y contrato HTTP e2e.
 
 ---
 

@@ -18,7 +18,7 @@ Todos los endpoints requieren **`admin`**.
 
 ## `GET /api/v1/empleados/`
 
-Devuelve todos los usuarios (empleados y admins) según lo que exponga el legacy.
+Devuelve todos los usuarios (empleados y admins), ordenados por `nombre ASC`.
 
 ```json
 [

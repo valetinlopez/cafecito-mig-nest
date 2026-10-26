@@ -87,6 +87,7 @@ src/users/
 | ---------------------------------- | -------------------------- | ----------------------------- |
 | `findByEmail(email)`               | `Promise<Usuario \| null>` | Login, forgot-password        |
 | `findById(id)`                     | `Promise<Usuario \| null>` | Perfil, JWT strategy, pedidos |
+| `findAll()`                        | `Promise<Usuario[]>`       | Listado administrativo de empleados |
 | `create(data)`                     | `Promise<Usuario>`         | Registro, empleados           |
 | `update(id, data)`                 | `Promise<Usuario \| null>` | Perfil, empleados, password   |
 | `existsByEmail(email, excludeId?)` | `Promise<boolean>`         | Duplicados (alta y perfil)    |
@@ -97,6 +98,7 @@ Notas de contrato interno:
   (D-09 de `auth`), no de la persistencia.
 - `existsByEmail` acepta `excludeId` para validar un cambio de email sin chocar
   con el propio usuario.
+- `findAll` resuelve el orden `nombre ASC` en PostgreSQL; no ordenar en memoria.
 - `update` devuelve `null` cuando el usuario no existe; el consumidor traduce a
   `401` (auth) o `404` (empleados).
 - Ningún método devuelve DTOs HTTP: el mapeo lo hace el módulo que expone el

@@ -46,6 +46,7 @@ interface Usuario {
 class UsersService {
   findByEmail(email: string): Promise<Usuario | null>;
   findById(id: number): Promise<Usuario | null>;
+  findAll(): Promise<Usuario[]>;
   create(data: CreateUsuarioData): Promise<Usuario>;
   update(id: number, data: UpdateUsuarioData): Promise<Usuario | null>;
   existsByEmail(email: string, excludeId?: number): Promise<boolean>;
