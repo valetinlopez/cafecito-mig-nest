@@ -1,4 +1,10 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOkResponse,
@@ -6,6 +12,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard.js';
 import { CategoriasService } from './categorias.service.js';
 import { CategoriaResponseDto } from './dto/categoria-response.dto.js';
 
@@ -13,12 +20,11 @@ import { CategoriaResponseDto } from './dto/categoria-response.dto.js';
  * `GET /api/v1/categorias/` — solo lectura (MIG-18).
  *
  * Contrato: requiere JWT de cualquier rol (`auth`), ver `docs/api-contract.md` §4.
- * El guard se agrega en MIG-24 (`JwtAuthGuard`): hoy no existe la infraestructura
- * de autenticación en el scaffold, por eso el endpoint todavía no está protegido.
  */
 @ApiTags('Categorías')
 @ApiBearerAuth()
 @Controller('categorias')
+@UseGuards(JwtAuthGuard)
 export class CategoriasController {
   constructor(private readonly categoriasService: CategoriasService) {}
 

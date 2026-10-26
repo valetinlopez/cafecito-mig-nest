@@ -8,7 +8,7 @@
 | Actualizado | 2026-10-26                                                   |
 | Sprint      | S1 — Auth & Usuarios                                         |
 | Epic        | MIG-4 — E3: Autenticación, Usuarios & Empleados              |
-| Foco actual | MIG-23 implementado, pendiente PR; siguiente MIG-24 y MIG-26 |
+| Foco actual | MIG-24: aplicación de guards JWT a endpoints disponibles     |
 
 ---
 
@@ -20,9 +20,9 @@
 | health     | Implementado                          | ✅    | ✅  | —                                                   |
 | config     | Implementado                          | ✅    | ✅  | —                                                   |
 | database   | Implementado                          | ✅    | ✅  | Validar tablas en MIG-44                            |
-| categorias | Implementado (solo lectura)           | ✅    | ✅  | Guard JWT en MIG-24; relación `OneToMany` en MIG-29 |
-| common     | Implementado (MIG-20 + guards MIG-23) | ✅    | ✅  | Aplicar guards al resto en MIG-24                   |
-| auth       | Implementado (MIG-23)                 | ✅    | ✅  | Aplicar guards al resto en MIG-24                   |
+| categorias | Implementado (solo lectura + JWT)     | ✅    | ✅  | Relación `OneToMany` en MIG-29                     |
+| common     | Implementado (MIG-20 + guards MIG-23) | ✅    | ✅  | Aplicar a futuros controllers                      |
+| auth       | Implementado (MIG-23)                 | ✅    | ✅  | —                                                   |
 | users      | Implementado (MIG-22/25)              | ✅    | ✅  | Consumido por `empleados` (MIG-26)                  |
 | empleados  | DTOs implementados (MIG-22)           | ✅    | ✅  | CRUD + service (MIG-26)                             |
 | mesas      | Scaffold (módulo vacío)               | ❌    | ✅  | Entity + transiciones                               |
@@ -44,8 +44,8 @@
 | MIG-19 | Config tipada + validación de entorno + `DatabaseModule`               | Cerrado      |
 | MIG-20 | CORS, prefijo `/api/v1`, `ValidationPipe` 422 y filtro `{ detail }`    | En revisión  |
 | MIG-21 | Vitest + `test/utils/` (mocks de Repository/QueryBuilder) + cobertura  | Cerrado      |
-| MIG-22 | Entity `Usuario` + DTOs con `class-validator` + tests                  | Pendiente PR |
-| MIG-23 | 7 endpoints de auth + `AuthService` + `UsersService` + guards          | Pendiente PR |
+| MIG-22 | Entity `Usuario` + DTOs con `class-validator` + tests                  | Integrado en develop |
+| MIG-23 | 7 endpoints de auth + `AuthService` + `UsersService` + guards          | Integrado en develop |
 | MIG-43 | Fechas UTC: proceso en UTC, transformer y `toIsoUtc()`                 | En revisión  |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs) | Cerrado      |
 
@@ -55,7 +55,7 @@
 
 | Tema                                   | Impacto                     | Ticket |
 | -------------------------------------- | --------------------------- | ------ |
-| Guards no aplicados fuera de `auth`    | Módulos aún sin protección  | MIG-24 |
+| Guards pendientes en módulos scaffold | Sin controllers que proteger aún | MIG-24 |
 | Sin `SwaggerModule`                    | `/docs` no disponible       | MIG-40 |
 | Sin `numericTransformer`               | `numeric` llega como string | MIG-44 |
 | Mapeo `usuarios` sin validar con la DB | `schema:log` puede diferir  | MIG-44 |
@@ -100,12 +100,12 @@
 
 ## 6. Próximo paso
 
-1. ~~MIG-22: entity `Usuario` + DTOs~~ y ~~MIG-23: 7 endpoints de auth~~
-   implementados. Abrir el PR de MIG-23 con las dependencias adelantadas
-   (`UsersService` de MIG-25 y guards de MIG-24) documentadas.
-2. **MIG-24:** aplicar `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles('admin')`
-   a `mesas`, `productos`, `categorias`, `pedidos`, `caja`, `dashboard`,
-   `empleados` y `reportes`; agregar e2e de `401`/`403` por módulo.
+1. MIG-22 y MIG-23 ya están integrados en `develop`, incluidos `UsersService`,
+   `JwtStrategy`, guards y decoradores adelantados.
+2. **MIG-24:** `JwtStrategy`, guards y decoradores ya están implementados por
+   adelantado en MIG-23. El endpoint existente de `categorias` queda protegido
+   con `JwtAuthGuard` y e2e de `401`; aplicar `RolesGuard` + `@Roles('admin')` a
+   cada módulo cuando sus controllers estén implementados.
 3. **MIG-26:** `empleados` sobre `UsersService` con regla CFB-112 (siempre
    `mozo`, sin cambio de rol, sin auto-desactivación).
 4. **MIG-44:** validar el mapeo de `usuarios` (y las tablas restantes) con
@@ -125,3 +125,4 @@
 | 2026-10-21 | MIG-43: proceso fijado en UTC, `utcTimestampTransformer`, `toIsoUtc()/toIsoUtcOrNull()` y ADR 0007. 117 unit + 23 e2e en verde.                                                                             |
 | 2026-10-22 | MIG-22: entity `Usuario` (`usuarios`, email 150), `Rol` centralizado, `UsuarioResponseDto` y 8 DTOs de entrada (auth/empleados) validados y testeados. 149 unit en verde.                                   |
 | 2026-10-26 | MIG-23: `AuthController` con los 7 endpoints, `AuthService`, `UsersService`, `JwtStrategy`, `JwtAuthGuard`/`RolesGuard` y `@Public/@Roles/@CurrentUser`. 202 unit + 50 e2e en verde; cobertura 93.6% stmts. |
+| 2026-10-26 | MIG-24 en curso: `categorias` protegido con JWT; e2e cubre token ausente, inválido, usuario inactivo y acceso autenticado.                                                                                 |

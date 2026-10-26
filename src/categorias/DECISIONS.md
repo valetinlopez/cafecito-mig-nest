@@ -54,16 +54,14 @@ propone recrear la restricción.
 
 ---
 
-## D-06 — El guard JWT todavía no está aplicado
+## D-06 — Acceso protegido por JWT
 
-**Decisión:** el controller declara `@ApiBearerAuth()` y documenta `401`, pero no
-tiene guard hasta que exista la infraestructura de auth.
+**Decisión:** `CategoriasController` aplica `JwtAuthGuard`; cualquier usuario
+autenticado puede consultar el catálogo.
 
-**Motivo:** el `JwtAuthGuard` llega en MIG-24. Declarar un guard inexistente
-rompería el build; omitir la documentación rompería el contrato.
-
-**Riesgo:** el endpoint está **sin protección** hasta MIG-24. Aceptado como deuda
-de S0 y registrado en `.agents/memory.md`.
+**Motivo:** el contrato exige autenticación (`auth`) pero no restringe la
+consulta por rol. El guard y la estrategia verifican la firma, expiración y
+estado actual del usuario en cada request.
 
 ---
 
@@ -80,6 +78,5 @@ un rediseño fuera de alcance (constitución §2).
 
 | Tema                         | Ticket |
 | ---------------------------- | ------ |
-| Aplicar `JwtAuthGuard`       | MIG-24 |
 | `@OneToMany(() => Producto)` | MIG-29 |
 | Validar esquema real         | MIG-44 |

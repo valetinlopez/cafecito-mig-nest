@@ -8,8 +8,7 @@
 
 ## `GET /api/v1/categorias/`
 
-- **Auth:** `auth` (token válido, cualquier rol).
-  > El guard todavía no está aplicado (MIG-24); el contrato ya exige `401`.
+- **Auth:** `auth` (token válido, cualquier rol), aplicado con `JwtAuthGuard`.
 - **Body:** —
 - **Query:** —
 - **Éxito:** `200` · `Categoria[]`

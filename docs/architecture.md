@@ -100,7 +100,7 @@ HTTP
  │
  ├─ Controller ......... valida entrada (DTO), delega, elige código HTTP
  │
- ├─ Guard .............. (pendiente) JwtAuthGuard → RolesGuard
+ ├─ Guard .............. JwtAuthGuard → RolesGuard (por controller)
  │
  ├─ Service ............ reglas de negocio + transacciones
  │
@@ -135,7 +135,7 @@ Puntos de borde:
 | Health     | `src/health`     | **Implementado**             | `GET /` (fuera de `/api/v1`)           | —                                              |
 | Config     | `src/config`     | **Implementado**             | Validación de entorno + config tipada  | —                                              |
 | Database   | `src/database`   | **Implementado**             | DataSource, pool, migraciones          | `config`                                       |
-| Categorías | `src/categorias` | **Implementado (lectura)**   | `GET /categorias/`                     | `database`                                     |
+| Categorías | `src/categorias` | **Implementado (lectura + JWT)** | `GET /categorias/`                | `database`, `common`                           |
 | Auth       | `src/auth`       | **Implementado** (MIG-23)    | Login, registro, perfil, password      | `users`, `config/auth`, `common`               |
 | Users      | `src/users`      | **Implementado** (MIG-22/25) | Entity/gestión de usuarios             | `database`                                     |
 | Empleados  | `src/empleados`  | Implementado parcial (DTOs)  | ABM de empleados (`rol = mozo`)        | `users`                                        |
