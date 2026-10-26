@@ -4,7 +4,7 @@
 
 | Campo      | Valor                                          |
 | ---------- | ---------------------------------------------- |
-| Estado     | Scaffold (módulo vacío)                        |
+| Estado     | Parcial MIG-29: GET/POST/PATCH; DELETE pendiente |
 | Contrato   | [`./CONTRACT.md`](./CONTRACT.md) · global §6.3 |
 | Decisiones | [`./DECISIONS.md`](./DECISIONS.md)             |
 | Depende de | `categorias`                                   |
@@ -18,11 +18,11 @@
 
 ## Reglas locales
 
-- `precio` es `numeric(10,2)` con `numericTransformer` y sale como `number`.
+- `precio` se almacena como string `numeric(10,2)` y el response DTO lo convierte temporalmente a `number`; transformer compartido pendiente MIG-44.
 - Response con `categoria: { id, nombre }`; request con `categoria_id`.
-- `@ManyToOne(() => Categoria)` sin `eager`; pedir `relations` explícitamente.
+- `categoria_id` permanece scalar, sin relación ORM hasta MIG-44; hidratar categoría vía `CategoriasService`.
 - El stock lo descuenta `pedidos`, no este módulo.
-- `DELETE` solo sin pedidos asociados; el resto se marca `disponible = false`.
+- `DELETE` según contrato está pendiente de MIG-30, que confirma pedidos asociados.
 - `descripcion` nullable devuelve `null`, no se omite.
 - Validar `categoria_id` en el service para responder `400`, no `500`.
 

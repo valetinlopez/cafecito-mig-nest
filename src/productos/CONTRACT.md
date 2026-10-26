@@ -14,6 +14,10 @@
 | `PATCH`  | `/api/v1/productos/{id}` | admin | `200` · `Producto`   | `400`, `401`, `403`, `404`, `422` |
 | `DELETE` | `/api/v1/productos/{id}` | admin | `204` sin body       | `400`, `401`, `403`, `404`        |
 
+> El contrato global incluye DELETE, pero la implementación de MIG-29 se limita
+> a GET/POST/PATCH. DELETE queda pendiente de MIG-30 por la dependencia de
+> pedidos asociados; esto no cambia el contrato.
+
 ---
 
 ## Tipos
@@ -104,8 +108,8 @@ asociados. Marcalo como no disponible en su lugar.`
 
 | Regla                               | Verificación                 |
 | ----------------------------------- | ---------------------------- |
-| `precio` es `number` en JSON (D-05) | Transformer + DTO            |
-| `categoria` viene anidada           | `relations: ['categoria']`   |
+| `precio` es `number` en JSON (D-05) | Conversión temporal en DTO; transformer MIG-44 |
+| `categoria` viene anidada           | Lookup explícito vía `CategoriasService` |
 | `descripcion` nullable explícito    | `null`, no campo omitido     |
-| `204` real sin body                 | `@HttpCode(204)` + no return |
+| DELETE `204` real sin body          | Pendiente MIG-30             |
 | Sin paginación (D-10)               | Array plano                  |

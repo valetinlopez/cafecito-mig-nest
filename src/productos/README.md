@@ -2,11 +2,11 @@
 
 | Campo        | Valor                                                |
 | ------------ | ---------------------------------------------------- |
-| Estado       | **Scaffold** (módulo registrado, sin código propio)  |
-| Entity       | `Producto` → tabla `productos` (por confirmar)       |
-| Endpoints    | 5 (ver [`CONTRACT.md`](./CONTRACT.md))               |
-| Dependencias | `categorias`, `common/transformers`, `common/guards` |
-| Tests        | Pendientes                                           |
+| Estado       | **Parcial (MIG-29)**: GET/POST/PATCH                 |
+| Entity       | `Producto` → tabla `productos` (mapeo por validar en MIG-44) |
+| Endpoints    | 4 implementados; DELETE pendiente de MIG-30          |
+| Dependencias | `categorias`, `common/guards`                        |
+| Tests        | Unitarios y e2e para endpoints implementados        |
 
 ---
 
@@ -19,10 +19,11 @@ de datos de `pedidos` para calcular subtotales y descontar stock.
 
 ## 2. Estado actual
 
-```
-src/productos/
-└── productos.module.ts    # @Module({}) — vacío
-```
+GET colección/detalle, POST y PATCH están implementados. DELETE se conserva en
+el contrato global pero espera MIG-30 para verificar pedidos asociados. La
+relación ORM de categoría y el transformer numérico compartido esperan MIG-44.
+Mientras tanto, `categoria_id` es scalar, `CategoriasService` hidrata el objeto
+anidado y el response DTO convierte temporalmente `precio` a `number`.
 
 ---
 
@@ -51,13 +52,13 @@ src/productos/
 | ------------- | -------------- | ---------------- | ----------------------------- |
 | `id`          | `id`           | `serial`         | PK                            |
 | `nombre`      | `nombre`       | `varchar`        | not null                      |
-| `descripcion` | `descripcion`  | `varchar`/`text` | nullable                      |
-| `precio`      | `precio`       | `numeric(10,2)`  | `> 0`, transformer a `number` |
+| `descripcion` | `descripcion`  | `varchar`/`text` | nullable (tipo físico por validar en MIG-44) |
+| `precio`      | `precio`       | `numeric(10,2)`  | `> 0`, conversión temporal en response DTO |
 | `stock`       | `stock`        | `int`            | `>= 0`, default 0             |
 | `stockMinimo` | `stock_minimo` | `int`            | `>= 0`, default 5             |
 | `disponible`  | `disponible`   | `boolean`        | default `true`                |
-| `categoriaId` | `categoria_id` | `int`            | FK a `categorias`             |
-| `categoria`   | —              | `ManyToOne`      | solo si existe `Categoria`    |
+| `categoriaId` | `categoria_id` | `int`            | scalar; validar contra esquema en MIG-44 |
+| `categoria`   | —              | propiedad DTO hidratada | sin relación ORM hasta MIG-44 |
 
 ---
 
@@ -65,9 +66,8 @@ src/productos/
 
 - `precio > 0`; `stock >= 0`; `stock_minimo >= 0`; `nombre` mínimo 1.
 - `categoria_id` debe existir → `400` `La categoría indicada no existe`.
-- `DELETE` con pedidos asociados → `400` `No se puede eliminar: el producto
-tiene pedidos asociados. Marcalo como no disponible en su lugar.`
-- `DELETE` exitoso → `204` sin body.
+- `DELETE` está definido en el contrato, pero no implementado hasta MIG-30,
+  cuando se confirme el acceso a pedidos asociados.
 - El stock se descuenta desde `pedidos`, no desde `productos`.
 - `disponible = false` oculta el producto del alta de pedidos sin borrar
   historial.
@@ -77,23 +77,23 @@ tiene pedidos asociados. Marcalo como no disponible en su lugar.`
 ## 6. Dependencias
 
 ```
-categorias (entity)  →  productos (entity + service)  →  pedidos
+  categorias (service lookup)  →  productos (entity + service)  →  pedidos
 ```
 
-- `Producto` declara `@ManyToOne(() => Categoria)` cuando la entity exista.
+- `categoria_id` se valida e hidrata mediante `CategoriasService`; relación ORM
+  postergada hasta validar esquema y transformer en MIG-44.
 - `pedidos` consume `ProductosService` para validar disponibilidad y stock.
 
 ---
 
 ## 7. Tests esperados
 
-- Lista ordenada (definir: nombre) con categoría anidada y `precio` numérico.
+- Lista ordenada por nombre con categoría anidada y `precio` numérico.
 - Lista vacía.
 - Alta con categoría inexistente → `400`.
 - Alta con `precio <= 0` → `422`.
-- Baja con pedidos asociados → `400`.
-- Baja exitosa → `204` sin body.
-- e2e de `403` con rol `mozo` en `POST`/`PATCH`/`DELETE`.
+- DELETE y sus casos de pedidos asociados → MIG-30.
+- e2e de `403` con rol `mozo` en `POST`/`PATCH`.
 
 ---
 

@@ -140,7 +140,7 @@ Puntos de borde:
 | Users      | `src/users`      | **Implementado** (MIG-22/25) | Entity/gestión de usuarios             | `database`                                     |
 | Empleados  | `src/empleados`  | Implementado en rama MIG-26 (pendiente revisión) | ABM de empleados (`rol = mozo`) | `users`, `common`                               |
 | Mesas      | `src/mesas`      | Implementado (MIG-27)        | Estados y ABM de mesas                 | `ACTIVE_ORDERS_PORT` (adapter de pedidos pendiente MIG-30) |
-| Productos  | `src/productos`  | Scaffold (módulo vacío)      | Catálogo, stock, precios               | `categorias`                                   |
+| Productos  | `src/productos`  | Parcial (MIG-29: GET/POST/PATCH; DELETE MIG-30) | Catálogo, stock, precios | `categorias` (lookup); schema/transformer MIG-44 |
 | Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)      | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
 | Pagos      | `src/pagos`      | Scaffold (módulo vacío)      | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
 | Caja       | `src/caja`       | Scaffold (módulo vacío)      | Apertura, cierre, movimientos          | `pagos`                                        |
@@ -203,14 +203,15 @@ Reglas de dependencia:
 
 Solo `categorias` y `usuarios` tienen entity implementada. El resto se infiere
 del contrato y del legacy, y debe validarse contra la base en MIG-44 antes de
-crear entities.
+considerar definitivo su mapeo. Productos ya tiene entity provisional en esta
+rama; sus columnas y relaciones siguen sujetas a esa validación.
 
 | Tabla legacy (a confirmar) | Entity           | Módulo     | Estado                |
 | -------------------------- | ---------------- | ---------- | --------------------- |
 | `categorias`               | `Categoria`      | categorias | Implementada          |
 | `usuarios`                 | `Usuario`        | users      | Implementada (MIG-22) |
 | `mesas`                    | `Mesa`           | mesas      | Pendiente             |
-| `productos`                | `Producto`       | productos  | Pendiente             |
+| `productos`                | `Producto`       | productos  | Provisional (MIG-29; validar MIG-44) |
 | `pedidos`                  | `Pedido`         | pedidos    | Pendiente             |
 | `detalle_pedidos`          | `DetallePedido`  | pedidos    | Pendiente             |
 | `pagos`                    | `Pago`           | pagos      | Pendiente             |

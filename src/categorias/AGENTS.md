@@ -22,7 +22,8 @@
 - Sin barrels: imports al archivo concreto con extensión `.js`.
 - `@Unique('categorias_nombre_key', ['nombre'])` con el nombre real de PostgreSQL.
 - No agregar `POST`/`PATCH`/`DELETE`: el contrato es solo lectura.
-- El guard JWT está pendiente (MIG-24); no inventar uno parcial.
+- `CategoriasService` ofrece lookups por id y por lote para Productos; la relación ORM `OneToMany` se difiere a MIG-44.
+- El guard JWT ya está implementado (MIG-24).
 
 ## Verificación
 
