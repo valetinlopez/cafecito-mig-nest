@@ -4,7 +4,7 @@
 
 | Campo         | Valor                                               |
 | ------------- | --------------------------------------------------- |
-| Estado        | Implementado parcial (entity + DTOs, MIG-22)        |
+| Estado        | Implementado (entity + DTOs MIG-22, service MIG-25) |
 | Contrato      | [`./CONTRACT.md`](./CONTRACT.md) — contrato interno |
 | Decisiones    | [`./DECISIONS.md`](./DECISIONS.md)                  |
 | Consumido por | `auth`, `empleados`, `pedidos`                      |

@@ -2,19 +2,19 @@
 
 > Instrucciones locales de este directorio. Leelo antes de tocar `src/auth/`.
 
-| Campo      | Valor                                          |
-| ---------- | ---------------------------------------------- |
-| Estado     | Implementado parcial (DTOs, MIG-22)            |
-| Contrato   | [`./CONTRACT.md`](./CONTRACT.md) · global §6.1 |
-| Decisiones | [`./DECISIONS.md`](./DECISIONS.md)             |
-| Depende de | `users` (entity `Usuario`), `config/auth`      |
+| Campo      | Valor                                             |
+| ---------- | ------------------------------------------------- |
+| Estado     | Implementado (MIG-23)                             |
+| Contrato   | [`./CONTRACT.md`](./CONTRACT.md) · global §6.1    |
+| Decisiones | [`./DECISIONS.md`](./DECISIONS.md)                |
+| Depende de | `users` (`UsersService`), `config/auth`, `common` |
 
 ## Antes de implementar
 
 1. [`README.md`](./README.md) — piezas y orden de implementación.
 2. [`CONTRACT.md`](./CONTRACT.md) — 7 endpoints y shapes.
-3. [`DECISIONS.md`](./DECISIONS.md) — JWT, bcrypt y mensajes exactos.
-4. `src/users/` — de ahí sale la entity y `UsersService` (MIG-25).
+3. [`DECISIONS.md`](./DECISIONS.md) — JWT, bcrypt, guards y mensajes exactos.
+4. `src/users/` — de ahí sale la entity y `UsersService`.
 5. `src/auth/dto/` — los DTOs ya existen, no redefinirlos en el controller.
 
 ## Reglas locales
@@ -25,7 +25,8 @@
 - `reset_token` solo en `development`; en el resto, `null`.
 - Mensajes de error literales del contrato; no reescribirlos.
 - `POST /auth/register` requiere `admin`.
-- No crear un `APP_GUARD` global sin marcar antes las rutas públicas.
+- Guards por controller con `@UseGuards(JwtAuthGuard, RolesGuard)` y `@Public()`
+  explícito; no `APP_GUARD` global.
 - Validaciones nuevas: en el DTO; traducciones, en `common/pipes`.
 
 ## Verificación

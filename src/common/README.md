@@ -1,11 +1,11 @@
 # Módulo `common`
 
-| Campo         | Valor                                               |
-| ------------- | --------------------------------------------------- |
-| Estado        | **Implementado** (MIG-20; fechas UTC en MIG-43)     |
-| Tipo          | Infraestructura transversal, sin endpoints          |
-| Consumido por | Todos los feature modules                           |
-| Tests         | 70 unitarios + `test/common.e2e-spec.ts` (18 casos) |
+| Campo         | Valor                                                        |
+| ------------- | ------------------------------------------------------------ |
+| Estado        | **Implementado** (MIG-20; guards y decoradores en MIG-23/24) |
+| Tipo          | Infraestructura transversal, sin endpoints                   |
+| Consumido por | Todos los feature modules                                    |
+| Tests         | 70+ unitarios + `test/common.e2e-spec.ts` (18 casos)         |
 
 ---
 
@@ -48,8 +48,18 @@ src/common/
 ├── transformers/
 │   ├── utc-timestamp.transformer.ts # timestamp without time zone ↔ Date
 │   └── utc-timestamp.transformer.spec.ts
-├── decorators/.gitkeep              # MIG-24
-├── guards/.gitkeep                  # MIG-24
+├── auth/
+│   ├── authenticated-user.ts        # shape de `request.user`
+│   └── auth-messages.ts             # literales 401/403 del contrato
+├── decorators/
+│   ├── public.decorator.ts          # @Public()
+│   ├── roles.decorator.ts           # @Roles('admin')
+│   └── current-user.decorator.ts    # @CurrentUser()
+├── guards/
+│   ├── jwt-auth.guard.ts            # validación del Bearer
+│   ├── jwt-auth.guard.spec.ts
+│   ├── roles.guard.ts               # admin/mozo
+│   └── roles.guard.spec.ts
 ├── README.md · CONTRACT.md · DECISIONS.md · AGENTS.md
 ```
 
@@ -60,8 +70,13 @@ El prefijo `/api/v1` y el CORS no son providers: se aplican en
 
 ## 3. Estructura objetivo
 
+### Estructura de guards y decoradores
+
 ```
 src/common/
+├── auth/
+│   ├── authenticated-user.ts      # shape público que viaja en request.user
+│   └── auth-messages.ts           # 401/403 literales del contrato
 ├── decorators/
 │   ├── public.decorator.ts        # @Public() para rutas sin auth
 │   ├── roles.decorator.ts         # @Roles('admin')
@@ -92,7 +107,8 @@ src/common/
 ```
 MIG-20  →  prefijo /api/v1 + ValidationPipe 422 + AllExceptionsFilter + CORS ✅
 MIG-21  →  utilidades de test / mocks de repositorio ✅
-MIG-24  →  JwtAuthGuard + RolesGuard + @Public/@Roles
+MIG-23  →  JwtAuthGuard + RolesGuard + @Public/@Roles/@CurrentUser ✅ (adelantado)
+MIG-24  →  aplicar los guards al resto de los módulos + e2e 401/403
 MIG-43  →  zona horaria UTC + transformer de fechas + `toIsoUtc()` ✅
 MIG-44  →  numericTransformer + validación de esquema real
 ```
@@ -115,7 +131,10 @@ importan directamente para probar el cableado real sin PostgreSQL.
 | `pinProcessTimezone`             | El proceso queda en UTC aunque el sistema esté en ART.  |
 | `toIsoUtc` / `parseUtcTimestamp` | Instante conocido con `Z`, round-trip y zonas.          |
 | `utcTimestampTransformer`        | Escritura UTC, lectura UTC y nulos explícitos.          |
+| `JwtAuthGuard`                   | Bypass de `@Public()` y `detail` de 401.                |
+| `RolesGuard`                     | `@Roles`, `@Public` y 403 con el mensaje del contrato.  |
 | `test/common.e2e-spec.ts`        | Prefijo, CORS, header, 422, 400, 404 y 500.             |
+| `test/auth.e2e-spec.ts`          | Guards reales: 401 sin token, 403 con rol insuficiente. |
 
 ---
 

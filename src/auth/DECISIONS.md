@@ -121,3 +121,81 @@ aplica en `RegisterDto`, `ChangePasswordDto`, `ResetPasswordDto` y
 incluidas las de usuarios migrados del legacy. Validar longitud en el login
 transformaría un `401` de credenciales en un `422` engañoso y podría bloquear
 cuentas existentes.
+
+---
+
+## D-12 — Guards y `UsersService` se adelantan a MIG-23
+
+**Decisión:** el PR de MIG-23 incluye `UsersService` (previsto para MIG-25) y
+`JwtAuthGuard`/`RolesGuard`/`@Public()`/`@Roles()`/`@CurrentUser()` (previstos
+para MIG-24).
+
+**Motivo:** el criterio de aceptación del ticket es que **los 7 endpoints
+funcionen** con sus códigos y mensajes. Sin service no hay login, y sin guards
+`register`, `me` y `change-password` quedarían públicos o sin rol. Entregar el
+controller con mocks habría dejado el ticket abierto y trasladado la deuda.
+
+**Alcance:** `empleados` (MIG-26) no se toca. Los guards quedan genéricos en
+`common` para que MIG-24 solo los aplique al resto de los módulos y agregue sus
+e2e de `401`/`403`.
+
+---
+
+## D-13 — Guard por controller, no `APP_GUARD` global
+
+**Decisión:** `AuthController` declara
+`@UseGuards(JwtAuthGuard, RolesGuard)` y marca con `@Public()` las tres rutas
+abiertas (`login`, `forgot-password`, `reset-password`).
+
+**Motivo:** un guard global exige auditar antes todas las rutas públicas
+(incluido `GET /`); un olvido deja el sistema inaccesible. La excepción queda
+declarada junto al endpoint y el guard se reutiliza sin configuración extra.
+
+---
+
+## D-14 — El access token no transporta datos del usuario
+
+**Decisión:** el payload es `{ sub, rol }` (fijado por el epic MIG-4).
+`JwtStrategy` relee la fila en cada request y devuelve el shape público.
+
+**Motivo:** un token de 480 minutos con nombre/email/rol quedaría desactualizado
+hasta su expiración. Releer la base hace que una baja o un cambio de rol apliquen
+al instante, y permite responder `401 Usuario no encontrado o inactivo` sin
+esperar al refresh.
+
+**Costo:** una query por request autenticado; se acepta por ser una lectura por
+PK y por la corrección del comportamiento.
+
+---
+
+## D-15 — Reset token con `purpose` y 15 minutos
+
+**Decisión:** el token de reseteo se firma con el mismo `SECRET_KEY` pero con
+`purpose = reset` y `expiresIn: 900` segundos.
+
+**Motivo:** criterio del epic MIG-4: los reset tokens **no** son intercambiables
+con access tokens. `JwtStrategy` rechaza cualquier payload con `purpose`
+(401) y `resetPassword` exige `purpose = reset` (400).
+
+---
+
+## D-16 — Orden de verificación en el login
+
+**Decisión:** primero se busca el usuario, después se compara la contraseña y
+recién al final se evalúa `activo`.
+
+**Motivo:** un email inexistente y una contraseña incorrecta responden el mismo
+`401 Email o contraseña incorrectos`, sin filtrar qué cuentas existen. El
+mensaje `Usuario no encontrado o inactivo` solo aparece cuando la contraseña ya
+es correcta, igual que el contrato §5.4.
+
+---
+
+## D-17 — Mensajes del borde de seguridad centralizados
+
+**Decisión:** los literales viven en `auth/auth-messages.ts` (negocio) y
+`common/auth/auth-messages.ts` (guards y estrategia). Ningún string del contrato
+se repite en el código.
+
+**Motivo:** el front muestra `detail` tal cual y algunos flujos comparan el
+texto. Una copia desactualizada cambia el contrato en silencio.

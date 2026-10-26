@@ -66,10 +66,24 @@ Adjunta el usuario autenticado al request (`@CurrentUser()`).
 | Caso             | Status | `detail`                           |
 | ---------------- | ------ | ---------------------------------- |
 | Rol insuficiente | `403`  | `Se requiere rol de administrador` |
+| Sin usuario      | `401`  | `Token inválido o expirado`        |
+
+### Decoradores
+
+| Decorador        | Contrato                                                        |
+| ---------------- | --------------------------------------------------------------- |
+| `@Public()`      | Exime la ruta de `JwtAuthGuard` y `RolesGuard`.                 |
+| `@Roles(...)`    | Exige que `request.user.rol` esté en la lista; si falta, `403`. |
+| `@CurrentUser()` | Inyecta el `AuthenticatedUser`; sin usuario lanza `401`.        |
 
 Rutas marcadas `@Public()` no pasan por el guard.
 
-> Ambos guards llegan en MIG-24; hoy `src/common/guards/` está vacío.
+`RolesGuard` también saltea las rutas `@Public()`: sin usuario no hay rol que
+comparar.
+
+> Ambos guards están implementados y los usa `AuthController` desde MIG-23. El
+> resto de los módulos los adopta en MIG-24. No se registran como `APP_GUARD`
+> global: se aplican con `@UseGuards` por controller (D-02).
 
 ---
 

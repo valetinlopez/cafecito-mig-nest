@@ -2,7 +2,7 @@
 
 | Campo         | Valor                                                           |
 | ------------- | --------------------------------------------------------------- |
-| Estado        | **Implementado parcial** (entity + DTOs; service en MIG-25)     |
+| Estado        | **Implementado** (entity + DTOs en MIG-22; service en MIG-25)   |
 | Entity        | `Usuario` → tabla `usuarios` (validar con `schema:log`, MIG-44) |
 | Endpoints     | Ninguno propio (ver [`CONTRACT.md`](./CONTRACT.md))             |
 | Dependencias  | `database`                                                      |
@@ -25,7 +25,9 @@ de personal son de `empleados`.
 
 ```
 src/users/
-├── users.module.ts              # TypeOrmModule.forFeature([Usuario])
+├── users.module.ts              # TypeOrmModule.forFeature([Usuario]) + UsersService
+├── users.service.ts             # único acceso a `usuarios`
+├── users.service.spec.ts
 ├── rol.ts                       # ROLES + tipo Rol (admin | mozo)
 ├── entities/
 │   ├── usuario.entity.ts
@@ -36,8 +38,9 @@ src/users/
 ```
 
 Implementado en MIG-22: entity, tipo `Rol`, módulo registrado y DTO de
-respuesta. **Falta `UsersService`** (MIG-25), que es el único punto de acceso a
-datos para `auth` y `empleados`.
+respuesta. `UsersService` se adelantó a MIG-23 porque `auth` lo necesita para
+login, perfil y reseteo (ver `auth/DECISIONS.md` D-12); queda también listo para
+`empleados` (MIG-26).
 
 ---
 
@@ -47,8 +50,8 @@ datos para `auth` y `empleados`.
 src/users/
 ├── users.module.ts
 ├── rol.ts
-├── users.service.ts             # MIG-25
-├── users.service.spec.ts        # MIG-25
+├── users.service.ts             # implementado (MIG-25)
+├── users.service.spec.ts
 ├── dto/
 │   └── usuario-response.dto.ts
 └── entities/
@@ -77,20 +80,27 @@ src/users/
 
 ## 5. API pública del módulo
 
-> **Objetivo de MIG-25.** `UsersService` todavía no existe; hoy el módulo solo
-> expone la entity y el DTO de respuesta.
+`UsersService` es el único punto de acceso a `usuarios` y el módulo lo exporta.
+`auth` y `empleados` lo consumen; el `Repository<Usuario>` **no** se exporta.
 
-| Método (service)       | Retorna                    | Uso                      |
-| ---------------------- | -------------------------- | ------------------------ |
-| `findByEmail(email)`   | `Promise<Usuario \| null>` | Login                    |
-| `findById(id)`         | `Promise<Usuario \| null>` | Perfil, pedidos          |
-| `create(data)`         | `Promise<Usuario>`         | Registro, empleados      |
-| `update(id, data)`     | `Promise<Usuario>`         | Perfil, empleados        |
-| `existsByEmail(email)` | `Promise<boolean>`         | Validación de duplicados |
+| Método (service)                   | Retorna                    | Uso                           |
+| ---------------------------------- | -------------------------- | ----------------------------- |
+| `findByEmail(email)`               | `Promise<Usuario \| null>` | Login, forgot-password        |
+| `findById(id)`                     | `Promise<Usuario \| null>` | Perfil, JWT strategy, pedidos |
+| `create(data)`                     | `Promise<Usuario>`         | Registro, empleados           |
+| `update(id, data)`                 | `Promise<Usuario \| null>` | Perfil, empleados, password   |
+| `existsByEmail(email, excludeId?)` | `Promise<boolean>`         | Duplicados (alta y perfil)    |
 
-El detalle final se define al implementar; lo importante es que `auth` y
-`empleados` consuman `UsersService` y no el repositorio directo. El módulo
-**no exporta** `TypeOrmModule` a propósito.
+Notas de contrato interno:
+
+- `create` recibe `passwordHash` ya calculado: el hashing es negocio de `auth`
+  (D-09 de `auth`), no de la persistencia.
+- `existsByEmail` acepta `excludeId` para validar un cambio de email sin chocar
+  con el propio usuario.
+- `update` devuelve `null` cuando el usuario no existe; el consumidor traduce a
+  `401` (auth) o `404` (empleados).
+- Ningún método devuelve DTOs HTTP: el mapeo lo hace el módulo que expone el
+  endpoint.
 
 ---
 
@@ -114,11 +124,11 @@ El detalle final se define al implementar; lo importante es que `auth` y
 - `usuario-response.dto.spec.ts`: mapea los 5 campos públicos y nunca incluye el
   hash.
 
-**Pendientes (MIG-25):**
+**Implementados (MIG-25, dentro del PR de MIG-23):**
 
-- `findByEmail` devuelve el usuario correcto y `null` si no existe.
-- `existsByEmail` distingue mayúsculas/minúsculas.
-- Normalización del email al crear y actualizar.
+- `users.service.spec.ts`: normalización de email en búsqueda, alta y edición;
+  `existsByEmail` con y sin `excludeId`; `update` aplica solo los campos
+  presentes y devuelve `null` si el usuario no existe.
 
 ---
 

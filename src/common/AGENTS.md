@@ -4,7 +4,7 @@
 
 | Campo      | Valor                                                      |
 | ---------- | ---------------------------------------------------------- |
-| Estado     | Implementado (MIG-20)                                      |
+| Estado     | Implementado (MIG-20; guards en MIG-23/24)                 |
 | Contrato   | [`./CONTRACT.md`](./CONTRACT.md) — garantías transversales |
 | Decisiones | [`./DECISIONS.md`](./DECISIONS.md)                         |
 
