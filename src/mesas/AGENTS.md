@@ -4,7 +4,7 @@
 
 | Campo      | Valor                                          |
 | ---------- | ---------------------------------------------- |
-| Estado     | Scaffold (módulo vacío)                        |
+| Estado     | Implementado (MIG-27)                           |
 | Contrato   | [`./CONTRACT.md`](./CONTRACT.md) · global §6.2 |
 | Decisiones | [`./DECISIONS.md`](./DECISIONS.md)             |
 | Depende de | `pedidos` (efectos de estado)                  |
@@ -22,6 +22,8 @@
 - Las transiciones automáticas las ejecuta `pedidos`; `mesas` no las duplica.
 - Antes de `ocupada → en_limpieza`, verificar que no haya pedido activo sin cobrar.
 - `numero` único con restricción nombrada segun la base real.
+- La consulta de pedidos activos se inyecta por `ACTIVE_ORDERS_PORT`; no importar
+	`pedidos` ni acceder a tablas de pedidos desde este módulo.
 - Sin `DELETE`: los pedidos históricos referencian la mesa.
 - Evitar `forwardRef`: si aparece un ciclo, mover la regla al módulo dueño.
 

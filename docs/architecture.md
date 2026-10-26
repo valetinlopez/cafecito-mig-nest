@@ -139,7 +139,7 @@ Puntos de borde:
 | Auth       | `src/auth`       | **Implementado** (MIG-23)    | Login, registro, perfil, password      | `users`, `config/auth`, `common`               |
 | Users      | `src/users`      | **Implementado** (MIG-22/25) | Entity/gestión de usuarios             | `database`                                     |
 | Empleados  | `src/empleados`  | Implementado en rama MIG-26 (pendiente revisión) | ABM de empleados (`rol = mozo`) | `users`, `common`                               |
-| Mesas      | `src/mesas`      | Scaffold (módulo vacío)      | Estados y ABM de mesas                 | `pedidos` (efectos de estado)                  |
+| Mesas      | `src/mesas`      | Implementado (MIG-27)        | Estados y ABM de mesas                 | `ACTIVE_ORDERS_PORT` (adapter de pedidos pendiente MIG-30) |
 | Productos  | `src/productos`  | Scaffold (módulo vacío)      | Catálogo, stock, precios               | `categorias`                                   |
 | Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)      | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
 | Pagos      | `src/pagos`      | Scaffold (módulo vacío)      | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
