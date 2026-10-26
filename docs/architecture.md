@@ -138,7 +138,7 @@ Puntos de borde:
 | Categorías | `src/categorias` | **Implementado (lectura + JWT)** | `GET /categorias/`                | `database`, `common`                           |
 | Auth       | `src/auth`       | **Implementado** (MIG-23)    | Login, registro, perfil, password      | `users`, `config/auth`, `common`               |
 | Users      | `src/users`      | **Implementado** (MIG-22/25) | Entity/gestión de usuarios             | `database`                                     |
-| Empleados  | `src/empleados`  | Implementado parcial (DTOs)  | ABM de empleados (`rol = mozo`)        | `users`                                        |
+| Empleados  | `src/empleados`  | Implementado en rama MIG-26 (pendiente revisión) | ABM de empleados (`rol = mozo`) | `users`, `common`                               |
 | Mesas      | `src/mesas`      | Scaffold (módulo vacío)      | Estados y ABM de mesas                 | `pedidos` (efectos de estado)                  |
 | Productos  | `src/productos`  | Scaffold (módulo vacío)      | Catálogo, stock, precios               | `categorias`                                   |
 | Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)      | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |

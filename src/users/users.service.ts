@@ -55,6 +55,10 @@ export class UsersService {
     return this.usuariosRepository.findOne({ where: { id } });
   }
 
+  async findAll(): Promise<Usuario[]> {
+    return this.usuariosRepository.find({ order: { nombre: 'ASC' } });
+  }
+
   /**
    * Indica si el email ya pertenece a otro usuario.
    *

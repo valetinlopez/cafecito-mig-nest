@@ -83,6 +83,18 @@ describe('UsersService', () => {
     });
   });
 
+  describe('findAll', () => {
+    it('devuelve usuarios ordenados por nombre desde la base', async () => {
+      const usuarios = [buildUsuario({ id: 2, nombre: 'Ana' }), buildUsuario()];
+      repository.find.mockResolvedValue(usuarios);
+
+      await expect(service.findAll()).resolves.toEqual(usuarios);
+      expect(repository.find).toHaveBeenCalledWith({
+        order: { nombre: 'ASC' },
+      });
+    });
+  });
+
   describe('existsByEmail', () => {
     it('devuelve true cuando el email pertenece a otro usuario', async () => {
       repository.findOne.mockResolvedValue(buildUsuario({ id: 2 }));
