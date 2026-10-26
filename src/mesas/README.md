@@ -2,11 +2,11 @@
 
 | Campo        | Valor                                               |
 | ------------ | --------------------------------------------------- |
-| Estado       | **Scaffold** (módulo registrado, sin código propio) |
-| Entity       | `Mesa` → tabla `mesas` (por confirmar)              |
+| Estado       | **Implementado (MIG-27)**                           |
+| Entity       | `Mesa` → tabla `mesas` (unique por validar en MIG-44) |
 | Endpoints    | 4 (ver [`CONTRACT.md`](./CONTRACT.md))              |
-| Dependencias | `pedidos` (efectos de estado), `common/guards`      |
-| Tests        | Pendientes                                          |
+| Dependencias | `ACTIVE_ORDERS_PORT`, `common/guards`                |
+| Tests        | Unitarios + e2e                                     |
 
 ---
 
@@ -22,10 +22,9 @@ este módulo: los dispara `pedidos` al entregar o cobrar.
 
 ## 2. Estado actual
 
-```
-src/mesas/
-└── mesas.module.ts    # @Module({}) — vacío
-```
+El módulo expone los cuatro endpoints del contrato. La transición a limpieza
+consulta `ACTIVE_ORDERS_PORT`; hasta que `pedidos` aporte su adapter, el provider
+por defecto falla cerrado y la transición no se permite.
 
 ---
 
@@ -37,12 +36,15 @@ src/mesas/
 ├── mesas.controller.ts
 ├── mesas.service.ts
 ├── mesas.service.spec.ts
+├── mesa-estado.ts
+├── active-orders.port.ts
 ├── dto/
 │   ├── create-mesa.dto.ts
 │   ├── update-mesa.dto.ts
 │   └── mesa-response.dto.ts
 ├── entities/
-│   └── mesa.entity.ts
+│   ├── mesa.entity.ts
+│   └── mesa.entity.spec.ts
 ├── README.md · CONTRACT.md · DECISIONS.md
 ```
 
@@ -86,20 +88,20 @@ type MesaEstado =
 
 **Regla de propiedad:** la validación de la transición puede vivir en
 `MesasService`, pero la decisión de negocio que la dispara vive en `pedidos`.
-Para evitar ciclos, `pedidos` usa `MesasService`; `mesas` no importa `pedidos`
-salvo para verificar pedidos activos, lo que se resuelve con una consulta
-puntual o un service exportado.
+Para evitar ciclos, `pedidos` usa `MesasService`; `mesas` depende del port
+`ACTIVE_ORDERS_PORT`, que el módulo `pedidos` reemplazará por un adapter real.
+El provider temporal falla cerrado ante ausencia de implementación.
 
 ---
 
-## 7. Tests esperados
+## 7. Tests
 
 - Lista de mesas ordenada por `numero`.
 - Transición válida (`libre → ocupada`) actualiza el estado.
 - Transición inválida (`pagado`-like) → `400`.
 - `POST` con número duplicado → `400`.
 - `GET /mesas/{id}` inexistente → `404`.
-- e2e de `401` (mozo) y `403` (mozo intentando `POST`).
+- e2e de `401` (sin token), `403` (mozo intentando `POST`) y acceso admin.
 
 ---
 

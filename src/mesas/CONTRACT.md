@@ -75,12 +75,15 @@ Errores: `400` `Ya existe una mesa con el número N`, `401`, `403`, `422`.
 
 Errores:
 
-| Código | `detail`                                                                     |
-| ------ | ---------------------------------------------------------------------------- |
-| `400`  | `No se puede cambiar el estado de 'X' a 'Y'`                                 |
-| `400`  | `No se puede pasar la mesa a limpieza: tiene un pedido activo sin cobrar...` |
-| `404`  | `Mesa no encontrada`                                                         |
-| `422`  | `estado` fuera del enum                                                      |
+| Código | `detail`                                                                  |
+| ------ | ------------------------------------------------------------------------- |
+| `400`  | `No se puede cambiar el estado de 'X' a 'Y'`                              |
+| `400`  | `No se puede pasar la mesa a limpieza: tiene un pedido activo sin cobrar` |
+| `404`  | `Mesa no encontrada`                                                      |
+| `422`  | `estado` fuera del enum                                                   |
+
+Si el port de pedidos no está disponible, la transición a `en_limpieza` falla
+cerrada con `500`; no se supone que no haya pedidos.
 
 ---
 

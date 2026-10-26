@@ -45,15 +45,17 @@ permitir `ocupada → en_limpieza`.
 **Motivo:** el contrato lo exige con un mensaje específico. Evita limpiar una
 mesa que todavía debe cobrarse.
 
-**Implementación:** consulta puntual al repositorio de pedidos o método exportado
-por `PedidosService`; evitar `forwardRef`.
+**Implementación:** MIG-27 define `ACTIVE_ORDERS_PORT` en `mesas` sin importar
+`pedidos` ni mapear su tabla. El provider temporal del módulo falla cerrado con
+`500`; MIG-30 debe proveer el adapter real. La condición positiva responde `400`
+con el detalle contractual y no persiste el estado.
 
 ---
 
 ## D-05 — `numero` único con restricción nombrada
 
-**Decisión:** `@Unique('mesas_numero_key', ['numero'])` (nombre a confirmar
-contra la base).
+**Decisión:** usar provisionalmente `@Unique('mesas_numero_key', ['numero'])`;
+confirmar el nombre contra la base en MIG-44.
 
 **Motivo:** misma regla que `categorias`: el nombre real evita que `schema:log`
 proponga recrear la restricción.

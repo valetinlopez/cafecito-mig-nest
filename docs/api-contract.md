@@ -424,7 +424,7 @@ Transiciones permitidas (manuales):
 - **Auth:** auth
 - **Body:** `MesaUpdate`
 - **Éxito:** `200` · `Mesa`
-- **Errores:** `400` (`No se puede cambiar el estado de 'X' a 'Y'`; `No se puede pasar la mesa a limpieza: tiene un pedido activo sin cobrar...`), `401`, `404`, `422`
+- **Errores:** `400` (`No se puede cambiar el estado de 'X' a 'Y'`; `No se puede pasar la mesa a limpieza: tiene un pedido activo sin cobrar`), `401`, `404`, `422`
 
 ```json
 // request
