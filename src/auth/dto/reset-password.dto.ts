@@ -6,7 +6,7 @@ import { IsString, MinLength } from 'class-validator';
  * `POST /api/v1/auth/reset-password`, público).
  *
  * El token se valida en el service: firma, expiración (15 min) y claim
- * `purpose = reset` para que no sea intercambiable con un access token
+ * `purpose = password_reset` para que no sea intercambiable con un access token
  * (criterio del epic MIG-4). El DTO solo verifica tipo y formato de la clave.
  */
 export class ResetPasswordDto {

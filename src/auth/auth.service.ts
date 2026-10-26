@@ -34,6 +34,7 @@ import type { UpdateProfileDto } from './dto/update-profile.dto.js';
 import {
   RESET_TOKEN_EXPIRES_IN_SECONDS,
   RESET_TOKEN_PURPOSE,
+  parseUserIdClaim,
 } from './jwt-payload.js';
 import type { AccessTokenPayload, ResetTokenPayload } from './jwt-payload.js';
 
@@ -203,8 +204,8 @@ export class AuthService {
   /**
    * `POST /auth/reset-password` → `200 MessageResponse`.
    *
-   * El token debe tener `purpose = reset` y estar vigente: un access token con
-   * firma válida se rechaza con `400 Token inválido o expirado`.
+  * El token debe tener `purpose = password_reset` y estar vigente. Un access
+  * token con firma válida se rechaza con `400 Token inválido o expirado`.
    */
   async resetPassword(dto: ResetPasswordDto): Promise<MessageResponseDto> {
     const usuarioId = await this.verifyResetToken(dto.token);
@@ -221,7 +222,7 @@ export class AuthService {
 
   private async signAccessToken(usuario: Usuario): Promise<string> {
     const payload: AccessTokenPayload = {
-      sub: usuario.id,
+      sub: String(usuario.id),
       rol: usuario.rol,
     };
 
@@ -230,7 +231,7 @@ export class AuthService {
 
   private async signResetToken(usuario: Usuario): Promise<string> {
     const payload: ResetTokenPayload = {
-      sub: usuario.id,
+      sub: String(usuario.id),
       purpose: RESET_TOKEN_PURPOSE,
     };
 
@@ -240,7 +241,7 @@ export class AuthService {
   }
 
   private async verifyResetToken(token: string): Promise<number> {
-    let payload: Partial<ResetTokenPayload>;
+    let payload: { sub?: unknown; purpose?: unknown };
 
     try {
       payload =
@@ -253,9 +254,8 @@ export class AuthService {
       throw new BadRequestException(RESET_TOKEN_INVALID_DETAIL);
     }
 
-    const id = Number(payload.sub);
-
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = parseUserIdClaim(payload.sub);
+    if (id === null) {
       throw new BadRequestException(RESET_TOKEN_INVALID_DETAIL);
     }
 

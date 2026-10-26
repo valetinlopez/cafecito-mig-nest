@@ -65,7 +65,7 @@ describe('JwtStrategy', () => {
   it('devuelve el shape público del usuario autenticado', async () => {
     usersService.findById.mockResolvedValue(buildUsuario());
 
-    const usuario = await strategy.validate({ sub: 1 });
+    const usuario = await strategy.validate({ sub: '1' });
 
     expect(usersService.findById).toHaveBeenCalledWith(1);
     expect(usuario).toEqual({
@@ -78,9 +78,19 @@ describe('JwtStrategy', () => {
     expect(usuario).not.toHaveProperty('passwordHash');
   });
 
+  it('acepta el sub numérico emitido por sesiones legacy', async () => {
+    usersService.findById.mockResolvedValue(buildUsuario());
+
+    await expect(strategy.validate({ sub: 1 })).resolves.toMatchObject({
+      id: 1,
+      rol: 'mozo',
+    });
+    expect(usersService.findById).toHaveBeenCalledWith(1);
+  });
+
   it('rechaza un token de reseteo para que no sirva como access token', async () => {
     await expect(
-      strategy.validate({ sub: 1, purpose: 'reset' }),
+      strategy.validate({ sub: '1', purpose: 'password_reset' }),
     ).rejects.toThrow(new UnauthorizedException(INVALID_TOKEN_DETAIL));
     expect(usersService.findById).not.toHaveBeenCalled();
   });

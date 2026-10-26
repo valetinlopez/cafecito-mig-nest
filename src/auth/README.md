@@ -89,8 +89,8 @@ Ver [`CONTRACT.md`](./CONTRACT.md) para el detalle de request/response.
 - Token de reset inválido o expirado → `400` `Token inválido o expirado`.
 - `password_nueva` mínimo 6 caracteres → `422` si no cumple.
 - `reset_token` se devuelve **solo** en `development` (D-15); en el resto, `null`.
-- El token de reseteo dura 15 minutos y lleva `purpose = reset`: **no** sirve
-  como access token.
+- El token de reseteo dura 15 minutos y lleva `purpose = password_reset`:
+  **no** sirve como access token.
 
 ---
 

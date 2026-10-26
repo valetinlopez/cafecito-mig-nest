@@ -117,12 +117,12 @@ describe('AuthController (e2e)', () => {
     id: number,
     rol: Usuario['rol'],
   ): Promise<string> {
-    return jwtService.signAsync({ sub: id, rol });
+    return jwtService.signAsync({ sub: String(id), rol });
   }
 
   async function signResetToken(id: number): Promise<string> {
     return jwtService.signAsync(
-      { sub: id, purpose: 'reset' },
+      { sub: String(id), purpose: 'password_reset' },
       { expiresIn: 15 * 60 },
     );
   }
@@ -286,11 +286,11 @@ describe('AuthController (e2e)', () => {
       ]);
 
       const payload = await jwtService.verifyAsync<{
-        sub: number;
+        sub: string;
         rol: string;
       }>(body.access_token);
 
-      expect(payload.sub).toBe(1);
+      expect(payload.sub).toBe('1');
       expect(payload.rol).toBe('admin');
     });
 
@@ -340,6 +340,18 @@ describe('AuthController (e2e)', () => {
         detail: "Campo 'email': debe ser un email válido",
       });
     });
+  });
+
+  it('mantiene válidas las sesiones legacy con sub numérico', async () => {
+    const legacyToken = await jwtService.signAsync({
+      sub: mozo.id,
+      rol: mozo.rol,
+    });
+
+    await request(server)
+      .get('/api/v1/auth/me')
+      .set('Authorization', `Bearer ${legacyToken}`)
+      .expect(200);
   });
 
   describe('POST /api/v1/auth/register', () => {
