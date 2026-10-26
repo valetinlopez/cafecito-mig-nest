@@ -199,3 +199,31 @@ devolver un `Date` crudo en `fromEntity()`.
 
 **Verificación:** test con un instante conocido que compara el string exacto y
 comprueba que el campo no es un `Date`.
+
+---
+
+## D-17 — Metadata y mensajes de seguridad con una sola fuente
+
+**Decisión:** las claves `isPublic` y `roles` viven junto a sus decoradores
+(`decorators/public.decorator.ts`, `decorators/roles.decorator.ts`) y los
+mensajes 401/403 en `auth/auth-messages.ts`. El shape de `request.user` es
+`auth/authenticated-user.ts`.
+
+**Motivo:** el guard, el decorador y el controller tienen que leer exactamente
+la misma clave; un literal repetido se desincroniza en silencio. Los mensajes
+son parte del contrato (`{ detail }`) y el front los muestra tal cual, así que
+tampoco se duplican por archivo.
+
+**Alternativa descartada:** constantes de metadata dentro de cada guard. El
+decorador se importa desde cualquier módulo y no debe depender del guard.
+
+---
+
+## D-18 — `@CurrentUser()` falla cerrado
+
+**Decisión:** si el decorador se usa en una ruta sin `JwtAuthGuard`, lanza `401`
+en lugar de inyectar `undefined`.
+
+**Motivo:** un controller que recibe `undefined` puede terminar consultando
+`id: undefined` y devolver el primer usuario de la tabla. Fallar en el borde es
+más seguro y hace evidente el guard faltante en los tests (constitución §8).

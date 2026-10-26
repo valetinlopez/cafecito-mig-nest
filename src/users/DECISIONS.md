@@ -127,3 +127,18 @@ compartida con producción.
 **Motivo:** PostgreSQL rechaza el excedente con un error de query (`500` vía
 filtro global). Validarlo antes devuelve `422` con el formato del contrato. No
 es una restricción nueva: el dato tampoco entraba antes.
+
+---
+
+## D-12 — Semántica del service para consumidores distintos
+
+**Decisión:** `existsByEmail(email, excludeId?)` excluye al propio usuario del
+chequeo y `update(id, data)` devuelve `null` cuando la fila no existe.
+
+**Motivo:** `auth` y `empleados` necesitan el mismo acceso a datos con
+respuestas HTTP distintas. Devolver `null` (en lugar de lanzar `404`) deja que
+cada módulo decida: `auth` responde `401 Usuario no encontrado o inactivo` y
+`empleados` responderá `404 Empleado no encontrado` (MIG-26). Un `400`/`404`
+hardcodeado en `users` acoplaría la persistencia al contrato de otro módulo.
+
+**Verificación:** `users.service.spec.ts` cubre el `null` y el `excludeId`.

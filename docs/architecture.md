@@ -130,23 +130,23 @@ Puntos de borde:
 
 ## 5. Mapa de módulos
 
-| Módulo     | Directorio       | Estado                        | Dominio                                | Depende de                                     |
-| ---------- | ---------------- | ----------------------------- | -------------------------------------- | ---------------------------------------------- |
-| Health     | `src/health`     | **Implementado**              | `GET /` (fuera de `/api/v1`)           | —                                              |
-| Config     | `src/config`     | **Implementado**              | Validación de entorno + config tipada  | —                                              |
-| Database   | `src/database`   | **Implementado**              | DataSource, pool, migraciones          | `config`                                       |
-| Categorías | `src/categorias` | **Implementado (lectura)**    | `GET /categorias/`                     | `database`                                     |
-| Auth       | `src/auth`       | Implementado parcial (DTOs)   | Login, registro, perfil, password      | `users`, `config/auth`                         |
-| Users      | `src/users`      | Implementado parcial (entity) | Entity/gestión de usuarios             | `database`                                     |
-| Empleados  | `src/empleados`  | Implementado parcial (DTOs)   | ABM de empleados (`rol = mozo`)        | `users`                                        |
-| Mesas      | `src/mesas`      | Scaffold (módulo vacío)       | Estados y ABM de mesas                 | `pedidos` (efectos de estado)                  |
-| Productos  | `src/productos`  | Scaffold (módulo vacío)       | Catálogo, stock, precios               | `categorias`                                   |
-| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)       | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
-| Pagos      | `src/pagos`      | Scaffold (módulo vacío)       | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
-| Caja       | `src/caja`       | Scaffold (módulo vacío)       | Apertura, cierre, movimientos          | `pagos`                                        |
-| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)       | KPIs de solo lectura                   | `mesas`, `pedidos`, `pagos`, `caja`            |
-| Reportes   | `src/reportes`   | Scaffold (módulo vacío)       | Reporte de ventas por período          | `pagos`, `caja`, `pedidos`                     |
-| Common     | `src/common`     | **Implementado**              | Filtros, pipes, interceptores y CORS   | —                                              |
+| Módulo     | Directorio       | Estado                       | Dominio                                | Depende de                                     |
+| ---------- | ---------------- | ---------------------------- | -------------------------------------- | ---------------------------------------------- |
+| Health     | `src/health`     | **Implementado**             | `GET /` (fuera de `/api/v1`)           | —                                              |
+| Config     | `src/config`     | **Implementado**             | Validación de entorno + config tipada  | —                                              |
+| Database   | `src/database`   | **Implementado**             | DataSource, pool, migraciones          | `config`                                       |
+| Categorías | `src/categorias` | **Implementado (lectura)**   | `GET /categorias/`                     | `database`                                     |
+| Auth       | `src/auth`       | **Implementado** (MIG-23)    | Login, registro, perfil, password      | `users`, `config/auth`, `common`               |
+| Users      | `src/users`      | **Implementado** (MIG-22/25) | Entity/gestión de usuarios             | `database`                                     |
+| Empleados  | `src/empleados`  | Implementado parcial (DTOs)  | ABM de empleados (`rol = mozo`)        | `users`                                        |
+| Mesas      | `src/mesas`      | Scaffold (módulo vacío)      | Estados y ABM de mesas                 | `pedidos` (efectos de estado)                  |
+| Productos  | `src/productos`  | Scaffold (módulo vacío)      | Catálogo, stock, precios               | `categorias`                                   |
+| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)      | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
+| Pagos      | `src/pagos`      | Scaffold (módulo vacío)      | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
+| Caja       | `src/caja`       | Scaffold (módulo vacío)      | Apertura, cierre, movimientos          | `pagos`                                        |
+| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)      | KPIs de solo lectura                   | `mesas`, `pedidos`, `pagos`, `caja`            |
+| Reportes   | `src/reportes`   | Scaffold (módulo vacío)      | Reporte de ventas por período          | `pagos`, `caja`, `pedidos`                     |
+| Common     | `src/common`     | **Implementado**             | Filtros, pipes, guards, decoradores    | —                                              |
 
 **Leyenda:** _Implementado_ = código + tests + doc. _Scaffold_ = el módulo
 existe registrado en `AppModule` pero sin controller/service/entity; su contrato
@@ -260,7 +260,7 @@ local. Contra Neon (aunque sea un `.env` de desarrollo), queda en `false`.
 | CORS configurable                | **Implementado** | MIG-20  | Contrato D-16          |
 | `numericTransformer`             | Pendiente        | MIG-44  | ADR 0004               |
 | Serialización de fechas `Z`      | **Implementado** | MIG-43  | ADR 0003 + 0007        |
-| `JwtAuthGuard` + `RolesGuard`    | Pendiente        | MIG-24  | Contrato §4            |
+| `JwtAuthGuard` + `RolesGuard`    | **Implementado** | MIG-23  | Contrato §4            |
 | Swagger en `/docs`               | Pendiente        | MIG-40  | Convenciones §9        |
 | Header `X-Response-Time-ms`      | **Implementado** | MIG-20  | Contrato D-11          |
 | Utilidades de test compartidas   | **Implementado** | MIG-21  | test/README + ADR 0006 |
@@ -289,7 +289,11 @@ El detalle de criterios está en
 ## 11. Seguridad
 
 - JWT Bearer HS256, 480 min, roles `admin`/`mozo` (D-08).
+- El access token solo lleva `{ sub, rol }`; `JwtStrategy` relee el usuario y
+  rechaza tokens de reseteo (`purpose`) y usuarios inactivos.
 - Password con `bcrypt`; el hash nunca sale en un DTO.
+- Guards por controller con `@Public()` explícito; `@CurrentUser()` falla
+  cerrado si falta el guard.
 - Toda respuesta no-2xx usa `{ detail }` sin filtrar stack traces ni detalles
   internos.
 - Los secretos vienen del entorno; el arranque falla si faltan.

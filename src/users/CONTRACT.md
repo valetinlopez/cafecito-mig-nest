@@ -47,8 +47,8 @@ class UsersService {
   findByEmail(email: string): Promise<Usuario | null>;
   findById(id: number): Promise<Usuario | null>;
   create(data: CreateUsuarioData): Promise<Usuario>;
-  update(id: number, data: UpdateUsuarioData): Promise<Usuario>;
-  existsByEmail(email: string): Promise<boolean>;
+  update(id: number, data: UpdateUsuarioData): Promise<Usuario | null>;
+  existsByEmail(email: string, excludeId?: number): Promise<boolean>;
 }
 ```
 
@@ -57,6 +57,10 @@ Los métodos pueden ajustarse al implementar, pero:
 - Devuelven entities o tipos de dominio, **no DTOs HTTP**.
 - El mapeo al shape público lo hace el módulo que expone el endpoint.
 - Ningún consumidor accede al repositorio de `usuarios` por fuera de este service.
+- `update` devuelve `null` si la fila no existe: el consumidor decide el código
+  (`401` en `auth`, `404` en `empleados`).
+- `existsByEmail` con `excludeId` permite validar un cambio de email sin chocar
+  con el propio usuario.
 
 ---
 
@@ -77,17 +81,20 @@ La entity y el shape público son de `users`; los DTOs de entrada viven en el
 módulo que expone el endpoint (MIG-22). Todos usan `class-validator` y el
 `ValidationPipe` global responde **422** (`Campo '<campo>': mensaje`).
 
-| DTO                  | Archivo                                | Campos                            | Validaciones clave                         |
-| -------------------- | -------------------------------------- | --------------------------------- | ------------------------------------------ |
-| `UsuarioResponseDto` | `users/dto/usuario-response.dto.ts`    | `id, nombre, email, rol, activo`  | `fromEntity()`; nunca incluye el hash      |
-| `LoginDto`           | `auth/dto/login.dto.ts`                | `email, password`                 | `@IsEmail`, `@IsString` (sin mínimo)       |
-| `RegisterDto`        | `auth/dto/register.dto.ts`             | `nombre, email, password, rol`    | `@MinLength(6)`, `@IsIn(ROLES)`            |
-| `UpdateProfileDto`   | `auth/dto/update-profile.dto.ts`       | `nombre?, email?`                 | `@IsOptional`; descarta `rol`              |
-| `ChangePasswordDto`  | `auth/dto/change-password.dto.ts`      | `password_actual, password_nueva` | `@MinLength(6)` solo en la nueva           |
-| `ForgotPasswordDto`  | `auth/dto/forgot-password.dto.ts`      | `email`                           | `@IsEmail`                                 |
-| `ResetPasswordDto`   | `auth/dto/reset-password.dto.ts`       | `token, password_nueva`           | `@MinLength(6)` en la nueva                |
-| `CreateEmpleadoDto`  | `empleados/dto/create-empleado.dto.ts` | `nombre, email, password`         | sin `rol` (CFB-112); `@MinLength(6)`       |
-| `UpdateEmpleadoDto`  | `empleados/dto/update-empleado.dto.ts` | `nombre?, email?, activo?`        | sin `rol`; baja lógica con `activo: false` |
+| DTO                         | Archivo                                    | Campos                              | Validaciones clave                         |
+| --------------------------- | ------------------------------------------ | ----------------------------------- | ------------------------------------------ |
+| `UsuarioResponseDto`        | `users/dto/usuario-response.dto.ts`        | `id, nombre, email, rol, activo`    | `fromEntity()`; nunca incluye el hash      |
+| `LoginDto`                  | `auth/dto/login.dto.ts`                    | `email, password`                   | `@IsEmail`, `@IsString` (sin mínimo)       |
+| `RegisterDto`               | `auth/dto/register.dto.ts`                 | `nombre, email, password, rol`      | `@MinLength(6)`, `@IsIn(ROLES)`            |
+| `UpdateProfileDto`          | `auth/dto/update-profile.dto.ts`           | `nombre?, email?`                   | `@IsOptional`; descarta `rol`              |
+| `ChangePasswordDto`         | `auth/dto/change-password.dto.ts`          | `password_actual, password_nueva`   | `@MinLength(6)` solo en la nueva           |
+| `ForgotPasswordDto`         | `auth/dto/forgot-password.dto.ts`          | `email`                             | `@IsEmail`                                 |
+| `ResetPasswordDto`          | `auth/dto/reset-password.dto.ts`           | `token, password_nueva`             | `@MinLength(6)` en la nueva                |
+| `CreateEmpleadoDto`         | `empleados/dto/create-empleado.dto.ts`     | `nombre, email, password`           | sin `rol` (CFB-112); `@MinLength(6)`       |
+| `UpdateEmpleadoDto`         | `empleados/dto/update-empleado.dto.ts`     | `nombre?, email?, activo?`          | sin `rol`; baja lógica con `activo: false` |
+| `TokenResponseDto`          | `auth/dto/token-response.dto.ts`           | `access_token, token_type, usuario` | `fromEntity()`; `token_type = "bearer"`    |
+| `MessageResponseDto`        | `auth/dto/message-response.dto.ts`         | `message`                           | acciones sin recurso                       |
+| `ForgotPasswordResponseDto` | `auth/dto/forgot-password-response.dto.ts` | `message, reset_token`              | `reset_token` null fuera de dev            |
 
 `nombre` y `email` validan `@MaxLength(100)` y `@MaxLength(150)`
 respectivamente: reflejan el largo real de la columna para devolver `422` en
