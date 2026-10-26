@@ -214,7 +214,7 @@ export class AuthController {
     operationId: 'resetPassword',
     summary: 'Restablecer contraseña',
     description:
-      'Confirma el reseteo con un token emitido por `forgot-password` (`purpose = reset`, 15 minutos). Un access token no es válido acá.',
+      'Confirma el reseteo con un token emitido por `forgot-password` (`purpose = password_reset`, 15 minutos). Un access token no es válido acá.',
   })
   @ApiOkResponse({
     description: 'Contraseña restablecida.',

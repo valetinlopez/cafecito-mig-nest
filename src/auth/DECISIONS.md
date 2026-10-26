@@ -171,11 +171,11 @@ PK y por la corrección del comportamiento.
 ## D-15 — Reset token con `purpose` y 15 minutos
 
 **Decisión:** el token de reseteo se firma con el mismo `SECRET_KEY` pero con
-`purpose = reset` y `expiresIn: 900` segundos.
+`purpose = password_reset` y `expiresIn: 900` segundos.
 
 **Motivo:** criterio del epic MIG-4: los reset tokens **no** son intercambiables
 con access tokens. `JwtStrategy` rechaza cualquier payload con `purpose`
-(401) y `resetPassword` exige `purpose = reset` (400).
+(401) y `resetPassword` exige `purpose = password_reset` (400).
 
 ---
 

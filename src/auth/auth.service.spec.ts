@@ -27,6 +27,9 @@ import { MessageResponseDto } from './dto/message-response.dto.js';
 import { TokenResponseDto } from './dto/token-response.dto.js';
 
 const PLAIN_PASSWORD = 'secreto123';
+const PASSLIB_PASSWORD = 'passlib-fixture-password';
+const PASSLIB_BCRYPT_HASH =
+  '$2b$04$1ijdvxfE.vdUMsbzS22sXOPIR2.fYk/KkwPecjcqr6UkxMzGOe59y';
 
 /** Error de `pg` con el `code` que TypeORM expone en `driverError`. */
 function queryFailedWith(
@@ -131,7 +134,7 @@ describe('AuthService', () => {
         'valentin@cafecito.com',
       );
       expect(jwtService.signAsync).toHaveBeenCalledWith({
-        sub: 1,
+        sub: '1',
         rol: 'mozo',
       });
       expect(response).toBeInstanceOf(TokenResponseDto);
@@ -184,6 +187,19 @@ describe('AuthService', () => {
       ).rejects.toEqual(
         new UnauthorizedException(USER_NOT_FOUND_OR_INACTIVE_DETAIL),
       );
+    });
+
+    it('verifica hashes bcrypt $2b$ generados con Passlib', async () => {
+      usersService.findByEmail.mockResolvedValue(
+        buildUsuario({ passwordHash: PASSLIB_BCRYPT_HASH }),
+      );
+
+      await expect(
+        service.login({
+          email: 'valentin@cafecito.com',
+          password: PASSLIB_PASSWORD,
+        }),
+      ).resolves.toBeInstanceOf(TokenResponseDto);
     });
   });
 
@@ -374,7 +390,7 @@ describe('AuthService', () => {
       });
 
       expect(jwtService.signAsync).toHaveBeenCalledWith(
-        { sub: 1, purpose: 'reset' },
+        { sub: '1', purpose: 'password_reset' },
         { expiresIn: 15 * 60 },
       );
       expect(response).toBeInstanceOf(ForgotPasswordResponseDto);
@@ -422,7 +438,7 @@ describe('AuthService', () => {
       expect(usersService.update).not.toHaveBeenCalled();
     });
 
-    it('rechaza un access token: la firma es válida pero no tiene purpose reset', async () => {
+    it('rechaza un access token: la firma es válida pero no tiene purpose de reset', async () => {
       jwtService.verifyAsync.mockResolvedValue({ sub: 1 });
 
       await expect(
@@ -435,7 +451,10 @@ describe('AuthService', () => {
     });
 
     it('actualiza la contraseña con un token de reseteo válido', async () => {
-      jwtService.verifyAsync.mockResolvedValue({ sub: 1, purpose: 'reset' });
+      jwtService.verifyAsync.mockResolvedValue({
+        sub: '1',
+        purpose: 'password_reset',
+      });
       usersService.update.mockResolvedValue(buildUsuario());
 
       const response = await service.resetPassword({
@@ -455,7 +474,10 @@ describe('AuthService', () => {
     });
 
     it('responde 400 si el usuario del token ya no existe', async () => {
-      jwtService.verifyAsync.mockResolvedValue({ sub: 99, purpose: 'reset' });
+      jwtService.verifyAsync.mockResolvedValue({
+        sub: 99,
+        purpose: 'password_reset',
+      });
       usersService.update.mockResolvedValue(null);
 
       await expect(
@@ -465,5 +487,6 @@ describe('AuthService', () => {
         }),
       ).rejects.toEqual(new BadRequestException(RESET_TOKEN_INVALID_DETAIL));
     });
+
   });
 });

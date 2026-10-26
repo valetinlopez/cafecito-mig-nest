@@ -8,7 +8,7 @@
 | Actualizado | 2026-10-26                                                   |
 | Sprint      | S1 — Auth & Usuarios                                         |
 | Epic        | MIG-4 — E3: Autenticación, Usuarios & Empleados              |
-| Foco actual | MIG-24: aplicación de guards JWT a endpoints disponibles     |
+| Foco actual | MIG-25: cierre de AuthService y compatibilidad de tokens     |
 
 ---
 
@@ -22,7 +22,7 @@
 | database   | Implementado                          | ✅    | ✅  | Validar tablas en MIG-44                            |
 | categorias | Implementado (solo lectura + JWT)     | ✅    | ✅  | Relación `OneToMany` en MIG-29                     |
 | common     | Implementado (MIG-20 + guards MIG-23) | ✅    | ✅  | Aplicar a futuros controllers                      |
-| auth       | Implementado (MIG-23)                 | ✅    | ✅  | —                                                   |
+| auth       | Implementado (MIG-23; MIG-25 en revisión) | ✅ | ✅  | Revisar claims y compatibilidad antes del PR       |
 | users      | Implementado (MIG-22/25)              | ✅    | ✅  | Consumido por `empleados` (MIG-26)                  |
 | empleados  | DTOs implementados (MIG-22)           | ✅    | ✅  | CRUD + service (MIG-26)                             |
 | mesas      | Scaffold (módulo vacío)               | ❌    | ✅  | Entity + transiciones                               |
@@ -46,6 +46,7 @@
 | MIG-21 | Vitest + `test/utils/` (mocks de Repository/QueryBuilder) + cobertura  | Cerrado      |
 | MIG-22 | Entity `Usuario` + DTOs con `class-validator` + tests                  | Integrado en develop |
 | MIG-23 | 7 endpoints de auth + `AuthService` + `UsersService` + guards          | Integrado en develop |
+| MIG-24 | JWT aplicado a endpoints disponibles de `categorias`                    | Integrado en develop |
 | MIG-43 | Fechas UTC: proceso en UTC, transformer y `toIsoUtc()`                 | En revisión  |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs) | Cerrado      |
 
@@ -69,7 +70,7 @@
 | 2026-10-26 | Guards y `UsersService` se adelantan a MIG-23 por dependencia         | `src/auth/DECISIONS.md`   |
 | 2026-10-26 | Guard por controller + `@Public()`; sin `APP_GUARD` global            | `src/auth/DECISIONS.md`   |
 | 2026-10-26 | Access token `{sub, rol}`; usuario releído de la DB en cada request   | `src/auth/DECISIONS.md`   |
-| 2026-10-26 | Reset token con `purpose = reset` y 15 minutos                        | `src/auth/DECISIONS.md`   |
+| 2026-10-26 | Reset token con `purpose = password_reset` y 15 minutos                | `src/auth/DECISIONS.md`   |
 | 2026-10-26 | `@CurrentUser()` falla cerrado si falta el guard                      | `src/common/DECISIONS.md` |
 | 2026-10-26 | `existsByEmail(email, excludeId?)` y `update()` → `null` sin fila     | `src/users/DECISIONS.md`  |
 | 2026-10-22 | `email` de `usuarios` = `varchar(150)`; DTOs con `@MaxLength` espejo  | `src/users/DECISIONS.md`  |
@@ -100,12 +101,9 @@
 
 ## 6. Próximo paso
 
-1. MIG-22 y MIG-23 ya están integrados en `develop`, incluidos `UsersService`,
-   `JwtStrategy`, guards y decoradores adelantados.
-2. **MIG-24:** `JwtStrategy`, guards y decoradores ya están implementados por
-   adelantado en MIG-23. El endpoint existente de `categorias` queda protegido
-   con `JwtAuthGuard` y e2e de `401`; aplicar `RolesGuard` + `@Roles('admin')` a
-   cada módulo cuando sus controllers estén implementados.
+1. MIG-24 está integrado en `develop`; `categorias` requiere JWT.
+2. **MIG-25:** revisar y validar la alineación de AuthService con los criterios
+   del ticket antes de preparar commit/push.
 3. **MIG-26:** `empleados` sobre `UsersService` con regla CFB-112 (siempre
    `mozo`, sin cambio de rol, sin auto-desactivación).
 4. **MIG-44:** validar el mapeo de `usuarios` (y las tablas restantes) con
@@ -126,3 +124,4 @@
 | 2026-10-22 | MIG-22: entity `Usuario` (`usuarios`, email 150), `Rol` centralizado, `UsuarioResponseDto` y 8 DTOs de entrada (auth/empleados) validados y testeados. 149 unit en verde.                                   |
 | 2026-10-26 | MIG-23: `AuthController` con los 7 endpoints, `AuthService`, `UsersService`, `JwtStrategy`, `JwtAuthGuard`/`RolesGuard` y `@Public/@Roles/@CurrentUser`. 202 unit + 50 e2e en verde; cobertura 93.6% stmts. |
 | 2026-10-26 | MIG-24 en curso: `categorias` protegido con JWT; e2e cubre token ausente, inválido, usuario inactivo y acceso autenticado.                                                                                 |
+| 2026-10-26 | MIG-25 en implementación: access/reset emiten `sub` string; reset usa `password_reset`/900s; `JwtStrategy` mantiene `sub` numérico legacy; agregado fixture bcrypt sintético Passlib. Validación pendiente. |

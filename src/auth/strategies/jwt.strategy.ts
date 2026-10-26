@@ -10,6 +10,7 @@ import {
 import type { AuthenticatedUser } from '../../common/auth/authenticated-user.js';
 import type { AuthConfig } from '../../config/auth.config.js';
 import { UsersService } from '../../users/users.service.js';
+import { parseUserIdClaim } from '../jwt-payload.js';
 
 /**
  * Payload decodificado. `purpose` no existe en un access token: si aparece, el
@@ -49,9 +50,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException(INVALID_TOKEN_DETAIL);
     }
 
-    const id = Number(payload.sub);
-
-    if (!Number.isInteger(id) || id <= 0) {
+    const id = parseUserIdClaim(payload.sub);
+    if (id === null) {
       throw new UnauthorizedException(TOKEN_WITHOUT_SUBJECT_DETAIL);
     }
 
