@@ -2,12 +2,12 @@
 
 | Campo        | Valor                                           |
 | ------------ | ----------------------------------------------- |
-| Estado       | **Implementado (solo lectura)**                 |
-| Ticket       | MIG-18 — módulo de referencia                   |
+| Estado       | **Implementado (lectura protegida por JWT)**    |
+| Ticket       | MIG-18 — módulo de referencia · auth MIG-24     |
 | Entity       | `Categoria` → tabla `categorias`                |
 | Endpoints    | `GET /api/v1/categorias/`                       |
 | Dependencias | `database` (TypeORM)                            |
-| Tests        | `categorias.service.spec.ts` + e2e del contrato |
+| Tests        | service unit + e2e de contrato/auth             |
 
 ---
 
@@ -93,7 +93,6 @@ Detalle y ejemplos en [`CONTRACT.md`](./CONTRACT.md).
 
 | Pendiente                           | Ticket |
 | ----------------------------------- | ------ |
-| Proteger con `JwtAuthGuard`         | MIG-24 |
 | `@OneToMany` hacia `Producto`       | MIG-29 |
 | Verificar el esquema contra la base | MIG-44 |
 
