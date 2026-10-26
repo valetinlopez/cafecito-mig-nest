@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CategoriaResponseDto } from './dto/categoria-response.dto.js';
 import { Categoria } from './entities/categoria.entity.js';
 
@@ -26,5 +26,17 @@ export class CategoriasService {
     return categorias.map((categoria) =>
       CategoriaResponseDto.fromEntity(categoria),
     );
+  }
+
+  /** Devuelve una categoría por ID o null, para validaciones de módulos consumidores. */
+  async findById(id: number): Promise<Categoria | null> {
+    return this.categoriasRepository.findOneBy({ id });
+  }
+
+  async findManyByIds(ids: number[]): Promise<Categoria[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    return this.categoriasRepository.find({ where: { id: In(ids) } });
   }
 }

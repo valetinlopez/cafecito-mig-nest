@@ -8,7 +8,7 @@
 | Actualizado | 2026-10-27                                                   |
 | Sprint      | S1 — Auth & Usuarios                                         |
 | Epic        | MIG-4 — E3: Autenticación, Usuarios & Empleados              |
-| Foco actual | MIG-27: módulo mesas implementado en rama                    |
+| Foco actual | MIG-29: Productos parcial en rama; sin commit/push            |
 
 ---
 
@@ -20,13 +20,13 @@
 | health     | Implementado                          | ✅    | ✅  | —                                                   |
 | config     | Implementado                          | ✅    | ✅  | —                                                   |
 | database   | Implementado                          | ✅    | ✅  | Validar tablas en MIG-44                            |
-| categorias | Implementado (solo lectura + JWT)     | ✅    | ✅  | Relación `OneToMany` en MIG-29                     |
+| categorias | Implementado (solo lectura + JWT)     | ✅    | ✅  | Relación `OneToMany` diferida a MIG-44             |
 | common     | Implementado (MIG-20 + guards MIG-23) | ✅    | ✅  | Aplicar a futuros controllers                      |
 | auth       | Implementado (MIG-23/25)                 | ✅    | ✅  | —                                                   |
 | users      | Implementado (MIG-22/25)              | ✅    | ✅  | Consumido por `empleados` (MIG-26)                  |
 | empleados  | Implementado en rama MIG-26             | ✅    | ✅  | Revisión e integración                             |
 | mesas      | Implementado en rama MIG-27             | ✅    | ✅  | Revisión e integración                             |
-| productos  | Scaffold (módulo vacío)               | ❌    | ✅  | Depende de `categorias`                             |
+| productos  | Parcial MIG-29 (GET/POST/PATCH)        | ✅    | ✅  | DELETE MIG-30; relación/transformer MIG-44          |
 | pedidos    | Scaffold (módulo vacío)               | ❌    | ✅  | Depende de mesas/productos/caja                     |
 | pagos      | Scaffold (módulo vacío)               | ❌    | ✅  | Sin endpoints propios                               |
 | caja       | Scaffold (módulo vacío)               | ❌    | ✅  | Definir `null` literal (D-09)                       |
@@ -102,13 +102,13 @@
 
 ## 6. Próximo paso
 
-1. MIG-25 y MIG-26 están integrados en `develop`; auth emite `sub` string y
-   reset tokens con `password_reset`.
-2. **MIG-27:** módulo `mesas` implementado en `feature/MIG-27-mesas`. Usa
-   `ACTIVE_ORDERS_PORT` con provider temporal fail-closed; MIG-30 debe aportar
-   el adapter real.
-3. **MIG-44:** confirmar `mesas_numero_key` y validar el mapeo de las tablas con
-   `npm run schema:log` antes de ajustar entities.
+1. **MIG-29:** completar validación, revisar el diff y detenerse sin commit/push
+   hasta nueva instrucción. El alcance actual omite DELETE hasta MIG-30.
+2. **MIG-30:** aportar la consulta/adapter de pedidos asociados que habilite
+   DELETE de productos y el adapter de pedidos activos de mesas.
+3. **MIG-44:** validar el mapeo provisional de productos/categorías y agregar
+   el transformer numérico compartido; ejecutar `npm run schema:log` antes de
+   ajustar entities.
 
 ---
 
@@ -129,4 +129,4 @@
 | 2026-10-26 | MIG-25 mergeado en develop como PR #10: claims JWT corregidos y compatibilidad legacy validada. |
 | 2026-10-26 | MIG-26 CRUD de empleados implementado y validado en `feature/MIG-26-empleados`; falta revisión e integración. |
 | 2026-10-26 | MIG-26 iniciado en `feature/MIG-26-empleados` desde `develop` actualizado tras pull; decisión: bcrypt en EmpleadosService, lista completa ordenada por nombre ASC. |
-| 2026-10-27 | MIG-27 implementado en `feature/MIG-27-mesas`: entity, DTOs, controller, transiciones y tests. La consulta de pedido activo usa port temporal fail-closed hasta MIG-30. |
+| 2026-10-27 | MIG-29 parcial en `feature/MIG-29-productos`: GET/POST/PATCH con guards, DTOs, lookup de categoría y tests. DELETE espera MIG-30; relación ORM y transformer numérico compartido esperan MIG-44. |

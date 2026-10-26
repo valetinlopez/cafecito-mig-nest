@@ -6,7 +6,7 @@
 | Ticket       | MIG-18 — módulo de referencia · auth MIG-24     |
 | Entity       | `Categoria` → tabla `categorias`                |
 | Endpoints    | `GET /api/v1/categorias/`                       |
-| Dependencias | `database` (TypeORM)                            |
+| Dependencias | `database` (TypeORM); su service es consumido por `productos` (MIG-29) |
 | Tests        | service unit + e2e de contrato/auth             |
 
 ---
@@ -93,7 +93,7 @@ Detalle y ejemplos en [`CONTRACT.md`](./CONTRACT.md).
 
 | Pendiente                           | Ticket |
 | ----------------------------------- | ------ |
-| `@OneToMany` hacia `Producto`       | MIG-29 |
+| `@OneToMany` hacia `Producto`       | MIG-44 |
 | Verificar el esquema contra la base | MIG-44 |
 
 ---

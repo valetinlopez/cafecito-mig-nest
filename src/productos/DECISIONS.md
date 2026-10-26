@@ -2,10 +2,11 @@
 
 ---
 
-## D-01 — Decimales con `numericTransformer`
+## D-01 — Conversión de decimales transitoria hasta MIG-44
 
-**Decisión:** `precio` es `numeric(10,2)` con `numericTransformer` y sale como
-`number` en el DTO.
+**Decisión:** `precio` se almacena como `string` proveniente de `numeric`; el
+response DTO lo convierte temporalmente a `number`. El transformer compartido
+se incorpora en MIG-44.
 
 **Motivo:** `pg` devuelve `numeric` como string. Sin el transformer, el front
 recibe `"850.00"` y rompe `toLocaleString` y las multiplicaciones (ADR 0004).
@@ -23,13 +24,14 @@ tocar tipos y stores.
 
 ---
 
-## D-03 — Relación `ManyToOne` explícita, sin `eager`
+## D-03 — Categoría scalar hasta MIG-44
 
-**Decisión:** `@ManyToOne(() => Categoria)` y `relations: ['categoria']` en las
-consultas que lo necesitan.
+**Decisión:** no declarar relación ORM todavía. `categoria_id` es scalar y se
+valida/hidrata vía `CategoriasService`; revisar relación luego de validar el
+esquema compartido en MIG-44.
 
-**Motivo:** `eager: true` dispara joins implícitos en cada query y puede romper
-listados masivos. La relación se pide solo donde hace falta (convenciones §6.1).
+**Motivo:** la tabla compartida aún no se validó y no se debe crear una relación
+especulativa. El lookup en lote evita N+1 en la colección.
 
 ---
 
@@ -46,10 +48,10 @@ habría dos escrituras no atómicas.
 
 ---
 
-## D-05 — Borrar producto vs marcar no disponible
+## D-05 — DELETE pendiente de MIG-30
 
-**Decisión:** permitir `DELETE` solo si no hay pedidos asociados; recomendar
-`disponible = false` en el mensaje de error.
+**Decisión:** conservar el endpoint en el contrato, pero no implementarlo hasta
+MIG-30, que aportará la entidad/consulta de pedidos asociados.
 
 **Motivo:** el historial de pedidos referencia el producto. Borrarlo rompería
 detalles y reportes. El contrato fija el texto exacto del error.
@@ -70,5 +72,6 @@ del front.
 
 **Decisión:** el service verifica existencia de la categoría antes de guardar.
 
-**Motivo:** la FK puede no estar declarada aún en la entity (depende de MIG-29) y
-el contrato exige `400`, no el `500` de una violación de FK.
+**Motivo:** el contrato exige `400`, no el `500` de una violación de FK. La
+validación explícita se mantiene aunque el mapeo de la FK/relación ORM se
+posponga hasta validar el esquema en MIG-44.
