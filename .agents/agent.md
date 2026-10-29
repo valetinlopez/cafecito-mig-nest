@@ -149,12 +149,39 @@ Regla: otro agente debe poder continuar **solo** leyendo el repo.
 
 ---
 
-## 7. Referencias rápidas
+## 7. Ciclo SDD
+
+Todo cambio con comportamiento nuevo pasa por el ciclo Spec-Driven Development
+([ADR 0008](../docs/adr/0008-adopcion-developai-sdd.md),
+[`docs/workflows/sdd.md`](../docs/workflows/sdd.md)):
+
+```
+/sdd-constitution → /sdd-spec → /sdd-clarify → /sdd-plan → /sdd-tasks
+                                                              ↓
+                                       /sdd-validate ← /sdd-implement
+```
+
+Reglas de operación:
+
+1. No escribas código sin `spec.md` aprobada y `tasks.md` con la tarea concreta.
+2. Una tarea = un commit `Tn:` = un gate corrido.
+3. Si la implementación contradice la spec, usá `/sdd-change`; no la "arregles".
+4. No cambies contrato, constitución ni ADR aceptado. Si hace falta, frená y pedí
+   aprobación humana.
+5. Al cerrar: `validate.md` con matriz RF → test y `VEREDICTO`.
+
+Los roles con permisos distintos viven en `.opencode/agents/`. El `coordinator`
+delega; no implementa.
+
+---
+
+## 8. Referencias rápidas
 
 | Necesito…                     | Voy a…                                       |
 | ----------------------------- | -------------------------------------------- |
 | Saber qué está hecho          | `.agents/memory.md`                          |
-| Saber cómo se escribe         | `docs/conventions.md`                        |
+| Saber en qué fase está una spec | `/sdd-status` o `specs/README.md`          |
+| Saber cómo se escribe         | `docs/conventions.md` + skill `nestjs-esm`   |
 | Saber qué expone la API       | `docs/api-contract.md` / `docs/openapi.yaml` |
 | Saber por qué se decidió algo | `docs/adr/`                                  |
 | Crear un módulo               | `docs/workflows/new-module.md`               |

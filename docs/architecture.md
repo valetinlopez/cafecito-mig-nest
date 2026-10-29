@@ -324,6 +324,26 @@ El detalle de criterios está en
 | 0005 | Barra final equivalente en colecciones | Aceptado |
 | 0006 | Vitest como runner único de tests      | Aceptado |
 | 0007 | Zona horaria del proceso y `timestamp` | Aceptado |
+| 0008 | Adopción de DevelopAI (SDD + agentes)  | Aceptado |
+
+---
+
+## 13. Proceso de desarrollo (SDD)
+
+Desde MIG-45 el repo sigue un ciclo **Spec-Driven Development** con
+orquestación multiagente ([ADR 0008](./adr/0008-adopcion-developai-sdd.md)):
+
+```
+specs/NNN-slug/spec.md → clarify.md → plan.md → tasks.md → implement → validate.md
+```
+
+- `specs/` es la fuente de verdad del **qué**; `src/<modulo>/DECISIONS.md` del
+  **porqué local**; `docs/adr/` de las decisiones transversales.
+- Los agentes y permisos viven en `.opencode/agents/`; los comandos en
+  `.opencode/commands/sdd-*.md`; el proceso humano en
+  [`workflows/sdd.md`](./workflows/sdd.md).
+- Los cuatro gates del DoD más el build ESM corren en CI
+  (`.github/workflows/ci.yml`) y bloquean el merge.
 
 ---
 

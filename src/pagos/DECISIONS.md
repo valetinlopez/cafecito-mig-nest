@@ -80,7 +80,7 @@ en desarrollo, haría fallar el `ALTER TABLE` si existen filas históricas sin c
 o con usuario dado de baja (el contrato ya tipa `usuario_nombre: null`).
 
 **Consecuencia:** la invariante "todo cobro nuevo pertenece a la caja abierta"
-se valida en el service del cobro (MIG-32), no con la restricción de columna.
+se valida en el service del cobro (MIG-33), no con la restricción de columna.
 MIG-44 confirma tipos, nulabilidad y FKs contra la base real.
 
 ---
@@ -119,9 +119,9 @@ que el contrato no dependa del transformer.
 
 **Decisión:** `registrarPago`, `findByCaja` y `findByPedido` existen con sus
 firmas definitivas y rechazan con `NotImplementedException` (501) mencionando
-MIG-32. No devuelven `[]` ni `null`.
+MIG-33. No devuelven `[]` ni `null`.
 
 **Motivo:** `pedidos` y `caja` pueden programar contra las firmas desde ya, y
 cualquier llamada accidental falla de forma visible en lugar de simular una
 respuesta vacía que ocultaría el pendiente. `PagosModule` registra la entity,
-así que MIG-32 solo agrega el repositorio y la transacción.
+así que MIG-33 solo agrega el repositorio y la transacción.

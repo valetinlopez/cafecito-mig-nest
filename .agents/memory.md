@@ -8,7 +8,7 @@
 | Actualizado | 2026-10-29                                                   |
 | Sprint      | S3 — Pedidos, Pagos & Caja                                   |
 | Epic        | MIG-7 — E7: Módulo Pagos & Caja                              |
-| Foco actual | MIG-31: entity `Pago` + DTOs + esqueleto de service          |
+| Foco actual | MIG-45: arnés DevelopAI (SDD + agentes con permisos)         |
 
 ---
 
@@ -50,6 +50,7 @@
 | MIG-25 | Claims JWT y reset tokens alineados; bcrypt Passlib probado              | Integrado en develop |
 | MIG-43 | Fechas UTC: proceso en UTC, transformer y `toIsoUtc()`                 | En revisión  |
 | MIG-31 | Entity `Pago` + `PagoResponseDto` + esqueleto de `PagosService`        | Cerrado      |
+| MIG-45 | Arnés DevelopAI: ADR 0008, skills, agentes, comandos, spec piloto y CI  | Cerrado      |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs) | Cerrado      |
 
 ---
@@ -70,9 +71,10 @@
 
 | Fecha      | Decisión                                                              | Registro                  |
 | ---------- | --------------------------------------------------------------------- | ------------------------- |
+| 2026-10-29 | Adopción de SDD + orquestación multiagente con permisos por rol        | ADR 0008                  |
 | 2026-10-29 | `numericTransformer` compartido se adelanta a MIG-31 (`Pago.monto`)   | `src/common/DECISIONS.md` |
 | 2026-10-29 | `pagos`: `caja_id`/`usuario_id` nullable y sin relaciones ORM         | `src/pagos/DECISIONS.md`  |
-| 2026-10-29 | Esqueleto de `PagosService` responde `501` hasta MIG-32                | `src/pagos/DECISIONS.md`  |
+| 2026-10-29 | Esqueleto de `PagosService` responde `501` hasta MIG-33                | `src/pagos/DECISIONS.md`  |
 | 2026-10-26 | Guards y `UsersService` se adelantan a MIG-23 por dependencia         | `src/auth/DECISIONS.md`   |
 | 2026-10-26 | Guard por controller + `@Public()`; sin `APP_GUARD` global            | `src/auth/DECISIONS.md`   |
 | 2026-10-26 | Access token `{sub, rol}`; usuario releído de la DB en cada request   | `src/auth/DECISIONS.md`   |
@@ -102,16 +104,20 @@
 | 2   | ¿Los movimientos de caja son tabla propia o derivan de `pagos`?                        | `caja`                | MIG-44   |
 | 3   | ¿El front tolera `X-Response-Time-ms` ausente? (D-11 opcional)                         | Nada                  | Front    |
 | 4   | ¿Hay refresh token previsto?                                                           | `auth`                | Producto |
+| 5   | ¿Se permite cobrar un pedido con `total = 0`? (spec 033, S-04)                         | Nada (supuesto)       | Producto |
 
 ---
 
 ## 6. Próximo paso
 
-1. **MIG-31:** revisar el diff de `feature/MIG-31-entity-pago-dt-os` y mergear.
-   Sin migración: la entity es provisional y se valida en MIG-44.
-2. **MIG-32:** implementar el cobro transaccional en `PedidosService` usando
-   `PagosService.registrarPago()`, y los movimientos de caja con `findByCaja()`.
-3. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
+1. **MIG-45:** revisar el PR del arnés DevelopAI (ADR 0008, skills, agentes,
+   comandos, `specs/033-cobro` y CI) y mergear a `develop`.
+2. **MIG-33:** implementar el cobro con `specs/033-cobro/tasks.md` una vez que
+   MIG-30 (entities `Pedido`/`DetallePedido`) esté en `develop`; el primer paso
+   es `T1` (DTO) y `T2` (`PagosService.registrarPago` con `EntityManager`).
+3. **MIG-32:** módulo `caja` completo, incluido `findAbierta(manager?)` que
+   consume el cobro, y los movimientos derivados de `pagos`.
+4. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
    productos/pedidos/caja y confirmar columnas, nulabilidad y FKs de `pagos`.
 
 ---
@@ -135,3 +141,4 @@
 | 2026-10-26 | MIG-26 iniciado en `feature/MIG-26-empleados` desde `develop` actualizado tras pull; decisión: bcrypt en EmpleadosService, lista completa ordenada por nombre ASC. |
 | 2026-10-27 | MIG-29 parcial en `feature/MIG-29-productos`: GET/POST/PATCH con guards, DTOs, lookup de categoría y tests. DELETE espera MIG-30; relación ORM y transformer numérico compartido esperan MIG-44. |
 | 2026-10-29 | MIG-31 en `MIG-31-entity-pago-dt-os`: entity `Pago` (unique `pagos_pedido_id_key`, `numericTransformer` para `monto`, `utcTimestampTransformer` para `fecha`), `PagoResponseDto`, `METODOS_PAGO` y esqueleto de `PagosService` con `501`. `numericTransformer` se adelanta a `common`. 266 unit + 65 e2e en verde. |
+| 2026-10-29 | MIG-45: se adopta DevelopAI (ADR 0008). Skills `sdd` y `nestjs-esm`, agentes `coordinator/planner/implementer/reviewer` con permisos, nueve comandos `/sdd-*`, spec piloto `specs/033-cobro` (cobro atómico, 11 RF) y CI con los cuatro gates + build. Se corrige la referencia del cobro de MIG-32 a MIG-33. |

@@ -2,7 +2,7 @@
 
 | Campo        | Valor                                                          |
 | ------------ | -------------------------------------------------------------- |
-| Estado       | **Entity + DTOs** (MIG-31); lógica del cobro en MIG-32          |
+| Estado       | **Entity + DTOs** (MIG-31); lógica del cobro en MIG-33          |
 | Entity       | `Pago` → tabla `pagos` (mapeo a confirmar en MIG-44)            |
 | Endpoints    | **Ninguno propio** (ver [`CONTRACT.md`](./CONTRACT.md))         |
 | Dependencias | `pedidos`, `caja`, `users`                                     |
@@ -26,7 +26,7 @@ entity ni las reglas del cobro.
 ```
 src/pagos/
 ├── pagos.module.ts          # forFeature([Pago]) + exporta PagosService
-├── pagos.service.ts         # esqueleto: 3 firmas, 501 hasta MIG-32
+├── pagos.service.ts         # esqueleto: 3 firmas, 501 hasta MIG-33/MIG-32
 ├── pagos.service.spec.ts
 ├── metodo-pago.ts           # METODOS_PAGO + type MetodoPago
 ├── metodo-pago.spec.ts
@@ -72,9 +72,9 @@ Sin controller y sin DTOs de request: la entrada es el DTO de `pedidos`.
 
 | Método                   | Uso                         | Estado      |
 | ------------------------ | --------------------------- | ----------- |
-| `registrarPago(data)`    | Desde el cobro en `pedidos` | MIG-32      |
+| `registrarPago(data)`    | Desde el cobro en `pedidos` | MIG-33      |
 | `findByCaja(cajaId)`     | Movimientos de una caja     | MIG-32      |
-| `findByPedido(pedidoId)` | Verificar cobro existente   | MIG-32      |
+| `findByPedido(pedidoId)` | Verificar cobro existente   | MIG-33      |
 
 Las tres firmas existen y fallan con `501` (`NotImplementedException`) indicando
 el ticket. Se congelan ahora para que `pedidos` y `caja` programen contra ellas
@@ -99,7 +99,7 @@ el ticket. Se congelan ahora para que `pedidos` y `caja` programen contra ellas
 | `pago.entity.spec.ts`        | Tabla, columnas snake_case, unique, transformers y ausencia de relaciones. |
 | `pago-response.dto.spec.ts`  | `monto` number, `fecha` con `Z`, claves internas fuera del JSON.  |
 | `metodo-pago.spec.ts`        | Los 5 métodos del glosario, en snake_case.                        |
-| `pagos.service.spec.ts`      | Firmas presentes y `501` con el ticket hasta MIG-32.              |
+| `pagos.service.spec.ts`      | Firmas presentes y `501` con el ticket (cobro MIG-33, movimientos MIG-32). |
 
 ---
 

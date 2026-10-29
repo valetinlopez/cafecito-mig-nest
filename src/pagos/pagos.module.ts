@@ -8,7 +8,7 @@ import { PagosService } from './pagos.service.js';
  *
  * `TypeOrmModule.forFeature([Pago])` registra la entity en el `DataSource`
  * global (`autoLoadEntities: true`) y deja el repositorio listo para que
- * MIG-32 implemente el cobro. Se exporta `PagosService` —no el repositorio—
+ * MIG-33 implemente el cobro. Se exporta `PagosService` —no el repositorio—
  * para que `pedidos` y `caja` dependan del contrato del servicio y no del
  * mapeo de la tabla.
  *

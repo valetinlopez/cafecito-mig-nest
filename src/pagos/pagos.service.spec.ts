@@ -19,6 +19,7 @@ const PAGO_INPUT: RegistrarPagoInput = {
 async function expectNotImplemented(
   promise: Promise<unknown>,
   operation: string,
+  ticket: string,
 ): Promise<void> {
   const error: unknown = await promise.then(
     () => null,
@@ -31,7 +32,7 @@ async function expectNotImplemented(
   }
   expect(error.getStatus()).toBe(501);
   expect(error.message).toContain(operation);
-  expect(error.message).toContain('MIG-32');
+  expect(error.message).toContain(ticket);
 }
 
 describe('PagosService', () => {
@@ -52,18 +53,23 @@ describe('PagosService', () => {
     expect(typeof service.findByPedido).toBe('function');
   });
 
-  it('registrarPago falla explícito con 501 hasta MIG-32', async () => {
+  it('registrarPago falla explícito con 501 hasta MIG-33', async () => {
     await expectNotImplemented(
       service.registrarPago(PAGO_INPUT),
       'registrarPago',
+      'MIG-33',
     );
   });
 
   it('findByCaja falla explícito con 501 hasta MIG-32', async () => {
-    await expectNotImplemented(service.findByCaja(3), 'findByCaja');
+    await expectNotImplemented(service.findByCaja(3), 'findByCaja', 'MIG-32');
   });
 
-  it('findByPedido falla explícito con 501 hasta MIG-32', async () => {
-    await expectNotImplemented(service.findByPedido(12), 'findByPedido');
+  it('findByPedido falla explícito con 501 hasta MIG-33', async () => {
+    await expectNotImplemented(
+      service.findByPedido(12),
+      'findByPedido',
+      'MIG-33',
+    );
   });
 });

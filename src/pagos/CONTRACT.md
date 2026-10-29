@@ -97,7 +97,7 @@ interface MovimientoCaja {
 | `monto > 0` y = total del pedido | Cálculo en servidor                 |
 | `metodo_pago` ∈ enum             | `METODOS_PAGO` + validación en DTO  |
 | `fecha` ISO-8601 UTC con `Z`     | `toIsoUtc()` en el DTO de response  |
-| Pertenece a una caja abierta     | Validación en el cobro (MIG-32)     |
+| Pertenece a una caja abierta     | Validación en el cobro (MIG-33)     |
 | `monto` sale como JSON `number`  | `numericTransformer` + `fromEntity()` |
 
 ---

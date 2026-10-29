@@ -82,46 +82,74 @@ estar en verde. El detalle está en
 | Ningún módulo entra sin `*.spec.ts` en verde.                            | Constitución §5      |
 | Prohibido `any`, `console.log` y `TODO` sin ticket.                      | Constitución §7      |
 | Ninguna entity se crea a medias sobre la base compartida.                | Constitución §4      |
+| Nada de código sin `spec.md` aprobada (salvo cambio sin comportamiento). | ADR 0008, §5         |
 
 ---
 
 ## 4. Mapa de documentación
 
-| Documento                   | Para qué sirve                              |
-| --------------------------- | ------------------------------------------- |
-| `docs/constitution.md`      | Principios inmutables y cómo enmendarlos.   |
-| `docs/architecture.md`      | Componentes, módulos, dependencias, flujo.  |
-| `docs/conventions.md`       | Plantilla de código y checklist de PR.      |
-| `docs/api-contract.md`      | Contrato funcional (32 endpoints + health). |
-| `docs/openapi.yaml`         | Spec formal OpenAPI 3.1.                    |
-| `docs/glossary.md`          | Enums, estados, roles y vocabulario.        |
-| `docs/harness.md`           | Cómo funciona el esquema de trabajo.        |
-| `docs/adr/`                 | Decisiones de arquitectura (formato ADR).   |
-| `docs/workflows/`           | DoD y receta para crear módulos.            |
-| `src/<modulo>/AGENTS.md`    | Shim local: por dónde empezar y qué cuidar. |
-| `src/<modulo>/README.md`    | Responsabilidad, capas y estado del módulo. |
-| `src/<modulo>/CONTRACT.md`  | Endpoints y shapes que expone el módulo.    |
-| `src/<modulo>/DECISIONS.md` | Decisiones locales, riesgos y pendientes.   |
-| `.agents/agent.md`          | Cómo trabaja un agente en este repo.        |
-| `.agents/memory.md`         | Estado vivo del proyecto (se actualiza).    |
+| Documento                   | Para qué sirve                                                          |
+| --------------------------- | ----------------------------------------------------------------------- |
+| `docs/constitution.md`      | Principios inmutables y cómo enmendarlos.                               |
+| `docs/architecture.md`      | Componentes, módulos, dependencias, flujo.                              |
+| `docs/conventions.md`       | Plantilla de código y checklist de PR.                                  |
+| `docs/api-contract.md`      | Contrato funcional (32 endpoints + health).                             |
+| `docs/openapi.yaml`         | Spec formal OpenAPI 3.1.                                                |
+| `docs/glossary.md`          | Enums, estados, roles y vocabulario.                                    |
+| `docs/harness.md`           | Cómo funciona el esquema de trabajo.                                    |
+| `docs/workflows/sdd.md`     | Ciclo SDD: fases, EARS, tareas y veredicto.                             |
+| `specs/README.md`           | ¿Qué se está especificando y en qué fase?                               |
+| `docs/adr/`                 | Decisiones de arquitectura (formato ADR).                               |
+| `docs/workflows/`           | DoD y receta para crear módulos.                                        |
+| `src/<modulo>/AGENTS.md`    | Shim local: por dónde empezar y qué cuidar.                             |
+| `src/<modulo>/README.md`    | Responsabilidad, capas y estado del módulo.                             |
+| `src/<modulo>/CONTRACT.md`  | Endpoints y shapes que expone el módulo.                                |
+| `src/<modulo>/DECISIONS.md` | Decisiones locales, riesgos y pendientes.                               |
+| `.agents/agent.md`          | Cómo trabaja un agente en este repo.                                    |
+| `.agents/memory.md`         | Estado vivo del proyecto (se actualiza).                                |
+| `.agents/skills/`           | Recetas operativas que carga el agente.                                 |
+| `.opencode/agents/`         | Roles y permisos (`coordinator`, `planner`, `implementer`, `reviewer`). |
+| `.opencode/commands/`       | Comandos `/sdd-*` del ciclo.                                            |
 
 Regla de oro: **si una decisión no está escrita, no existe**. Se agrega al
 `DECISIONS.md` del módulo o como ADR, nunca queda solo en el chat o en el PR.
 
 ---
 
-## 5. Flujo de trabajo
+## 5. Flujo de trabajo (SDD)
+
+Todo cambio con **comportamiento nuevo** sigue el ciclo Spec-Driven Development
+([ADR 0008](docs/adr/0008-adopcion-developai-sdd.md),
+[`docs/workflows/sdd.md`](docs/workflows/sdd.md)). Un cambio sin comportamiento
+(typo, formato, bump de parche) se rige solo por el
+[DoD](docs/workflows/definition-of-done.md).
+
+| Fase | Comando                      | Artefacto                    | Responsable   |
+| ---- | ---------------------------- | ---------------------------- | ------------- |
+| 0    | `/sdd-constitution <tema>`   | Veredicto de compatibilidad  | `planner`     |
+| 1    | `/sdd-spec NNN-slug`         | `specs/NNN-slug/spec.md`     | `planner`     |
+| 2    | `/sdd-clarify NNN-slug`      | `clarify.md`                 | `reviewer`    |
+| 3    | `/sdd-plan NNN-slug`         | `plan.md`                    | `planner`     |
+| 4    | `/sdd-tasks NNN-slug`        | `tasks.md`                   | `planner`     |
+| 5    | `/sdd-implement NNN-slug Tn` | Código + test + commit `Tn:` | `implementer` |
+| 6    | `/sdd-validate NNN-slug`     | `validate.md` + `VEREDICTO`  | `reviewer`    |
+| 7    | `/sdd-change NNN-slug`       | Enmienda o spec nueva        | `planner`     |
+| —    | `/sdd-status`                | Estado de todas las specs    | `coordinator` |
 
 ```
-1. Leer memory.md                 → saber qué está en curso
-2. Leer src/<modulo>/AGENTS.md    → índice local del módulo
-3. Leer los 3 docs del módulo     → contexto, contrato y decisiones
-4. Verificar el contrato global   → api-contract.md / openapi.yaml
-5. Implementar + test
-6. Correr lint + typecheck + test + test:e2e
-7. Actualizar docs del módulo + memory.md
-8. Abrir PR con ticket MIG-XX
+1. /sdd-status                     → saber en qué fase está cada spec
+2. Leer memory.md                  → saber qué está en curso
+3. Leer src/<modulo>/AGENTS.md     → índice local del módulo
+4. Leer los 3 docs del módulo      → contexto, contrato y decisiones
+5. Verificar el contrato global    → api-contract.md / openapi.yaml
+6. Implementar una tarea + test    → commit Tn:
+7. Correr lint + typecheck + test + test:e2e
+8. Actualizar docs del módulo + memory.md + validate.md
+9. Abrir PR con ticket MIG-XX
 ```
+
+Máximo **dos vueltas** de validación. A la tercera, el problema es la spec y se
+vuelve a la fase 2 con el humano.
 
 Para decisiones que afectan a más de un módulo: ADR nuevo en `docs/adr/` y
 actualización de `docs/architecture.md`.

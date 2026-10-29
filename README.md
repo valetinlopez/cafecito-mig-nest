@@ -199,6 +199,10 @@ Guía para trabajar en el repositorio sin contexto previo (humanos y agentes):
 | [`docs/workflows/`](docs/workflows/definition-of-done.md) | Definition of Done y receta para crear módulos.                                 |
 | [`.agents/agent.md`](.agents/agent.md)                    | Cómo opera un agente en este repositorio.                                       |
 | [`.agents/memory.md`](.agents/memory.md)                  | Estado vivo del proyecto y próximo paso.                                        |
+| [`docs/workflows/sdd.md`](docs/workflows/sdd.md)          | Ciclo SDD (DevelopAI): spec, plan, tareas, validación y veredicto.              |
+| [`specs/README.md`](specs/README.md)                      | Especificaciones por funcionalidad y su estado.                                 |
+| [`.opencode/agents/`](.opencode/agents)                   | Roles con permisos: `coordinator`, `planner`, `implementer`, `reviewer`.        |
+| [`.opencode/commands/`](.opencode/commands)               | Comandos `/sdd-*` del ciclo.                                                    |
 
 Cada módulo de `src/` lleva su propia documentación junto al código:
 
