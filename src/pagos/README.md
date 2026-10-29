@@ -1,12 +1,12 @@
 # Módulo `pagos`
 
-| Campo        | Valor                                                   |
-| ------------ | ------------------------------------------------------- |
-| Estado       | **Scaffold** (módulo registrado, sin código propio)     |
-| Entity       | `Pago` → tabla `pagos` (por confirmar)                  |
-| Endpoints    | **Ninguno propio** (ver [`CONTRACT.md`](./CONTRACT.md)) |
-| Dependencias | `pedidos`, `caja`, `users`                              |
-| Tests        | Pendientes                                              |
+| Campo        | Valor                                                          |
+| ------------ | -------------------------------------------------------------- |
+| Estado       | **Entity + DTOs** (MIG-31); lógica del cobro en MIG-32          |
+| Entity       | `Pago` → tabla `pagos` (mapeo a confirmar en MIG-44)            |
+| Endpoints    | **Ninguno propio** (ver [`CONTRACT.md`](./CONTRACT.md))         |
+| Dependencias | `pedidos`, `caja`, `users`                                     |
+| Tests        | 17 unitarios (`entity`, `dto`, `metodo-pago`, `service`)        |
 
 ---
 
@@ -25,56 +25,64 @@ entity ni las reglas del cobro.
 
 ```
 src/pagos/
-└── pagos.module.ts    # @Module({}) — vacío
-```
-
----
-
-## 3. Estructura objetivo
-
-```
-src/pagos/
-├── pagos.module.ts
-├── pagos.service.ts
+├── pagos.module.ts          # forFeature([Pago]) + exporta PagosService
+├── pagos.service.ts         # esqueleto: 3 firmas, 501 hasta MIG-32
 ├── pagos.service.spec.ts
+├── metodo-pago.ts           # METODOS_PAGO + type MetodoPago
+├── metodo-pago.spec.ts
 ├── entities/
-│   └── pago.entity.ts
-├── README.md · CONTRACT.md · DECISIONS.md
+│   ├── pago.entity.ts
+│   └── pago.entity.spec.ts
+├── dto/
+│   ├── pago-response.dto.ts
+│   └── pago-response.dto.spec.ts
+├── README.md · CONTRACT.md · DECISIONS.md · AGENTS.md
 ```
 
-Sin controller ni DTOs de request: la entrada es el DTO de `pedidos`.
+Sin controller y sin DTOs de request: la entrada es el DTO de `pedidos`.
 
 ---
 
-## 4. Modelo esperado
+## 3. Modelo
 
-| Propiedad    | Columna       | Tipo            | Restricción                   |
-| ------------ | ------------- | --------------- | ----------------------------- |
-| `id`         | `id`          | `serial`        | PK                            |
-| `pedidoId`   | `pedido_id`   | `int`           | FK a `pedidos`, único         |
-| `cajaId`     | `caja_id`     | `int`           | FK a `cajas`                  |
-| `usuarioId`  | `usuario_id`  | `int`           | FK a `usuarios` (quién cobró) |
-| `monto`      | `monto`       | `numeric(10,2)` | `> 0`, transformer a `number` |
-| `metodoPago` | `metodo_pago` | enum/varchar    | 5 valores del glosario        |
-| `fecha`      | `fecha`       | `timestamp`     | default now, UTC naive        |
+| Propiedad    | Columna       | Tipo            | Restricción                     |
+| ------------ | ------------- | --------------- | ------------------------------- |
+| `id`         | `id`          | `serial`        | PK                              |
+| `pedidoId`   | `pedido_id`   | `int`           | `UNIQUE`, not null              |
+| `cajaId`     | `caja_id`     | `int`           | FK a `cajas`, **nullable**      |
+| `usuarioId`  | `usuario_id`  | `int`           | FK a `usuarios`, **nullable**   |
+| `metodoPago` | `metodo_pago` | `varchar(30)`   | 5 valores del glosario          |
+| `monto`      | `monto`       | `numeric(10,2)` | `number` vía `numericTransformer` |
+| `fecha`      | `fecha`       | `timestamp`     | default `now()`, UTC naive      |
 
-> Nombres y tipos exactos a confirmar contra la base (MIG-44). `fecha` es
-> `timestamp without time zone` en el legacy: usar `utcTimestampTransformer` y
-> serializar con `toIsoUtc()` (ADR 0007).
+- La restricción se declara con el nombre real de PostgreSQL
+  (`pagos_pedido_id_key`) para que `schema:log` no proponga recrearla.
+- `monto` y `fecha` usan los transformers compartidos de `src/common/`: el JSON
+  nunca expone un string ni un `Date` crudo (D-05, D-06).
+- `caja_id` y `usuario_id` son nullable por los pagos históricos; la regla
+  "todo cobro nuevo pertenece a la caja abierta" se valida en el service
+  (`DECISIONS.md` D-08).
 
----
-
-## 5. Operaciones del service
-
-| Método                   | Uso                         |
-| ------------------------ | --------------------------- |
-| `registrarPago(data)`    | Desde el cobro en `pedidos` |
-| `findByCaja(cajaId)`     | Movimientos de una caja     |
-| `findByPedido(pedidoId)` | Verificar cobro existente   |
+> Nombres y tipos exactos se confirman contra la base en MIG-44. Las relaciones
+> ORM (`@ManyToOne`) se agregan cuando existan las entities `Pedido` y `Caja`.
 
 ---
 
-## 6. Reglas de negocio
+## 4. Operaciones del service
+
+| Método                   | Uso                         | Estado      |
+| ------------------------ | --------------------------- | ----------- |
+| `registrarPago(data)`    | Desde el cobro en `pedidos` | MIG-32      |
+| `findByCaja(cajaId)`     | Movimientos de una caja     | MIG-32      |
+| `findByPedido(pedidoId)` | Verificar cobro existente   | MIG-32      |
+
+Las tres firmas existen y fallan con `501` (`NotImplementedException`) indicando
+el ticket. Se congelan ahora para que `pedidos` y `caja` programen contra ellas
+(D-11).
+
+---
+
+## 5. Reglas de negocio
 
 - Un pedido tiene **como máximo un pago** (no hay cobros parciales).
 - El monto es el total del pedido; no se acepta un monto del cliente.
@@ -84,17 +92,20 @@ Sin controller ni DTOs de request: la entrada es el DTO de `pedidos`.
 
 ---
 
-## 7. Tests esperados
+## 6. Tests
 
-- Registrar un pago guarda monto, método, caja y usuario.
-- Segundo pago del mismo pedido → error de negocio.
-- Los movimientos de una caja devuelven fecha ISO, mesa y nombre del usuario.
-- El monto sale como `number`.
+| Archivo                      | Qué cubre                                                        |
+| ---------------------------- | ---------------------------------------------------------------- |
+| `pago.entity.spec.ts`        | Tabla, columnas snake_case, unique, transformers y ausencia de relaciones. |
+| `pago-response.dto.spec.ts`  | `monto` number, `fecha` con `Z`, claves internas fuera del JSON.  |
+| `metodo-pago.spec.ts`        | Los 5 métodos del glosario, en snake_case.                        |
+| `pagos.service.spec.ts`      | Firmas presentes y `501` con el ticket hasta MIG-32.              |
 
 ---
 
-## 8. Referencias
+## 7. Referencias
 
 - [`CONTRACT.md`](./CONTRACT.md) · [`DECISIONS.md`](./DECISIONS.md)
 - `docs/api-contract.md` §6.5 (`POST /pago`) y §6.6 (`movimientos`)
 - `docs/glossary.md` §2 y §4
+- `docs/adr/0004-decimales-number.md` · `docs/adr/0007-zona-horaria-proceso.md`

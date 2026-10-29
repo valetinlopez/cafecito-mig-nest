@@ -46,6 +46,8 @@ src/common/
 │   ├── utc-date.ts                  # toIsoUtc + literales de timestamp
 │   └── utc-date.spec.ts
 ├── transformers/
+│   ├── numeric.transformer.ts        # numeric(10,2) ↔ number (MIG-31)
+│   ├── numeric.transformer.spec.ts
 │   ├── utc-timestamp.transformer.ts # timestamp without time zone ↔ Date
 │   └── utc-timestamp.transformer.spec.ts
 ├── auth/
@@ -110,7 +112,8 @@ MIG-21  →  utilidades de test / mocks de repositorio ✅
 MIG-23  →  JwtAuthGuard + RolesGuard + @Public/@Roles/@CurrentUser ✅ (adelantado)
 MIG-24  →  aplicar los guards al resto de los módulos + e2e 401/403
 MIG-43  →  zona horaria UTC + transformer de fechas + `toIsoUtc()` ✅
-MIG-44  →  numericTransformer + validación de esquema real
+MIG-31  →  `numericTransformer` compartido ✅ (adelantado por `pagos`)
+MIG-44  →  aplicar el transformer a productos/pedidos/caja + esquema real
 ```
 
 `CommonModule` registra los `APP_*` una sola vez en `AppModule`. Los e2e lo
@@ -131,6 +134,7 @@ importan directamente para probar el cableado real sin PostgreSQL.
 | `pinProcessTimezone`             | El proceso queda en UTC aunque el sistema esté en ART.  |
 | `toIsoUtc` / `parseUtcTimestamp` | Instante conocido con `Z`, round-trip y zonas.          |
 | `utcTimestampTransformer`        | Escritura UTC, lectura UTC y nulos explícitos.          |
+| `numericTransformer`             | `numeric` → `number`, cero, nulos y sin `NaN`.          |
 | `JwtAuthGuard`                   | Bypass de `@Public()` y `detail` de 401.                |
 | `RolesGuard`                     | `@Roles`, `@Public` y 403 con el mensaje del contrato.  |
 | `test/common.e2e-spec.ts`        | Prefijo, CORS, header, 422, 400, 404 y 500.             |

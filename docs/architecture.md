@@ -142,7 +142,7 @@ Puntos de borde:
 | Mesas      | `src/mesas`      | Implementado (MIG-27)        | Estados y ABM de mesas                 | `ACTIVE_ORDERS_PORT` (adapter de pedidos pendiente MIG-30) |
 | Productos  | `src/productos`  | Parcial (MIG-29: GET/POST/PATCH; DELETE MIG-30) | Catálogo, stock, precios | `categorias` (lookup); schema/transformer MIG-44 |
 | Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)      | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
-| Pagos      | `src/pagos`      | Scaffold (módulo vacío)      | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
+| Pagos      | `src/pagos`      | Entity + DTOs (MIG-31); cobro MIG-32 | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
 | Caja       | `src/caja`       | Scaffold (módulo vacío)      | Apertura, cierre, movimientos          | `pagos`                                        |
 | Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)      | KPIs de solo lectura                   | `mesas`, `pedidos`, `pagos`, `caja`            |
 | Reportes   | `src/reportes`   | Scaffold (módulo vacío)      | Reporte de ventas por período          | `pagos`, `caja`, `pedidos`                     |
@@ -214,7 +214,7 @@ rama; sus columnas y relaciones siguen sujetas a esa validación.
 | `productos`                | `Producto`       | productos  | Provisional (MIG-29; validar MIG-44) |
 | `pedidos`                  | `Pedido`         | pedidos    | Pendiente             |
 | `detalle_pedidos`          | `DetallePedido`  | pedidos    | Pendiente             |
-| `pagos`                    | `Pago`           | pagos      | Pendiente             |
+| `pagos`                    | `Pago`           | pagos      | Provisional (MIG-31; validar MIG-44) |
 | `cajas`                    | `Caja`           | caja       | Pendiente             |
 | `movimientos_caja`*        | `MovimientoCaja` | caja       | Pendiente             |
 
@@ -259,7 +259,7 @@ local. Contra Neon (aunque sea un `.env` de desarrollo), queda en `false`.
 | `ValidationPipe` 422             | **Implementado** | MIG-20  | ADR 0001               |
 | `AllExceptionsFilter` `{detail}` | **Implementado** | MIG-20  | ADR 0002               |
 | CORS configurable                | **Implementado** | MIG-20  | Contrato D-16          |
-| `numericTransformer`             | Pendiente        | MIG-44  | ADR 0004               |
+| `numericTransformer`             | **Implementado** | MIG-31  | ADR 0004               |
 | Serialización de fechas `Z`      | **Implementado** | MIG-43  | ADR 0003 + 0007        |
 | `JwtAuthGuard` + `RolesGuard`    | **Implementado** | MIG-23  | Contrato §4            |
 | Swagger en `/docs`               | Pendiente        | MIG-40  | Convenciones §9        |
