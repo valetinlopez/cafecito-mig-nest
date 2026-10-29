@@ -17,8 +17,7 @@ export interface RegistrarPagoInput {
   metodoPago: MetodoPago;
 }
 
-const PENDING_OPERATION_MESSAGE =
-  'Pagos: operación pendiente de implementación (MIG-32)';
+const PENDING_OPERATION_MESSAGE = 'Pagos: operación pendiente de implementación';
 
 /**
  * Acceso a datos de `pagos` (MIG-31).
@@ -28,26 +27,26 @@ const PENDING_OPERATION_MESSAGE =
  * desde `GET /api/v1/caja/{id}/movimientos`.
  *
  * **Estado: esqueleto.** Este ticket entrega la entity y los DTOs; la lógica
- * (transacción del cobro, resolución de la caja abierta, mapeo de movimientos)
- * llega en MIG-32. Las firmas se congelan acá para que `pedidos` y `caja`
- * programen contra ellas, y toda llamada falla explícito con `501` en lugar de
- * devolver datos vacíos que ocultarían el pendiente.
+ * del cobro (transacción y resolución de la caja abierta) llega en MIG-33 y el
+ * mapeo de movimientos en MIG-32. Las firmas se congelan acá para que `pedidos`
+ * y `caja` programen contra ellas, y toda llamada falla explícito con `501` en
+ * lugar de devolver datos vacíos que ocultarían el pendiente.
  *
  * No inyecta repositorios todavía: agregarlos sin quien los consuma rompería
  * `noUnusedLocals` y no aporta al alcance. `PagosModule` ya registra la entity
- * con `TypeOrmModule.forFeature([Pago])`, así que MIG-32 solo suma el
- * `@InjectRepository(Pago)` (o el `DataSource` de la transacción).
+ * con `TypeOrmModule.forFeature([Pago])`, así que MIG-33 solo inyecta lo
+ * necesario para operar con el `EntityManager` del cobro.
  */
 @Injectable()
 export class PagosService {
   /**
    * Registra el pago de un pedido dentro de la transacción del cobro.
    *
-   * Implementación pendiente: MIG-32 (junto con el cambio a `pagado`, la
+   * Implementación pendiente: MIG-33 (junto con el cambio a `pagado`, la
    * liberación de la mesa y el cierre contable en la caja).
    */
   registrarPago(_input: RegistrarPagoInput): Promise<PagoResponseDto> {
-    return Promise.reject(this.pendingOperation('registrarPago'));
+    return Promise.reject(this.pendingOperation('registrarPago', 'MIG-33'));
   }
 
   /**
@@ -56,21 +55,24 @@ export class PagosService {
    * Implementación pendiente: MIG-32 (`GET /caja/{id}/movimientos`).
    */
   findByCaja(_cajaId: number): Promise<PagoResponseDto[]> {
-    return Promise.reject(this.pendingOperation('findByCaja'));
+    return Promise.reject(this.pendingOperation('findByCaja', 'MIG-32'));
   }
 
   /**
    * Devuelve el pago de un pedido, o `null` si todavía no se cobró.
    *
-   * Implementación pendiente: MIG-32 (verificación previa al cobro).
+   * Implementación pendiente: MIG-33 (verificación previa al cobro).
    */
   findByPedido(_pedidoId: number): Promise<PagoResponseDto | null> {
-    return Promise.reject(this.pendingOperation('findByPedido'));
+    return Promise.reject(this.pendingOperation('findByPedido', 'MIG-33'));
   }
 
-  private pendingOperation(operation: string): NotImplementedException {
+  private pendingOperation(
+    operation: string,
+    ticket: string,
+  ): NotImplementedException {
     return new NotImplementedException(
-      `${PENDING_OPERATION_MESSAGE}: ${operation}`,
+      `${PENDING_OPERATION_MESSAGE} (${ticket}): ${operation}`,
     );
   }
 }

@@ -7,6 +7,9 @@ Base: [`conventions.md`](../conventions.md) §3, §6 y §10.
 
 ## 0. Preparación
 
+0. Si el módulo entrega comportamiento nuevo, empezá por la spec:
+   `/sdd-spec NNN-slug` → `clarify` → `plan` → `tasks`
+   ([ciclo SDD](./sdd.md), ADR 0008). El resto de esta receta es la fase 5.
 1. Leé [`constitution.md`](../constitution.md) y
    [`architecture.md`](../architecture.md).
 2. Leé el contrato del módulo en [`api-contract.md`](../api-contract.md) y

@@ -22,7 +22,7 @@
 - Un pedido tiene como máximo un pago (`pagos_pedido_id_key`).
 - El monto es `pedido.total`; no se acepta un monto del cliente.
 - La caja se resuelve en el servidor (la abierta); no se recibe `caja_id`.
-- El `Pago` se crea dentro de la transacción del cobro; eso vive en MIG-32.
+- El `Pago` se crea dentro de la transacción del cobro; eso vive en MIG-33.
 - `metodo_pago` sale siempre de `METODOS_PAGO`; no repetir literales.
 - `numericTransformer` y `utcTimestampTransformer` se importan de `common`.
 - Sin relaciones ORM hasta que existan `Pedido` y `Caja` (D-09).

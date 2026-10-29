@@ -62,6 +62,9 @@ pasar el lint.
 
 ## 5. Documentación (harness)
 
+- [ ] Si el cambio tiene comportamiento nuevo: `specs/NNN-slug/spec.md`,
+      `clarify.md`, `plan.md`, `tasks.md` y `validate.md` con `VEREDICTO`
+      ([SDD](./sdd.md), ADR 0008).
 - [ ] `src/<modulo>/AGENTS.md` actualizado (índice, reglas locales, verificación).
 - [ ] `src/<modulo>/README.md` actualizado (responsabilidad, capas, estado).
 - [ ] `src/<modulo>/CONTRACT.md` actualizado si cambió un endpoint.

@@ -137,6 +137,11 @@ directorio) con una arquitectura documental que no duplica. El shim resuelve el
 | `docs/workflows/new-module.md`         | ¿Cómo se implementa un módulo?           | Cambia la receta de implementación.   |
 | `.agents/agent.md`                     | ¿Cómo opera un agente?                   | Cambia el modo de trabajo.            |
 | `.agents/memory.md`                    | ¿Qué está hecho y qué sigue?             | En cada sesión y cada PR.             |
+| `.agents/skills/`                      | ¿Qué recetas operativas carga el agente? | Cambia una regla de trabajo.          |
+| `.opencode/agents/`                    | ¿Quién planifica, implementa y valida?   | Cambia el reparto de roles.           |
+| `.opencode/commands/`                  | ¿Cómo se invoca el ciclo SDD?            | Cambia una fase del ciclo.            |
+| `specs/README.md`                      | ¿Qué se está especificando y en qué fase? | Nueva spec, cambio de fase o cierre.  |
+| `docs/workflows/sdd.md`                | ¿Cómo funciona el ciclo SDD?             | Cambia el proceso.                    |
 
 ### 5.2 Por módulo
 
@@ -281,6 +286,8 @@ Nunca copiar y mantener dos copias.
 - No documentar una decisión solo en el PR o en el chat.
 - No crear documentación para un módulo que no existe sin marcarla como scaffold.
 - No usar la memoria como diseño: `memory.md` es estado, no arquitectura.
+- No implementar una funcionalidad con comportamiento nuevo sin `spec.md`
+  aprobada (ADR 0008).
 
 ---
 
@@ -341,6 +348,54 @@ cambia en un PR de feature.
 **¿Esto reemplaza `docs/conventions.md`?**
 No. Lo complementa: conventions responde "cómo se escribe"; el harness responde
 "dónde está cada cosa y por qué".
+
+---
+
+## 15. Capa SDD (DevelopAI)
+
+Desde MIG-45 el harness incorpora el ciclo **Spec-Driven Development** con
+orquestación multiagente. El detalle operativo está en
+[`workflows/sdd.md`](./workflows/sdd.md); acá solo se explica cómo encaja.
+
+### 15.1 Qué se agregó
+
+| Pieza                | Ubicación                              | Responde                                        |
+| -------------------- | -------------------------------------- | ----------------------------------------------- |
+| Specs                | `specs/NNN-slug/`                      | ¿Qué debe pasar, por qué y cómo se verifica?    |
+| Skill de proceso     | `.agents/skills/sdd/SKILL.md`          | ¿Cómo se escribe una spec, un plan y tareas?    |
+| Skill de código      | `.agents/skills/nestjs-esm/SKILL.md`   | ¿Cómo se escribe código en este repo?           |
+| Agentes              | `.opencode/agents/`                    | ¿Quién planifica, implementa y valida?         |
+| Comandos             | `.opencode/commands/sdd-*.md`          | ¿Cómo se invoca cada fase?                      |
+| Gates de CI          | `.github/workflows/ci.yml`             | ¿Qué bloquea el merge?                          |
+
+### 15.2 Reparto de roles
+
+| Rol           | Escribe                                   | No puede                                            |
+| ------------- | ----------------------------------------- | --------------------------------------------------- |
+| `coordinator` | Estado de specs                           | Código, contrato, constitución                      |
+| `planner`     | `specs/`, `docs/`                         | Código, shell, contrato, constitución, ADR aceptado |
+| `implementer` | `src/`, `test/`, docs del módulo          | Contrato, constitución, ADR, `git push`             |
+| `reviewer`    | `clarify.md`, `validate.md`               | Cualquier otra edición                              |
+
+### 15.3 Cómo convive con el harness existente
+
+- `spec.md` responde el **qué**; `DECISIONS.md` el **porqué local**; el ADR el
+  **porqué transversal**. No se duplican: cada uno referencia al otro.
+- El `CONTRACT.md` del módulo sigue siendo el extracto operativo del contrato
+  global; la spec cita la sección de origen.
+- `AGENTS.md` sigue siendo el índice; **no** contiene requisitos ni planes.
+- `.agents/memory.md` sigue siendo estado; no reemplaza a `tasks.md`.
+
+### 15.4 Regla de permanencia
+
+| Nivel            | Vive en                                              | Cambia con          |
+| ---------------- | ---------------------------------------------------- | ------------------- |
+| Estado           | `.agents/memory.md`, `tasks.md`                      | Cada sesión / tarea |
+| Regla permanente | `AGENTS.md`, skills, `DECISIONS.md`                  | PR normal           |
+| Principio        | `docs/constitution.md`                               | ADR aprobado (§12)  |
+
+Si una decisión se repite tres veces, asciende de nivel. Si contradice la
+constitución, se frena y se abre un ADR.
 
 ---
 
