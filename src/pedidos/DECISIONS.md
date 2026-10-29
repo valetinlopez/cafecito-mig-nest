@@ -92,3 +92,94 @@ circular.
 
 **Regla:** si aparece un ciclo, se mueve la regla al módulo dueño, no se usa
 `forwardRef` (constitución §3).
+
+---
+
+## D-09 — Relaciones completas desde MIG-30
+
+**Decisión:** `Pedido` declara `@ManyToOne` con `Mesa` y `Usuario`,
+`@OneToMany` con `DetallePedido` (bidireccional, inversa en
+`DetallePedido.pedido`) y `@OneToMany` con `Pago` (inversa en `Pago.pedido`).
+
+**Motivo:** el ticket MIG-30 las pide explícitamente y todas las contrapartes ya
+existen (`MIG-27` mesas, `MIG-22` usuarios, `MIG-31` pagos). La convención §6.1
+habilita relaciones **cuando existen ambas entities**. Sin ellas,
+`PedidoResponseDto` no puede hidratar `mesa`/`usuario` en una consulta y
+aparecería N+1 en el listado.
+
+**Consecuencia:** `Pago` incorpora su `@ManyToOne(Pedido)` (se actualiza
+`src/pagos/DECISIONS.md` D-09) y `Pedido.pagos` queda como inversa de solo
+lectura. Las relaciones son metadata de TypeORM, no providers de Nest, así que
+no hay `forwardRef`. MIG-44 confirma las FK contra la base real.
+
+**Nota:** `pagos` se declara `@OneToMany` como pide el ticket y como lo modela
+el legacy (`Pedido.pagos`), aunque la restricción `pagos_pedido_id_key` lo
+restringe a 0..1. Se conserva la forma de colección para no divergir del modelo
+heredado; la unicidad es la que impide registrar dos cobros.
+
+---
+
+## D-10 — FK escalar y relación sobre la misma columna
+
+**Decisión:** `mesaId`, `usuarioId`, `pedidoId` y `productoId` se mapean como
+columnas explícitas y además como `@ManyToOne` con `@JoinColumn` al mismo nombre
+físico.
+
+**Motivo:** MIG-33 necesita filtrar y asignar por id sin cargar la relación
+(`where: { mesaId }`), y el response necesita la entidad hidratada. TypeORM
+reutiliza la columna existente al construir el join column, así que no hay DDL
+duplicado ni doble escritura.
+
+---
+
+## D-11 — Cascada solo para insertar detalles
+
+**Decisión:** `detalles` usa `cascade: ['insert']`; nunca `update` ni `remove`.
+
+**Motivo:** los detalles son una foto del precio al momento del pedido. Permitir
+`remove`/`update` en cascada dejaría reescribir ventas históricas, y no existe
+un endpoint de borrado de pedidos en el contrato. El `Pago` tampoco se crea por
+cascada: lo registra la transacción del cobro (MIG-33).
+
+---
+
+## D-12 — `subtotal` es histórico y no se recalcula
+
+**Decisión:** la entity persiste `subtotal`; `DetallePedidoResponseDto` lo
+expone tal cual y nunca lo deriva de `Producto.precio`.
+
+**Motivo:** si el producto cambia de precio, la venta ya registrada debe
+conservar el valor cobrado. Recalcular al leer rompería reportes y arqueos.
+
+---
+
+## D-13 — DTOs separados por operación y por recurso anidado
+
+**Decisión:** `DetallePedidoCreateDto`, `CreatePedidoDto`, `UpdatePedidoDto`,
+`PedidoPagoDto`, `DetallePedidoResponseDto` y `PedidoResponseDto`.
+
+**Motivo:** el request no declara `total`, `subtotal` ni `usuario_id` porque los
+calcula el servidor; el response anida `MesaResponseDto` y `UsuarioResponseDto`
+en lugar de serializar entities (constitución §8). `PedidoPagoDto` no tiene
+`monto` (D-03 de `pagos`).
+
+**Consecuencia:** `PedidoResponseDto.fromEntity()` exige `mesa`, `usuario` y
+`detalles` hidratados y falla explícito si faltan; nunca emite un pedido
+incompleto que rompería el front.
+
+---
+
+## D-14 — Nombres de tabla y FK provisionales
+
+**Decisión:** las tablas son `pedidos` y `detalle_pedidos`; las FK se declaran
+con el default de PostgreSQL (`pedidos_mesa_id_fkey`,
+`pedidos_usuario_id_fkey`, `detalle_pedidos_pedido_id_fkey`,
+`detalle_pedidos_producto_id_fkey`, `pagos_pedido_id_fkey`).
+
+**Motivo:** `detalle_pedidos` es el nombre que declara MIG-30 y la documentación
+del módulo; el default de PostgreSQL evita que `schema:log` proponga recrear
+restricciones con nombres generados por TypeORM.
+
+**Consecuencia:** MIG-44 valida nombres, nulabilidad y tipos contra la base
+compartida. Si alguno difiere, se corrige en una migración revisada, no con
+`synchronize` contra Neon (constitución §4).

@@ -1,6 +1,15 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import type { Relation } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Unique,
+} from 'typeorm';
 import { numericTransformer } from '../../common/transformers/numeric.transformer.js';
 import { utcTimestampTransformer } from '../../common/transformers/utc-timestamp.transformer.js';
+import { Pedido } from '../../pedidos/entities/pedido.entity.js';
 import type { MetodoPago } from '../metodo-pago.js';
 
 /**
@@ -21,13 +30,13 @@ import type { MetodoPago } from '../metodo-pago.js';
  * (`pagos_pedido_id_key`) porque es el que PostgreSQL generó al crear la tabla
  * desde Python. Sin el nombre, `schema:log` (MIG-44) propone recrearla.
  *
- * **Relaciones diferidas:** el ticket pide `@ManyToOne(() => Pedido)` y la caja
- * referencia `cajas`, pero ambas entities todavía no existen. Declararlas
- * obligaría a un mapeo parcial de tablas compartidas con producción y, con
- * `synchronize` en desarrollo, TypeORM podría alterarlas (constitución §4,
- * convenciones §6.1). Por eso `pedidoId`, `cajaId` y `usuarioId` quedan como
- * columnas escalares; las relaciones se agregan en MIG-32/MIG-44, cuando exista
- * la contra-parte.
+ * **Relaciones:** `pedido` se declara acá desde MIG-30, cuando `Pedido` pasó a
+ * existir, para completar el `@OneToMany(() => Pago)` que pide el ticket. La
+ * relación reutiliza la columna física `pedido_id` (`@JoinColumn`), no agrega
+ * DDL duplicado y se declara con FK explícita (`pagos_pedido_id_fkey`); MIG-44
+ * confirma el nombre contra la base real. La relación con `cajas` sigue
+ * diferida a MIG-32/MIG-44 porque esa entity todavía no existe; `cajaId` y
+ * `usuarioId` permanecen escalares y nullable (ver `DECISIONS.md` D-09).
  *
  * `cajaId` y `usuarioId` son nullable a propósito: hay pagos históricos previos
  * a la apertura de caja y usuarios dados de baja lógicamente (el contrato ya
@@ -67,4 +76,11 @@ export class Pago {
     transformer: utcTimestampTransformer,
   })
   fecha!: Date;
+
+  @ManyToOne(() => Pedido, (pedido) => pedido.pagos)
+  @JoinColumn({
+    name: 'pedido_id',
+    foreignKeyConstraintName: 'pagos_pedido_id_fkey',
+  })
+  pedido!: Relation<Pedido>;
 }

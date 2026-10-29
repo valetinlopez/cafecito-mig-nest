@@ -57,11 +57,18 @@ describe('Pago entity', () => {
     expect(monto?.options.scale).toBe(2);
   });
 
-  it('no declara relaciones mientras Pedido y Caja no existan', () => {
-    const relations = metadata.relations.filter(
+  it('declara la relación con Pedido reutilizando pedido_id', () => {
+    const relations = metadata.relations
+      .filter((entry) => entry.target === Pago)
+      .map((relation) => [relation.propertyName, relation.relationType]);
+
+    expect(relations).toEqual([['pedido', 'many-to-one']]);
+
+    const joinColumn = metadata.joinColumns.find(
       (entry) => entry.target === Pago,
     );
 
-    expect(relations).toEqual([]);
+    expect(joinColumn?.name).toBe('pedido_id');
+    expect(joinColumn?.foreignKeyConstraintName).toBe('pagos_pedido_id_fkey');
   });
 });

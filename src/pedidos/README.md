@@ -1,12 +1,12 @@
 # Módulo `pedidos`
 
-| Campo        | Valor                                               |
-| ------------ | --------------------------------------------------- |
-| Estado       | **Scaffold** (módulo registrado, sin código propio) |
-| Entities     | `Pedido` · `DetallePedido`                          |
-| Endpoints    | 5 (ver [`CONTRACT.md`](./CONTRACT.md))              |
-| Dependencias | `mesas`, `productos`, `users`, `caja`, `pagos`      |
-| Tests        | Pendientes                                          |
+| Campo        | Valor                                                         |
+| ------------ | ------------------------------------------------------------- |
+| Estado       | **Entities + DTOs** (MIG-30); service y controller en MIG-33  |
+| Entities     | `Pedido` · `DetallePedido`                                    |
+| Endpoints    | 5 (ver [`CONTRACT.md`](./CONTRACT.md)) — pendientes de MIG-33 |
+| Dependencias | `mesas`, `productos`, `users`, `caja`, `pagos`                |
+| Tests        | ✅ 49 unitarios del módulo                                    |
 
 ---
 
@@ -23,44 +23,63 @@ Es el módulo con más reglas y el que más depende de otros.
 
 ```
 src/pedidos/
-└── pedidos.module.ts    # @Module({}) — vacío
-```
-
----
-
-## 3. Estructura objetivo
-
-```
-src/pedidos/
-├── pedidos.module.ts
-├── pedidos.controller.ts
-├── pedidos.service.ts
-├── pedidos.service.spec.ts
+├── pedidos.module.ts              # TypeOrmModule.forFeature([Pedido, DetallePedido])
+├── pedido-estado.ts               # PEDIDO_ESTADOS + PedidoEstado
 ├── dto/
+│   ├── detalle-pedido-create.dto.ts
 │   ├── create-pedido.dto.ts
 │   ├── update-pedido.dto.ts
 │   ├── pedido-pago.dto.ts
+│   ├── detalle-pedido-response.dto.ts
 │   └── pedido-response.dto.ts
 ├── entities/
 │   ├── pedido.entity.ts
 │   └── detalle-pedido.entity.ts
-├── README.md · CONTRACT.md · DECISIONS.md
+└── README.md · CONTRACT.md · DECISIONS.md · AGENTS.md
+```
+
+MIG-30 entrega **solo persistencia y contrato**: entities, DTOs, validaciones de
+forma y tests. No hay `PedidosService` ni `PedidosController` todavía; los
+endpoints de §6.5 se implementan en MIG-33.
+
+---
+
+## 3. Estructura objetivo (MIG-33)
+
+```
+src/pedidos/
+├── pedidos.service.ts
+├── pedidos.service.spec.ts
+├── pedidos.controller.ts
+└── … (lo ya entregado por MIG-30)
 ```
 
 ---
 
-## 4. Modelo esperado
+## 4. Modelo
 
-| Tabla             | Campo clave                                               | Notas                      |
-| ----------------- | --------------------------------------------------------- | -------------------------- |
-| `pedidos`         | `id`, `estado`, `total`, `fecha`, `mesa_id`, `usuario_id` | `total` `numeric(10,2)`    |
-| `detalle_pedidos` | `id`, `pedido_id`, `producto_id`, `cantidad`, `subtotal`  | `subtotal` `numeric(10,2)` |
+| Tabla             | Campo clave                                               | Notas                                 |
+| ----------------- | --------------------------------------------------------- | ------------------------------------- |
+| `pedidos`         | `id`, `estado`, `total`, `fecha`, `mesa_id`, `usuario_id` | `total` `numeric(10,2)` → `number`    |
+| `detalle_pedidos` | `id`, `pedido_id`, `producto_id`, `cantidad`, `subtotal`  | `subtotal` histórico, `numeric(10,2)` |
+
+Relaciones:
+
+| Origen                   | Relación    | Destino         | Cascada  |
+| ------------------------ | ----------- | --------------- | -------- |
+| `Pedido.mesa`            | `ManyToOne` | `Mesa`          | —        |
+| `Pedido.usuario`         | `ManyToOne` | `Usuario`       | —        |
+| `Pedido.detalles`        | `OneToMany` | `DetallePedido` | `insert` |
+| `Pedido.pagos`           | `OneToMany` | `Pago`          | —        |
+| `DetallePedido.pedido`   | `ManyToOne` | `Pedido`        | —        |
+| `DetallePedido.producto` | `ManyToOne` | `Producto`      | —        |
 
 Estados y transiciones: [`docs/glossary.md`](../../docs/glossary.md) §3.1.
+Decisiones de mapeo: [`DECISIONS.md`](./DECISIONS.md) D-09 a D-14.
 
 ---
 
-## 5. Reglas de negocio
+## 5. Reglas de negocio (MIG-33)
 
 ### Crear pedido
 
@@ -97,21 +116,22 @@ Errores `400`: `Mesa N no encontrada`, `La mesa ya tiene un pedido activo`,
 ## 6. Consultas
 
 - `GET /pedidos/` devuelve **solo activos**: excluye `pagado` y `cancelado`.
-- Incluye `mesa`, `usuario` y `detalles`.
+- Incluye `mesa`, `usuario` y `detalles` con `relations` explícitas (sin N+1).
 - Sin paginación (D-10).
 
 ---
 
-## 7. Tests esperados
+## 7. Tests entregados en MIG-30
 
-- Crear pedido calcula total y subtotales y descuenta stock.
-- Crear con mesa ocupada → `400`.
-- Crear con stock insuficiente → `400`.
-- Transición válida e inválida.
-- Cancelar repone stock y libera mesa.
-- Cobrar sin caja abierta → `400`.
-- Cobrar pedido no entregado → `400`.
-- e2e del shape completo con relaciones anidadas.
+- Enum de estados completo y sin duplicados.
+- Mapeo de tablas, columnas, FK y transformers de ambas entities.
+- Metadata de TypeORM resuelto con las relaciones cruzadas (sin ciclos rotos).
+- `CreatePedidoDto`: mínimo un detalle, `cantidad >= 1`, ids enteros y descarte
+  de campos que calcula el servidor.
+- `UpdatePedidoDto`: acepta los 6 estados y rechaza el resto.
+- `PedidoPagoDto`: acepta los 5 métodos y descarta `monto`.
+- `PedidoResponseDto`: shape exacto, decimales como `number`, fecha ISO con `Z`,
+  sin `password_hash` y falla si faltan relaciones hidratadas.
 
 ---
 

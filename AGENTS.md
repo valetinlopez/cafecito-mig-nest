@@ -167,3 +167,4 @@ actualización de `docs/architecture.md`.
   (Excepción: `CONTRACT.md` por módulo, que es un extracto operativo del
   contrato global y debe citar la sección de origen.)
 - No usar el `AGENTS.md` de módulo como segundo README: es un índice, no contenido.
+  - No hagas commit el desarrolador lo hace
