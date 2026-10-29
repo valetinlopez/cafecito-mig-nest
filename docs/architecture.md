@@ -130,23 +130,23 @@ Puntos de borde:
 
 ## 5. Mapa de módulos
 
-| Módulo     | Directorio       | Estado                       | Dominio                                | Depende de                                     |
-| ---------- | ---------------- | ---------------------------- | -------------------------------------- | ---------------------------------------------- |
-| Health     | `src/health`     | **Implementado**             | `GET /` (fuera de `/api/v1`)           | —                                              |
-| Config     | `src/config`     | **Implementado**             | Validación de entorno + config tipada  | —                                              |
-| Database   | `src/database`   | **Implementado**             | DataSource, pool, migraciones          | `config`                                       |
-| Categorías | `src/categorias` | **Implementado (lectura + JWT)** | `GET /categorias/`                | `database`, `common`                           |
-| Auth       | `src/auth`       | **Implementado** (MIG-23)    | Login, registro, perfil, password      | `users`, `config/auth`, `common`               |
-| Users      | `src/users`      | **Implementado** (MIG-22/25) | Entity/gestión de usuarios             | `database`                                     |
-| Empleados  | `src/empleados`  | Implementado en rama MIG-26 (pendiente revisión) | ABM de empleados (`rol = mozo`) | `users`, `common`                               |
-| Mesas      | `src/mesas`      | Implementado (MIG-27)        | Estados y ABM de mesas                 | `ACTIVE_ORDERS_PORT` (adapter de pedidos pendiente MIG-30) |
-| Productos  | `src/productos`  | Parcial (MIG-29: GET/POST/PATCH; DELETE MIG-30) | Catálogo, stock, precios | `categorias` (lookup); schema/transformer MIG-44 |
-| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)      | Comandas y transiciones                | `mesas`, `productos`, `users`, `caja`, `pagos` |
-| Pagos      | `src/pagos`      | Entity + DTOs (MIG-31); cobro MIG-32 | Persistencia de cobros (sin endpoints) | `pedidos`, `caja`, `users`                     |
-| Caja       | `src/caja`       | Scaffold (módulo vacío)      | Apertura, cierre, movimientos          | `pagos`                                        |
-| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)      | KPIs de solo lectura                   | `mesas`, `pedidos`, `pagos`, `caja`            |
-| Reportes   | `src/reportes`   | Scaffold (módulo vacío)      | Reporte de ventas por período          | `pagos`, `caja`, `pedidos`                     |
-| Common     | `src/common`     | **Implementado**             | Filtros, pipes, guards, decoradores    | —                                              |
+| Módulo     | Directorio       | Estado                                           | Dominio                                           | Depende de                                                 |
+| ---------- | ---------------- | ------------------------------------------------ | ------------------------------------------------- | ---------------------------------------------------------- |
+| Health     | `src/health`     | **Implementado**                                 | `GET /` (fuera de `/api/v1`)                      | —                                                          |
+| Config     | `src/config`     | **Implementado**                                 | Validación de entorno + config tipada             | —                                                          |
+| Database   | `src/database`   | **Implementado**                                 | DataSource, pool, migraciones                     | `config`                                                   |
+| Categorías | `src/categorias` | **Implementado (lectura + JWT)**                 | `GET /categorias/`                                | `database`, `common`                                       |
+| Auth       | `src/auth`       | **Implementado** (MIG-23)                        | Login, registro, perfil, password                 | `users`, `config/auth`, `common`                           |
+| Users      | `src/users`      | **Implementado** (MIG-22/25)                     | Entity/gestión de usuarios                        | `database`                                                 |
+| Empleados  | `src/empleados`  | Implementado en rama MIG-26 (pendiente revisión) | ABM de empleados (`rol = mozo`)                   | `users`, `common`                                          |
+| Mesas      | `src/mesas`      | Implementado (MIG-27)                            | Estados y ABM de mesas                            | `ACTIVE_ORDERS_PORT` (adapter de pedidos pendiente MIG-30) |
+| Productos  | `src/productos`  | Parcial (MIG-29: GET/POST/PATCH; DELETE MIG-30)  | Catálogo, stock, precios                          | `categorias` (lookup); schema/transformer MIG-44           |
+| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)                          | Comandas y transiciones                           | `mesas`, `productos`, `users`, `caja`, `pagos`             |
+| Pagos      | `src/pagos`      | Entity + DTOs (MIG-31); consultas de Caja MIG-32 | Persistencia de cobros (sin endpoints)            | `pedidos`, `caja`, `users`                                 |
+| Caja       | `src/caja`       | **Implementado (MIG-32)**                        | Apertura, cierre, historial, movimientos y ventas | `pagos`, `common`                                          |
+| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)                          | KPIs de solo lectura                              | `mesas`, `pedidos`, `pagos`, `caja`                        |
+| Reportes   | `src/reportes`   | Scaffold (módulo vacío)                          | Reporte de ventas por período                     | `pagos`, `caja`, `pedidos`                                 |
+| Common     | `src/common`     | **Implementado**                                 | Filtros, pipes, guards, decoradores               | —                                                          |
 
 **Leyenda:** _Implementado_ = código + tests + doc. _Scaffold_ = el módulo
 existe registrado en `AppModule` pero sin controller/service/entity; su contrato
@@ -206,17 +206,17 @@ del contrato y del legacy, y debe validarse contra la base en MIG-44 antes de
 considerar definitivo su mapeo. Productos ya tiene entity provisional en esta
 rama; sus columnas y relaciones siguen sujetas a esa validación.
 
-| Tabla legacy (a confirmar) | Entity           | Módulo     | Estado                |
-| -------------------------- | ---------------- | ---------- | --------------------- |
-| `categorias`               | `Categoria`      | categorias | Implementada          |
-| `usuarios`                 | `Usuario`        | users      | Implementada (MIG-22) |
-| `mesas`                    | `Mesa`           | mesas      | Pendiente             |
+| Tabla legacy (a confirmar) | Entity           | Módulo     | Estado                               |
+| -------------------------- | ---------------- | ---------- | ------------------------------------ |
+| `categorias`               | `Categoria`      | categorias | Implementada                         |
+| `usuarios`                 | `Usuario`        | users      | Implementada (MIG-22)                |
+| `mesas`                    | `Mesa`           | mesas      | Pendiente                            |
 | `productos`                | `Producto`       | productos  | Provisional (MIG-29; validar MIG-44) |
-| `pedidos`                  | `Pedido`         | pedidos    | Pendiente             |
-| `detalle_pedidos`          | `DetallePedido`  | pedidos    | Pendiente             |
+| `pedidos`                  | `Pedido`         | pedidos    | Pendiente                            |
+| `detalle_pedidos`          | `DetallePedido`  | pedidos    | Pendiente                            |
 | `pagos`                    | `Pago`           | pagos      | Provisional (MIG-31; validar MIG-44) |
-| `cajas`                    | `Caja`           | caja       | Pendiente             |
-| `movimientos_caja`*        | `MovimientoCaja` | caja       | Pendiente             |
+| `cajas`                    | `Caja`           | caja       | Pendiente                            |
+| `movimientos_caja`*        | `MovimientoCaja` | caja       | Pendiente                            |
 
 \* El contrato expone movimientos derivados de pagos; la tabla real se confirma
 en MIG-44.

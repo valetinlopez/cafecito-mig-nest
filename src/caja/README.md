@@ -1,12 +1,12 @@
 # Módulo `caja`
 
-| Campo        | Valor                                               |
-| ------------ | --------------------------------------------------- |
-| Estado       | **Scaffold** (módulo registrado, sin código propio) |
-| Entities     | `Caja` (+ movimientos derivados de `pagos`)         |
-| Endpoints    | 5 (ver [`CONTRACT.md`](./CONTRACT.md))              |
-| Dependencias | `pagos`, `users`, `common/guards`                   |
-| Tests        | Pendientes                                          |
+| Campo        | Valor                                       |
+| ------------ | ------------------------------------------- |
+| Estado       | **Implementado (MIG-32)**                   |
+| Entities     | `Caja` (+ movimientos derivados de `pagos`) |
+| Endpoints    | 5 (ver [`CONTRACT.md`](./CONTRACT.md))      |
+| Dependencias | `pagos`, `users`, `common/guards`           |
+| Tests        | ✅ unitarios + e2e                          |
 
 ---
 
@@ -24,12 +24,17 @@ los cobros del día.
 
 ```
 src/caja/
-└── caja.module.ts    # @Module({}) — vacío
+├── caja.module.ts
+├── caja.controller.ts
+├── caja.service.ts
+├── caja.service.spec.ts
+├── entities/caja.entity.ts
+└── dto/ (apertura, cierre, caja y movimiento)
 ```
 
 ---
 
-## 3. Estructura objetivo
+## 3. Estructura implementada
 
 ```
 src/caja/
@@ -91,7 +96,7 @@ pagos (movimientos)  →  caja (consolidación)  →  reportes
 
 ---
 
-## 7. Tests esperados
+## 7. Tests MIG-32
 
 - Apertura cuando no hay caja → `201` con estado `abierta`.
 - Apertura con caja abierta → `400`.
@@ -100,6 +105,11 @@ pagos (movimientos)  →  caja (consolidación)  →  reportes
 - Cierre actualiza estado, `fecha_cierre` y `monto_final`.
 - Movimientos ordenados y con monto numérico.
 - e2e de `403` con rol `mozo`.
+
+Las aperturas se serializan dentro de una transacción con advisory lock de
+PostgreSQL (sin DDL); el cierre usa `pessimistic_write`. Movimientos y
+`total_ventas` se consultan desde pagos, y el historial obtiene los totales
+agrupados para evitar N+1.
 
 ---
 

@@ -28,14 +28,17 @@ negocio; si crece, se puede cachear o materializar en un ticket futuro.
 
 ## D-03 — Una sola caja abierta
 
-**Decisión:** validar en el service y reforzar con una transacción (o un índice
-parcial `WHERE estado = 'abierta'`) que no exista otra caja abierta.
+**Decisión:** serializar aperturas con una transacción y
+`pg_advisory_xact_lock`, luego validar e insertar si no existe otra caja
+abierta.
 
 **Motivo:** dos aperturas simultáneas rompen la consolidación de ventas. La
 validación sola tiene una condición de carrera.
 
-**Implementación:** `INSERT ... WHERE NOT EXISTS (SELECT 1 FROM cajas WHERE
-estado = 'abierta')` o transacción con bloqueo.
+**Implementación (MIG-32):** adquirir una clave fija para la operación de
+apertura mediante advisory transaction lock. Al no existir fila abierta, un
+lock de fila no serializaría dos inserts concurrentes. El advisory lock evita
+DDL y no modifica el esquema compartido.
 
 ---
 
@@ -52,7 +55,8 @@ contra lo esperado se calcula en reportes, no se corrige acá.
 ## D-05 — Movimientos derivados de `pagos`
 
 **Decisión:** no crear una tabla `movimientos_caja`; los movimientos son pagos
-filtrados por `caja_id`.
+filtrados por `caja_id`, proyectados con pedido, mesa y usuario nullable y
+ordenados por fecha descendente.
 
 **Motivo:** un movimiento no tiene datos propios: es un pago del período. Una
 tabla espejo duplicaría información y podría desincronizarse.

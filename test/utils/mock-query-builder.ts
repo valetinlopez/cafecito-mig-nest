@@ -44,6 +44,8 @@ export interface MockQueryBuilder<T extends ObjectLiteral> {
   getMany: Mock<() => Promise<T[]>>;
   getManyAndCount: Mock<() => Promise<[T[], number]>>;
   getCount: Mock<() => Promise<number>>;
+  getRawMany: Mock<SelectQueryBuilder<T>['getRawMany']>;
+  getRawOne: Mock<SelectQueryBuilder<T>['getRawOne']>;
 }
 
 /**
@@ -90,6 +92,8 @@ export function createMockQueryBuilder<
   queryBuilder.getMany = vi.fn<() => Promise<T[]>>();
   queryBuilder.getManyAndCount = vi.fn<() => Promise<[T[], number]>>();
   queryBuilder.getCount = vi.fn<() => Promise<number>>();
+  queryBuilder.getRawMany = vi.fn<SelectQueryBuilder<T>['getRawMany']>();
+  queryBuilder.getRawOne = vi.fn<SelectQueryBuilder<T>['getRawOne']>();
 
   return queryBuilder;
 }
