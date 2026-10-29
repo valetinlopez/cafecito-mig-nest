@@ -10,7 +10,7 @@ async function unavailableActiveOrdersCheck(): Promise<boolean> {
   throw new Error('Active orders provider is not configured');
 }
 
-/** Provider temporal fail-closed: se reemplaza al implementar pedidos (MIG-30). */
+/** Provider temporal fail-closed: se reemplaza al implementar `PedidosService` (MIG-33). */
 const unavailableActiveOrdersProvider = {
   provide: ACTIVE_ORDERS_PORT,
   useValue: {

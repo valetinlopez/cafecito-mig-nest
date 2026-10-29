@@ -22,7 +22,8 @@
 - Response con `categoria: { id, nombre }`; request con `categoria_id`.
 - `categoria_id` permanece scalar, sin relación ORM hasta MIG-44; hidratar categoría vía `CategoriasService`.
 - El stock lo descuenta `pedidos`, no este módulo.
-- `DELETE` según contrato está pendiente de MIG-30, que confirma pedidos asociados.
+- `DELETE` según contrato queda pendiente de un ticket de `productos`; MIG-30 ya
+  expone `DetallePedido.producto_id` para validar pedidos asociados.
 - `descripcion` nullable devuelve `null`, no se omite.
 - Validar `categoria_id` en el service para responder `400`, no `500`.
 

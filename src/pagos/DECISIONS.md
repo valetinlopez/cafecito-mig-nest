@@ -85,18 +85,22 @@ MIG-44 confirma tipos, nulabilidad y FKs contra la base real.
 
 ---
 
-## D-09 — Sin relaciones ORM hasta que existan `Pedido` y `Caja`
+## D-09 — Relación con `Pedido` declarada; `Caja` sigue diferida
 
-**Decisión:** `pedidoId`, `cajaId` y `usuarioId` quedan como columnas escalares;
-no se declara `@ManyToOne(() => Pedido, pedido => pedido.pagos)` en MIG-31.
+**Decisión:** desde MIG-30, `Pago` declara
+`@ManyToOne(() => Pedido, pedido => pedido.pagos)` sobre la columna física
+`pedido_id` y `Pedido` expone `pagos` como inversa de solo lectura. `cajaId` y
+`usuarioId` siguen como columnas escalares y nullable.
 
-**Motivo:** el ticket lo pide, pero `Pedido` y `Caja` todavía no existen en el
-código. Crear entities parciales solo para satisfacer la relación permitiría que
-TypeORM altere tablas compartidas con producción (constitución §4, convenciones
-§6.1). Misma decisión que se tomó en `Categoria`/`Usuario`.
+**Motivo:** cuando se escribió MIG-31, `Pedido` no existía y crear una entity
+parcial habría permitido que TypeORM altere una tabla compartida con producción
+(constitución §4, convenciones §6.1). MIG-30 crea `Pedido`, así que la
+contraparte ya existe y la relación se completa sin `forwardRef`. La relación con
+`cajas` se mantiene diferida a MIG-32/MIG-44 porque esa entity todavía no existe.
 
-**Consecuencia:** la relación bidireccional se agrega en MIG-32/MIG-44, cuando
-la contra-parte exista.
+**Consecuencia:** la FK se declara con el nombre de PostgreSQL
+(`pagos_pedido_id_fkey`) y MIG-44 lo confirma con `schema:log`. El pago se sigue
+creando dentro de la transacción del cobro (MIG-33), no por cascada.
 
 ---
 

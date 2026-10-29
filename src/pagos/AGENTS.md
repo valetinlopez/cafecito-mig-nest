@@ -25,7 +25,8 @@
 - El `Pago` se crea dentro de la transacción del cobro; eso vive en MIG-33.
 - `metodo_pago` sale siempre de `METODOS_PAGO`; no repetir literales.
 - `numericTransformer` y `utcTimestampTransformer` se importan de `common`.
-- Sin relaciones ORM hasta que existan `Pedido` y `Caja` (D-09).
+- Sin relación ORM con `cajas` hasta que exista la entity (D-09); la relación con
+  `Pedido` sí está declarada desde MIG-30.
 - El DTO expone solo `id`, `pedido_id`, `metodo_pago`, `monto`, `fecha`.
 - Movimientos de caja se derivan de pagos; no crear tabla espejo.
 
