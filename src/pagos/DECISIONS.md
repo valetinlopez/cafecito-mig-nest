@@ -119,13 +119,16 @@ que el contrato no dependa del transformer.
 
 ---
 
-## D-11 — El esqueleto del service falla con `501`
+## D-11 — El service migra por responsabilidad de ticket
 
-**Decisión:** `registrarPago`, `findByCaja` y `findByPedido` existen con sus
-firmas definitivas y rechazan con `NotImplementedException` (501) mencionando
-MIG-33. No devuelven `[]` ni `null`.
+**Decisión:** `findByCaja`, `getTotalVentas` y `getTotalesVentas` leen la
+proyección de pagos para Caja en MIG-32. `registrarPago` y `findByPedido`
+rechazan con `NotImplementedException` (501) hasta MIG-33.
 
-**Motivo:** `pedidos` y `caja` pueden programar contra las firmas desde ya, y
-cualquier llamada accidental falla de forma visible en lugar de simular una
-respuesta vacía que ocultaría el pendiente. `PagosModule` registra la entity,
-así que MIG-33 solo agrega el repositorio y la transacción.
+**Motivo:** el service implementa las consultas que requiere caja sin adelantar
+el flujo de cobro de pedidos. Los movimientos se proyectan con joins a pedido,
+mesa y usuario; los totales del historial se agrupan por caja y se convierten a
+`number`, normalizando ausencia de pagos a cero.
+
+**Consecuencia:** la tabla real, columnas y FKs se verifican en MIG-44; no se
+agrega relación ORM de `Pago` a `Caja` en MIG-32.

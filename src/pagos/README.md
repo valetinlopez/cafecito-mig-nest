@@ -1,12 +1,12 @@
 # Módulo `pagos`
 
-| Campo        | Valor                                                          |
-| ------------ | -------------------------------------------------------------- |
-| Estado       | **Entity + DTOs** (MIG-31); lógica del cobro en MIG-33          |
-| Entity       | `Pago` → tabla `pagos` (mapeo a confirmar en MIG-44)            |
-| Endpoints    | **Ninguno propio** (ver [`CONTRACT.md`](./CONTRACT.md))         |
-| Dependencias | `pedidos`, `caja`, `users`                                     |
-| Tests        | 17 unitarios (`entity`, `dto`, `metodo-pago`, `service`)        |
+| Campo        | Valor                                                   |
+| ------------ | ------------------------------------------------------- |
+| Estado       | **Entity + DTOs** (MIG-31); lógica del cobro en MIG-33  |
+| Entity       | `Pago` → tabla `pagos` (mapeo a confirmar en MIG-44)    |
+| Endpoints    | **Ninguno propio** (ver [`CONTRACT.md`](./CONTRACT.md)) |
+| Dependencias | `pedidos`, `caja`, `users`                              |
+| Tests        | Unitarios (`entity`, `dto`, `metodo-pago`, `service`)   |
 
 ---
 
@@ -26,7 +26,7 @@ entity ni las reglas del cobro.
 ```
 src/pagos/
 ├── pagos.module.ts          # forFeature([Pago]) + exporta PagosService
-├── pagos.service.ts         # esqueleto: 3 firmas, 501 hasta MIG-33/MIG-32
+├── pagos.service.ts         # movimientos y ventas MIG-32; cobro MIG-33 pendiente
 ├── pagos.service.spec.ts
 ├── metodo-pago.ts           # METODOS_PAGO + type MetodoPago
 ├── metodo-pago.spec.ts
@@ -45,15 +45,15 @@ Sin controller y sin DTOs de request: la entrada es el DTO de `pedidos`.
 
 ## 3. Modelo
 
-| Propiedad    | Columna       | Tipo            | Restricción                     |
-| ------------ | ------------- | --------------- | ------------------------------- |
-| `id`         | `id`          | `serial`        | PK                              |
-| `pedidoId`   | `pedido_id`   | `int`           | `UNIQUE`, not null              |
-| `cajaId`     | `caja_id`     | `int`           | FK a `cajas`, **nullable**      |
-| `usuarioId`  | `usuario_id`  | `int`           | FK a `usuarios`, **nullable**   |
-| `metodoPago` | `metodo_pago` | `varchar(30)`   | 5 valores del glosario          |
+| Propiedad    | Columna       | Tipo            | Restricción                       |
+| ------------ | ------------- | --------------- | --------------------------------- |
+| `id`         | `id`          | `serial`        | PK                                |
+| `pedidoId`   | `pedido_id`   | `int`           | `UNIQUE`, not null                |
+| `cajaId`     | `caja_id`     | `int`           | FK a `cajas`, **nullable**        |
+| `usuarioId`  | `usuario_id`  | `int`           | FK a `usuarios`, **nullable**     |
+| `metodoPago` | `metodo_pago` | `varchar(30)`   | 5 valores del glosario            |
 | `monto`      | `monto`       | `numeric(10,2)` | `number` vía `numericTransformer` |
-| `fecha`      | `fecha`       | `timestamp`     | default `now()`, UTC naive      |
+| `fecha`      | `fecha`       | `timestamp`     | default `now()`, UTC naive        |
 
 - La restricción se declara con el nombre real de PostgreSQL
   (`pagos_pedido_id_key`) para que `schema:log` no proponga recrearla.
@@ -70,15 +70,15 @@ Sin controller y sin DTOs de request: la entrada es el DTO de `pedidos`.
 
 ## 4. Operaciones del service
 
-| Método                   | Uso                         | Estado      |
-| ------------------------ | --------------------------- | ----------- |
-| `registrarPago(data)`    | Desde el cobro en `pedidos` | MIG-33      |
-| `findByCaja(cajaId)`     | Movimientos de una caja     | MIG-32      |
-| `findByPedido(pedidoId)` | Verificar cobro existente   | MIG-33      |
+| Método                   | Uso                         | Estado |
+| ------------------------ | --------------------------- | ------ |
+| `registrarPago(data)`    | Desde el cobro en `pedidos` | MIG-33 |
+| `findByCaja(cajaId)`     | Movimientos de una caja     | MIG-32 |
+| `findByPedido(pedidoId)` | Verificar cobro existente   | MIG-33 |
 
-Las tres firmas existen y fallan con `501` (`NotImplementedException`) indicando
-el ticket. Se congelan ahora para que `pedidos` y `caja` programen contra ellas
-(D-11).
+`findByCaja(cajaId)`, `getTotalVentas(cajaId)` y `getTotalesVentas(cajaIds)` están
+implementados en MIG-32. `registrarPago()` y `findByPedido()` permanecen con
+`501` hasta MIG-33.
 
 ---
 
@@ -94,12 +94,12 @@ el ticket. Se congelan ahora para que `pedidos` y `caja` programen contra ellas
 
 ## 6. Tests
 
-| Archivo                      | Qué cubre                                                        |
-| ---------------------------- | ---------------------------------------------------------------- |
-| `pago.entity.spec.ts`        | Tabla, columnas snake_case, unique, transformers y ausencia de relaciones. |
-| `pago-response.dto.spec.ts`  | `monto` number, `fecha` con `Z`, claves internas fuera del JSON.  |
-| `metodo-pago.spec.ts`        | Los 5 métodos del glosario, en snake_case.                        |
-| `pagos.service.spec.ts`      | Firmas presentes y `501` con el ticket (cobro MIG-33, movimientos MIG-32). |
+| Archivo                     | Qué cubre                                                                   |
+| --------------------------- | --------------------------------------------------------------------------- |
+| `pago.entity.spec.ts`       | Tabla, columnas snake_case, unique, transformers y ausencia de relaciones.  |
+| `pago-response.dto.spec.ts` | `monto` number, `fecha` con `Z`, claves internas fuera del JSON.            |
+| `metodo-pago.spec.ts`       | Los 5 métodos del glosario, en snake_case.                                  |
+| `pagos.service.spec.ts`     | Proyección de movimientos, orden DESC, usuario nullable y ventas agregadas. |
 
 ---
 

@@ -72,8 +72,8 @@ interface PagoResponseDto {
   id: number;
   pedido_id: number;
   metodo_pago: MetodoPago;
-  monto: number;        // number, 2 decimales (D-05)
-  fecha: string;        // ISO-8601 UTC con Z (D-06)
+  monto: number; // number, 2 decimales (D-05)
+  fecha: string; // ISO-8601 UTC con Z (D-06)
 }
 
 interface MovimientoCaja {
@@ -91,23 +91,23 @@ interface MovimientoCaja {
 
 ## 5. Invariantes
 
-| Invariante                       | Verificación                        |
-| -------------------------------- | ----------------------------------- |
-| Un pago por pedido               | `UNIQUE(pedido_id)` + service       |
-| `monto > 0` y = total del pedido | Cálculo en servidor                 |
-| `metodo_pago` ∈ enum             | `METODOS_PAGO` + validación en DTO  |
-| `fecha` ISO-8601 UTC con `Z`     | `toIsoUtc()` en el DTO de response  |
-| Pertenece a una caja abierta     | Validación en el cobro (MIG-33)     |
+| Invariante                       | Verificación                          |
+| -------------------------------- | ------------------------------------- |
+| Un pago por pedido               | `UNIQUE(pedido_id)` + service         |
+| `monto > 0` y = total del pedido | Cálculo en servidor                   |
+| `metodo_pago` ∈ enum             | `METODOS_PAGO` + validación en DTO    |
+| `fecha` ISO-8601 UTC con `Z`     | `toIsoUtc()` en el DTO de response    |
+| Pertenece a una caja abierta     | Validación en el cobro (MIG-33)       |
 | `monto` sale como JSON `number`  | `numericTransformer` + `fromEntity()` |
 
 ---
 
 ## 6. Estado de implementación (MIG-31)
 
-| Pieza             | Estado                                          |
-| ----------------- | ----------------------------------------------- |
-| `Pago` entity     | ✅ Columnas, unique y transformers               |
-| `PagoResponseDto` | ✅ `fromEntity()` con `number` y `Z`             |
-| `MetodoPago`      | ✅ 5 valores cerrados                            |
-| `PagosService`    | 🟡 Firmas creadas; operaciones responden `501`   |
-| Relaciones ORM    | ⏳ MIG-32/MIG-44 (faltan `Pedido` y `Caja`)      |
+| Pieza             | Estado                                                |
+| ----------------- | ----------------------------------------------------- |
+| `Pago` entity     | ✅ Columnas, unique y transformers                    |
+| `PagoResponseDto` | ✅ `fromEntity()` con `number` y `Z`                  |
+| `MetodoPago`      | ✅ 5 valores cerrados                                 |
+| `PagosService`    | ✅ Movimientos/totales MIG-32; cobro MIG-33 pendiente |
+| Relaciones ORM    | ⏳ MIG-32/MIG-44 (faltan `Pedido` y `Caja`)           |
