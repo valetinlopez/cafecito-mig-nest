@@ -5,10 +5,10 @@
 
 | Campo       | Valor                                                        |
 | ----------- | ------------------------------------------------------------ |
-| Actualizado | 2026-10-27                                                   |
-| Sprint      | S1 — Auth & Usuarios                                         |
-| Epic        | MIG-4 — E3: Autenticación, Usuarios & Empleados              |
-| Foco actual | MIG-29: Productos parcial en rama; sin commit/push            |
+| Actualizado | 2026-10-29                                                   |
+| Sprint      | S3 — Pedidos, Pagos & Caja                                   |
+| Epic        | MIG-7 — E7: Módulo Pagos & Caja                              |
+| Foco actual | MIG-31: entity `Pago` + DTOs + esqueleto de service          |
 
 ---
 
@@ -28,7 +28,7 @@
 | mesas      | Implementado en rama MIG-27             | ✅    | ✅  | Revisión e integración                             |
 | productos  | Parcial MIG-29 (GET/POST/PATCH)        | ✅    | ✅  | DELETE MIG-30; relación/transformer MIG-44          |
 | pedidos    | Scaffold (módulo vacío)               | ❌    | ✅  | Depende de mesas/productos/caja                     |
-| pagos      | Scaffold (módulo vacío)               | ❌    | ✅  | Sin endpoints propios                               |
+| pagos      | Entity + DTOs + esqueleto (MIG-31)    | ✅    | ✅  | Cobro y movimientos en MIG-32                       |
 | caja       | Scaffold (módulo vacío)               | ❌    | ✅  | Definir `null` literal (D-09)                       |
 | dashboard  | Scaffold (módulo vacío)               | ❌    | ✅  | Solo lectura                                        |
 | reportes   | Scaffold (módulo vacío)               | ❌    | ✅  | Depende de pagos/caja                               |
@@ -49,6 +49,7 @@
 | MIG-24 | JWT aplicado a endpoints disponibles de `categorias`                    | Integrado en develop |
 | MIG-25 | Claims JWT y reset tokens alineados; bcrypt Passlib probado              | Integrado en develop |
 | MIG-43 | Fechas UTC: proceso en UTC, transformer y `toIsoUtc()`                 | En revisión  |
+| MIG-31 | Entity `Pago` + `PagoResponseDto` + esqueleto de `PagosService`        | Cerrado      |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs) | Cerrado      |
 
 ---
@@ -59,7 +60,8 @@
 | -------------------------------------- | --------------------------- | ------ |
 | Guards pendientes en módulos scaffold | Sin controllers que proteger aún | MIG-24 |
 | Sin `SwaggerModule`                    | `/docs` no disponible       | MIG-40 |
-| Sin `numericTransformer`               | `numeric` llega como string | MIG-44 |
+| Transformer numérico sin adoptar       | Productos/caja siguen con conversión ad hoc | MIG-44 |
+| Mapeo `pagos`/`caja_id`/`usuario_id` sin validar | Nulabilidad y FKs provisionales | MIG-44 |
 | Mapeo `usuarios` sin validar con la DB | `schema:log` puede diferir  | MIG-44 |
 
 ---
@@ -68,6 +70,9 @@
 
 | Fecha      | Decisión                                                              | Registro                  |
 | ---------- | --------------------------------------------------------------------- | ------------------------- |
+| 2026-10-29 | `numericTransformer` compartido se adelanta a MIG-31 (`Pago.monto`)   | `src/common/DECISIONS.md` |
+| 2026-10-29 | `pagos`: `caja_id`/`usuario_id` nullable y sin relaciones ORM         | `src/pagos/DECISIONS.md`  |
+| 2026-10-29 | Esqueleto de `PagosService` responde `501` hasta MIG-32                | `src/pagos/DECISIONS.md`  |
 | 2026-10-26 | Guards y `UsersService` se adelantan a MIG-23 por dependencia         | `src/auth/DECISIONS.md`   |
 | 2026-10-26 | Guard por controller + `@Public()`; sin `APP_GUARD` global            | `src/auth/DECISIONS.md`   |
 | 2026-10-26 | Access token `{sub, rol}`; usuario releído de la DB en cada request   | `src/auth/DECISIONS.md`   |
@@ -102,13 +107,12 @@
 
 ## 6. Próximo paso
 
-1. **MIG-29:** completar validación, revisar el diff y detenerse sin commit/push
-   hasta nueva instrucción. El alcance actual omite DELETE hasta MIG-30.
-2. **MIG-30:** aportar la consulta/adapter de pedidos asociados que habilite
-   DELETE de productos y el adapter de pedidos activos de mesas.
-3. **MIG-44:** validar el mapeo provisional de productos/categorías y agregar
-   el transformer numérico compartido; ejecutar `npm run schema:log` antes de
-   ajustar entities.
+1. **MIG-31:** revisar el diff de `feature/MIG-31-entity-pago-dt-os` y mergear.
+   Sin migración: la entity es provisional y se valida en MIG-44.
+2. **MIG-32:** implementar el cobro transaccional en `PedidosService` usando
+   `PagosService.registrarPago()`, y los movimientos de caja con `findByCaja()`.
+3. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
+   productos/pedidos/caja y confirmar columnas, nulabilidad y FKs de `pagos`.
 
 ---
 
@@ -130,3 +134,4 @@
 | 2026-10-26 | MIG-26 CRUD de empleados implementado y validado en `feature/MIG-26-empleados`; falta revisión e integración. |
 | 2026-10-26 | MIG-26 iniciado en `feature/MIG-26-empleados` desde `develop` actualizado tras pull; decisión: bcrypt en EmpleadosService, lista completa ordenada por nombre ASC. |
 | 2026-10-27 | MIG-29 parcial en `feature/MIG-29-productos`: GET/POST/PATCH con guards, DTOs, lookup de categoría y tests. DELETE espera MIG-30; relación ORM y transformer numérico compartido esperan MIG-44. |
+| 2026-10-29 | MIG-31 en `MIG-31-entity-pago-dt-os`: entity `Pago` (unique `pagos_pedido_id_key`, `numericTransformer` para `monto`, `utcTimestampTransformer` para `fecha`), `PagoResponseDto`, `METODOS_PAGO` y esqueleto de `PagosService` con `501`. `numericTransformer` se adelanta a `common`. 266 unit + 65 e2e en verde. |

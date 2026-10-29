@@ -64,6 +64,18 @@ Errores: `401`, `403`, `404` `Caja no encontrada`.
 type MetodoPago =
   'efectivo' | 'debito' | 'credito' | 'transferencia' | 'mercado_pago';
 
+/**
+ * Shape interno del cobro (MIG-31). Ningún endpoint lo devuelve hoy: el cobro
+ * responde el `Pedido` y los movimientos usan `MovimientoCaja`.
+ */
+interface PagoResponseDto {
+  id: number;
+  pedido_id: number;
+  metodo_pago: MetodoPago;
+  monto: number;        // number, 2 decimales (D-05)
+  fecha: string;        // ISO-8601 UTC con Z (D-06)
+}
+
 interface MovimientoCaja {
   id: number;
   fecha: string;
@@ -79,10 +91,23 @@ interface MovimientoCaja {
 
 ## 5. Invariantes
 
-| Invariante                       | Verificación                  |
-| -------------------------------- | ----------------------------- |
-| Un pago por pedido               | `UNIQUE(pedido_id)` + service |
-| `monto > 0` y = total del pedido | Cálculo en servidor           |
-| `metodo_pago` ∈ enum             | DTO + validación              |
-| `fecha` ISO-8601 UTC con `Z`     | DTO de response               |
-| Pertenece a una caja abierta     | FK + validación en el cobro   |
+| Invariante                       | Verificación                        |
+| -------------------------------- | ----------------------------------- |
+| Un pago por pedido               | `UNIQUE(pedido_id)` + service       |
+| `monto > 0` y = total del pedido | Cálculo en servidor                 |
+| `metodo_pago` ∈ enum             | `METODOS_PAGO` + validación en DTO  |
+| `fecha` ISO-8601 UTC con `Z`     | `toIsoUtc()` en el DTO de response  |
+| Pertenece a una caja abierta     | Validación en el cobro (MIG-32)     |
+| `monto` sale como JSON `number`  | `numericTransformer` + `fromEntity()` |
+
+---
+
+## 6. Estado de implementación (MIG-31)
+
+| Pieza             | Estado                                          |
+| ----------------- | ----------------------------------------------- |
+| `Pago` entity     | ✅ Columnas, unique y transformers               |
+| `PagoResponseDto` | ✅ `fromEntity()` con `number` y `Z`             |
+| `MetodoPago`      | ✅ 5 valores cerrados                            |
+| `PagosService`    | 🟡 Firmas creadas; operaciones responden `501`   |
+| Relaciones ORM    | ⏳ MIG-32/MIG-44 (faltan `Pedido` y `Caja`)      |

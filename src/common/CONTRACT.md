@@ -98,7 +98,8 @@ comparar.
 
 Nunca devuelve `NaN` para valores válidos de PostgreSQL (ADR 0004).
 
-> Llega en MIG-44.
+> Implementado en `common/transformers/numeric.transformer.ts` (MIG-31). La
+> adopción en productos, pedidos y caja queda para MIG-44.
 
 ---
 
