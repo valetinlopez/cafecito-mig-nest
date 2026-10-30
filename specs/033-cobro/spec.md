@@ -1,16 +1,20 @@
 # Spec 033 — Cobro atómico de un pedido
 
-| Campo   | Valor                                                             |
-| ------- | ----------------------------------------------------------------- |
-| Ticket  | MIG-33 (`Pedido Service: crear, transiciones, cobro atómico + Controller`) — recorte "cobro" |
-| Epic    | MIG-8 — E6: Módulo Pedidos                                        |
-| Sprint  | S3 — Pedidos, Pagos & Caja                                        |
-| Estado  | Aprobada para implementación                                      |
+| Campo   | Valor                                                                                             |
+| ------- | ------------------------------------------------------------------------------------------------- |
+| Ticket  | MIG-33 (`Pedido Service: crear, transiciones, cobro atómico + Controller`) — recorte "cobro"      |
+| Epic    | MIG-8 — E6: Módulo Pedidos                                                                        |
+| Sprint  | S3 — Pedidos, Pagos & Caja                                                                        |
+| Estado  | Reemplazada por [`033-pedidos`](../033-pedidos/spec.md) — alcance integral MIG-33                 |
 | Alcance | `POST /api/v1/pedidos/{id}/pago`: cobrar un pedido entregado, registrar el pago y liberar la mesa |
 
 > Piloto del ciclo SDD (MIG-45). Los requisitos salen de
 > `docs/api-contract.md` §6.5, `src/pedidos/README.md` §5 y
 > `src/pagos/DECISIONS.md` D-02..D-05.
+
+> Esta spec acotada se conserva como piloto histórico de SDD. El usuario
+> confirmó que MIG-33 cubre el ciclo integral de pedidos; no se implementa ni
+> valida por separado. La fuente vigente es `specs/033-pedidos/spec.md`.
 
 ---
 
@@ -100,44 +104,44 @@ dejar la mesa disponible para el próximo cliente.
 
 ## 6. Casos límite y errores
 
-| Caso                                         | Resultado esperado                                   |
-| -------------------------------------------- | ---------------------------------------------------- |
-| Pedido inexistente                           | `404` `Pedido no encontrado`                         |
-| Pedido `pendiente`, `en_preparacion`, `listo` | `400` estado inválido                                |
-| Pedido `pagado` o `cancelado`                | `400` estado inválido (estados finales)              |
-| Sin caja abierta                             | `400` sin caja abierta                               |
-| `metodo_pago` ausente o inválido             | `422`                                                |
-| Cuerpo vacío o campo extra                  | `422` (whitelist del `ValidationPipe`)               |
-| Doble clic / dos requests concurrentes       | Un pago; el segundo `400` por estado                 |
-| Fallo al liberar la mesa                     | Rollback total: no queda pago ni pedido `pagado`     |
-| Pedido con `total = 0`                       | Ver supuesto S-04 (no hay regla en el contrato)      |
-| Token de `mozo`                              | `403`                                                |
+| Caso                                          | Resultado esperado                               |
+| --------------------------------------------- | ------------------------------------------------ |
+| Pedido inexistente                            | `404` `Pedido no encontrado`                     |
+| Pedido `pendiente`, `en_preparacion`, `listo` | `400` estado inválido                            |
+| Pedido `pagado` o `cancelado`                 | `400` estado inválido (estados finales)          |
+| Sin caja abierta                              | `400` sin caja abierta                           |
+| `metodo_pago` ausente o inválido              | `422`                                            |
+| Cuerpo vacío o campo extra                    | `422` (whitelist del `ValidationPipe`)           |
+| Doble clic / dos requests concurrentes        | Un pago; el segundo `400` por estado             |
+| Fallo al liberar la mesa                      | Rollback total: no queda pago ni pedido `pagado` |
+| Pedido con `total = 0`                        | Ver supuesto S-04 (no hay regla en el contrato)  |
+| Token de `mozo`                               | `403`                                            |
 
 ---
 
 ## 7. Criterios de aceptación
 
-| #      | Observable                                                                 |
-| ------ | -------------------------------------------------------------------------- |
-| CA-01  | `POST /pedidos/{id}/pago` sobre un pedido `entregado` devuelve `200` y `estado: "pagado"`. |
-| CA-02  | La fila de `pagos` tiene `monto = total`, `caja_id` de la caja abierta y `metodo_pago` del request. |
-| CA-03  | La mesa del pedido queda en `libre` en la misma operación.                 |
-| CA-04  | Un fallo simulado en cualquier paso deja las tres tablas sin cambios.      |
-| CA-05  | Los cinco métodos del enum se aceptan; un valor libre devuelve `422`.      |
-| CA-06  | `401` sin token y `403` con rol `mozo`.                                    |
-| CA-07  | El body de éxito respeta el shape `Pedido` y no expone `password_hash`.    |
+| #     | Observable                                                                                          |
+| ----- | --------------------------------------------------------------------------------------------------- |
+| CA-01 | `POST /pedidos/{id}/pago` sobre un pedido `entregado` devuelve `200` y `estado: "pagado"`.          |
+| CA-02 | La fila de `pagos` tiene `monto = total`, `caja_id` de la caja abierta y `metodo_pago` del request. |
+| CA-03 | La mesa del pedido queda en `libre` en la misma operación.                                          |
+| CA-04 | Un fallo simulado en cualquier paso deja las tres tablas sin cambios.                               |
+| CA-05 | Los cinco métodos del enum se aceptan; un valor libre devuelve `422`.                               |
+| CA-06 | `401` sin token y `403` con rol `mozo`.                                                             |
+| CA-07 | El body de éxito respeta el shape `Pedido` y no expone `password_hash`.                             |
 
 ---
 
 ## 8. Supuestos y preguntas abiertas
 
-| #    | Supuesto / pregunta                                                                 | Estado |
-| ---- | ----------------------------------------------------------------------------------- | ------ |
-| S-01 | La caja abierta se resuelve por `estado = 'abierta'` y hay como máximo una (caja D-03). | Aceptado |
-| S-02 | `usuario_id` del pago es el usuario del token; la columna es nullable por datos históricos (pagos D-08). | Aceptado |
-| S-03 | No se actualiza `total_ventas`: se deriva de los pagos (caja D-02).                  | Aceptado |
+| #    | Supuesto / pregunta                                                                                                                 | Estado                     |
+| ---- | ----------------------------------------------------------------------------------------------------------------------------------- | -------------------------- |
+| S-01 | La caja abierta se resuelve por `estado = 'abierta'` y hay como máximo una (caja D-03).                                             | Aceptado                   |
+| S-02 | `usuario_id` del pago es el usuario del token; la columna es nullable por datos históricos (pagos D-08).                            | Aceptado                   |
+| S-03 | No se actualiza `total_ventas`: se deriva de los pagos (caja D-02).                                                                 | Aceptado                   |
 | S-04 | Se acepta cobrar un pedido con `total = 0`: el contrato no lo prohíbe. Si el negocio lo rechaza, se agrega un RF en una spec nueva. | **Confirmar con producto** |
-| S-05 | La mesa del pedido existe y está en `pendiente_cobro`; el cobro la pasa a `libre` sin validar su estado previo. | Aceptado |
+| S-05 | La mesa del pedido existe y está en `pendiente_cobro`; el cobro la pasa a `libre` sin validar su estado previo.                     | Aceptado                   |
 
 ---
 

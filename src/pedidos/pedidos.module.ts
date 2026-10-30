@@ -1,20 +1,32 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { CajaModule } from '../caja/caja.module.js';
+import { MesasModule } from '../mesas/mesas.module.js';
+import { PagosModule } from '../pagos/pagos.module.js';
 import { DetallePedido } from './entities/detalle-pedido.entity.js';
 import { Pedido } from './entities/pedido.entity.js';
+import { PedidosController } from './pedidos.controller.js';
+import { PedidosService } from './pedidos.service.js';
 
 /**
- * Módulo de pedidos (MIG-30: entities y DTOs).
+ * Módulo de pedidos (MIG-30 entities/DTOs + MIG-33 ciclo funcional).
  *
- * `TypeOrmModule.forFeature([Pedido, DetallePedido])` registra ambas entities en
- * el `DataSource` global (`autoLoadEntities: true`) y deja los repositorios
- * listos para que MIG-33 implemente `PedidosService` y `PedidosController`.
+ * `TypeOrmModule.forFeature([Pedido, DetallePedido])` registra ambas entities
+ * en el `DataSource` global (`autoLoadEntities: true`). El módulo importa caja,
+ * mesas y pagos para coordinar sus servicios sin dependencias circulares.
  *
- * No hay controller todavía: el contrato de §6.5 se implementa en MIG-33. Las
- * relaciones con `mesas`, `usuarios`, `productos` y `pagos` ya existen, así que
- * TypeORM puede resolverlas sin `forwardRef` (D-08 de `DECISIONS.md`).
+ * Las relaciones con `mesas`, `usuarios`, `productos` y `pagos` son metadata
+ * de TypeORM; ninguna requiere `forwardRef` (D-08 de `DECISIONS.md`).
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([Pedido, DetallePedido])],
+  imports: [
+    TypeOrmModule.forFeature([Pedido, DetallePedido]),
+    MesasModule,
+    CajaModule,
+    PagosModule,
+  ],
+  controllers: [PedidosController],
+  providers: [PedidosService],
+  exports: [PedidosService],
 })
 export class PedidosModule {}

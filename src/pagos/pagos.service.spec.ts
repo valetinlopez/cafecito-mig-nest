@@ -1,4 +1,5 @@
 import type { TestingModule } from '@nestjs/testing';
+import type { EntityManager } from 'typeorm';
 import { createMockRepository } from '../../test/utils/mock-repository.js';
 import {
   createServiceTestModule,
@@ -32,15 +33,43 @@ describe('PagosService', () => {
     await module.close();
   });
 
-  it('expone las firmas del cobro aunque todavía no estén implementadas', () => {
+  it('expone las operaciones de cobro y consulta de pago', () => {
     expect(typeof service.registrarPago).toBe('function');
     expect(typeof service.findByCaja).toBe('function');
     expect(typeof service.findByPedido).toBe('function');
   });
 
-  it('mantiene registrarPago pendiente de MIG-33', async () => {
-    await expect(service.registrarPago(PAGO_INPUT)).rejects.toMatchObject({
-      status: 501,
+  it('registra el pago en el repositorio del manager transaccional', async () => {
+    const pago = {
+      id: 33,
+      pedidoId: PAGO_INPUT.pedidoId,
+      cajaId: PAGO_INPUT.cajaId,
+      usuarioId: PAGO_INPUT.usuarioId,
+      monto: PAGO_INPUT.monto,
+      metodoPago: PAGO_INPUT.metodoPago,
+      fecha: new Date('2026-10-29T12:00:00.000Z'),
+    } as Pago;
+    const getRepository = vi.fn(() => pagosRepository);
+    const manager = { getRepository } as unknown as EntityManager;
+    pagosRepository.create.mockImplementation((input) => input as Pago);
+    pagosRepository.save.mockResolvedValue(pago);
+
+    await expect(
+      service.registrarPago(manager, PAGO_INPUT),
+    ).resolves.toMatchObject({
+      id: 33,
+      pedido_id: 12,
+      metodo_pago: 'efectivo',
+      monto: 950,
+      fecha: '2026-10-29T12:00:00.000Z',
+    });
+    expect(getRepository).toHaveBeenCalledWith(Pago);
+    expect(pagosRepository.create).toHaveBeenCalledWith({
+      pedidoId: 12,
+      cajaId: 3,
+      usuarioId: 2,
+      monto: 950,
+      metodoPago: 'efectivo',
     });
   });
 
@@ -113,9 +142,25 @@ describe('PagosService', () => {
     expect(pagosRepository.createQueryBuilder).not.toHaveBeenCalled();
   });
 
-  it('mantiene findByPedido pendiente de MIG-33', async () => {
-    await expect(service.findByPedido(12)).rejects.toMatchObject({
-      status: 501,
+  it('busca un pago por pedido y devuelve null cuando no existe', async () => {
+    pagosRepository.findOneBy.mockResolvedValueOnce({
+      id: 33,
+      pedidoId: 12,
+      cajaId: 3,
+      usuarioId: 2,
+      monto: 950,
+      metodoPago: 'efectivo',
+      fecha: new Date('2026-10-29T12:00:00.000Z'),
+    } as Pago);
+    pagosRepository.findOneBy.mockResolvedValueOnce(null);
+
+    await expect(service.findByPedido(12)).resolves.toMatchObject({
+      pedido_id: 12,
+      monto: 950,
+    });
+    await expect(service.findByPedido(404)).resolves.toBeNull();
+    expect(pagosRepository.findOneBy).toHaveBeenNthCalledWith(1, {
+      pedidoId: 12,
     });
   });
 });

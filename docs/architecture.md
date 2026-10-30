@@ -130,23 +130,23 @@ Puntos de borde:
 
 ## 5. Mapa de módulos
 
-| Módulo     | Directorio       | Estado                                           | Dominio                                           | Depende de                                                 |
-| ---------- | ---------------- | ------------------------------------------------ | ------------------------------------------------- | ---------------------------------------------------------- |
-| Health     | `src/health`     | **Implementado**                                 | `GET /` (fuera de `/api/v1`)                      | —                                                          |
-| Config     | `src/config`     | **Implementado**                                 | Validación de entorno + config tipada             | —                                                          |
-| Database   | `src/database`   | **Implementado**                                 | DataSource, pool, migraciones                     | `config`                                                   |
-| Categorías | `src/categorias` | **Implementado (lectura + JWT)**                 | `GET /categorias/`                                | `database`, `common`                                       |
-| Auth       | `src/auth`       | **Implementado** (MIG-23)                        | Login, registro, perfil, password                 | `users`, `config/auth`, `common`                           |
-| Users      | `src/users`      | **Implementado** (MIG-22/25)                     | Entity/gestión de usuarios                        | `database`                                                 |
-| Empleados  | `src/empleados`  | Implementado en rama MIG-26 (pendiente revisión) | ABM de empleados (`rol = mozo`)                   | `users`, `common`                                          |
-| Mesas      | `src/mesas`      | Implementado (MIG-27)                            | Estados y ABM de mesas                            | `ACTIVE_ORDERS_PORT` (adapter de pedidos pendiente MIG-30) |
-| Productos  | `src/productos`  | Parcial (MIG-29: GET/POST/PATCH; DELETE MIG-30)  | Catálogo, stock, precios                          | `categorias` (lookup); schema/transformer MIG-44           |
-| Pedidos    | `src/pedidos`    | Scaffold (módulo vacío)                          | Comandas y transiciones                           | `mesas`, `productos`, `users`, `caja`, `pagos`             |
-| Pagos      | `src/pagos`      | Entity + DTOs (MIG-31); consultas de Caja MIG-32 | Persistencia de cobros (sin endpoints)            | `pedidos`, `caja`, `users`                                 |
-| Caja       | `src/caja`       | **Implementado (MIG-32)**                        | Apertura, cierre, historial, movimientos y ventas | `pagos`, `common`                                          |
-| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)                          | KPIs de solo lectura                              | `mesas`, `pedidos`, `pagos`, `caja`                        |
-| Reportes   | `src/reportes`   | Scaffold (módulo vacío)                          | Reporte de ventas por período                     | `pagos`, `caja`, `pedidos`                                 |
-| Common     | `src/common`     | **Implementado**                                 | Filtros, pipes, guards, decoradores               | —                                                          |
+| Módulo     | Directorio       | Estado                                           | Dominio                                           | Depende de                                             |
+| ---------- | ---------------- | ------------------------------------------------ | ------------------------------------------------- | ------------------------------------------------------ |
+| Health     | `src/health`     | **Implementado**                                 | `GET /` (fuera de `/api/v1`)                      | —                                                      |
+| Config     | `src/config`     | **Implementado**                                 | Validación de entorno + config tipada             | —                                                      |
+| Database   | `src/database`   | **Implementado**                                 | DataSource, pool, migraciones                     | `config`                                               |
+| Categorías | `src/categorias` | **Implementado (lectura + JWT)**                 | `GET /categorias/`                                | `database`, `common`                                   |
+| Auth       | `src/auth`       | **Implementado** (MIG-23)                        | Login, registro, perfil, password                 | `users`, `config/auth`, `common`                       |
+| Users      | `src/users`      | **Implementado** (MIG-22/25)                     | Entity/gestión de usuarios                        | `database`                                             |
+| Empleados  | `src/empleados`  | Implementado en rama MIG-26 (pendiente revisión) | ABM de empleados (`rol = mozo`)                   | `users`, `common`                                      |
+| Mesas      | `src/mesas`      | Implementado (MIG-27/33)                         | Estados y ABM; consulta pedidos activos           | `PedidoActiveOrdersAdapter` (sin ciclo DI)             |
+| Productos  | `src/productos`  | Parcial (MIG-29: GET/POST/PATCH; DELETE MIG-30)  | Catálogo, stock, precios                          | `categorias` (lookup); schema/transformer MIG-44       |
+| Pedidos    | `src/pedidos`    | Implementado (MIG-30/33)                         | Comandas, stock, transiciones y cobro             | `mesas`, `caja`, `pagos`; producto vía `EntityManager` |
+| Pagos      | `src/pagos`      | Implementado (MIG-31/32/33)                      | Persistencia y proyecciones de cobros (sin rutas) | `Pedido` (relación ORM); integrado desde pedidos/caja  |
+| Caja       | `src/caja`       | **Implementado (MIG-32)**                        | Apertura, cierre, historial, movimientos y ventas | `pagos`, `common`                                      |
+| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)                          | KPIs de solo lectura                              | `mesas`, `pedidos`, `pagos`, `caja`                    |
+| Reportes   | `src/reportes`   | Scaffold (módulo vacío)                          | Reporte de ventas por período                     | `pagos`, `caja`, `pedidos`                             |
+| Common     | `src/common`     | **Implementado**                                 | Filtros, pipes, guards, decoradores               | —                                                      |
 
 **Leyenda:** _Implementado_ = código + tests + doc. _Scaffold_ = el módulo
 existe registrado en `AppModule` pero sin controller/service/entity; su contrato
@@ -187,12 +187,19 @@ Cada módulo documenta su detalle en `src/<modulo>/README.md`.
         └───────────┘   └───────────┘   └───────────┘
 ```
 
+`MesasModule` consulta pedidos activos con `PedidoActiveOrdersAdapter` e
+inyecta directamente el repositorio de `Pedido`; no importa `PedidosModule`.
+Así el grafo de módulos permanece acíclico aunque `PedidosModule` orqueste
+`MesasModule`, `CajaModule` y `PagosModule`.
+
 Reglas de dependencia:
 
 1. `common`, `config` y `database` no dependen de ningún feature module.
 2. Un feature module **no importa otro feature module** salvo por su service
-   exportado, y solo cuando hay una regla de negocio compartida (ej.
-   `ProductosService` para validar stock).
+   exportado, y solo cuando hay una regla de negocio compartida. Excepción
+   acotada: adapters de lectura anti-ciclo pueden registrar una entity de otro
+   módulo y consultar con su propio repositorio (como `PedidoActiveOrdersAdapter`);
+   no exponen ni duplican lógica de negocio.
 3. Las dependencias circulares se resuelven **moviendo la regla al módulo
    dueño**, nunca con `forwardRef`.
 4. Las relaciones de TypeORM se declaran cuando existen **ambas** entities.

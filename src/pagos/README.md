@@ -2,11 +2,11 @@
 
 | Campo        | Valor                                                   |
 | ------------ | ------------------------------------------------------- |
-| Estado       | **Entity + DTOs** (MIG-31); lógica del cobro en MIG-33  |
+| Estado       | **Implementado** (MIG-31 + MIG-32 + MIG-33)             |
 | Entity       | `Pago` → tabla `pagos` (mapeo a confirmar en MIG-44)    |
 | Endpoints    | **Ninguno propio** (ver [`CONTRACT.md`](./CONTRACT.md)) |
 | Dependencias | `pedidos`, `caja`, `users`                              |
-| Tests        | Unitarios (`entity`, `dto`, `metodo-pago`, `service`)   |
+| Tests        | Unitarios (entity, DTO, método, service)                |
 
 ---
 
@@ -26,7 +26,7 @@ entity ni las reglas del cobro.
 ```
 src/pagos/
 ├── pagos.module.ts          # forFeature([Pago]) + exporta PagosService
-├── pagos.service.ts         # movimientos y ventas MIG-32; cobro MIG-33 pendiente
+├── pagos.service.ts         # movimientos/ventas MIG-32 y registro MIG-33
 ├── pagos.service.spec.ts
 ├── metodo-pago.ts           # METODOS_PAGO + type MetodoPago
 ├── metodo-pago.spec.ts
@@ -70,15 +70,15 @@ Sin controller y sin DTOs de request: la entrada es el DTO de `pedidos`.
 
 ## 4. Operaciones del service
 
-| Método                   | Uso                         | Estado |
-| ------------------------ | --------------------------- | ------ |
-| `registrarPago(data)`    | Desde el cobro en `pedidos` | MIG-33 |
-| `findByCaja(cajaId)`     | Movimientos de una caja     | MIG-32 |
-| `findByPedido(pedidoId)` | Verificar cobro existente   | MIG-33 |
+| Método                             | Uso                         | Estado              |
+| ---------------------------------- | --------------------------- | ------------------- |
+| `registrarPago(manager, data)`     | Desde el cobro en `pedidos` | Implementado MIG-33 |
+| `findByCaja(cajaId)`               | Movimientos de una caja     | MIG-32              |
+| `findByPedido(pedidoId, manager?)` | Verificar cobro existente   | Implementado MIG-33 |
 
 `findByCaja(cajaId)`, `getTotalVentas(cajaId)` y `getTotalesVentas(cajaIds)` están
-implementados en MIG-32. `registrarPago()` y `findByPedido()` permanecen con
-`501` hasta MIG-33.
+implementados en MIG-32. El registro del pago requiere el `EntityManager` del
+cobro para pertenecer a la misma transacción; la búsqueda puede reutilizarlo.
 
 ---
 

@@ -1,9 +1,9 @@
-import { Injectable, NotImplementedException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import type { Repository } from 'typeorm';
+import type { EntityManager, Repository } from 'typeorm';
 import { parseUtcTimestamp } from '../common/time/utc-date.js';
 import { Usuario } from '../users/entities/usuario.entity.js';
-import type { PagoResponseDto } from './dto/pago-response.dto.js';
+import { PagoResponseDto } from './dto/pago-response.dto.js';
 import { Pago } from './entities/pago.entity.js';
 import type { MetodoPago } from './metodo-pago.js';
 
@@ -51,9 +51,6 @@ interface TotalVentasRaw {
   total_ventas: number | string | null;
 }
 
-const PENDING_OPERATION_MESSAGE =
-  'Pagos: operación pendiente de implementación';
-
 /**
  * Acceso a datos de `pagos` (MIG-31).
  *
@@ -74,11 +71,23 @@ export class PagosService {
   /**
    * Registra el pago de un pedido dentro de la transacción del cobro.
    *
-   * Implementación pendiente: MIG-33 (junto con el cambio a `pagado`, la
-   * liberación de la mesa y el cierre contable en la caja).
+   * Usa el `EntityManager` del cobro para que el pago se revierta junto con el
+   * estado del pedido y de la mesa si falla cualquier paso de la operación.
    */
-  registrarPago(_input: RegistrarPagoInput): Promise<PagoResponseDto> {
-    return Promise.reject(this.pendingOperation('registrarPago', 'MIG-33'));
+  async registrarPago(
+    manager: EntityManager,
+    input: RegistrarPagoInput,
+  ): Promise<PagoResponseDto> {
+    const repository = manager.getRepository(Pago);
+    const pago = repository.create({
+      pedidoId: input.pedidoId,
+      cajaId: input.cajaId,
+      usuarioId: input.usuarioId,
+      monto: input.monto,
+      metodoPago: input.metodoPago,
+    });
+    const saved = await repository.save(pago);
+    return PagoResponseDto.fromEntity(saved);
   }
 
   /**
@@ -145,18 +154,15 @@ export class PagosService {
   /**
    * Devuelve el pago de un pedido, o `null` si todavía no se cobró.
    *
-   * Implementación pendiente: MIG-33 (verificación previa al cobro).
+   * Puede usar el manager transaccional del cobro; sin él, usa el repositorio
+   * normal para consultas independientes.
    */
-  findByPedido(_pedidoId: number): Promise<PagoResponseDto | null> {
-    return Promise.reject(this.pendingOperation('findByPedido', 'MIG-33'));
-  }
-
-  private pendingOperation(
-    operation: string,
-    ticket: string,
-  ): NotImplementedException {
-    return new NotImplementedException(
-      `${PENDING_OPERATION_MESSAGE} (${ticket}): ${operation}`,
-    );
+  async findByPedido(
+    pedidoId: number,
+    manager?: EntityManager,
+  ): Promise<PagoResponseDto | null> {
+    const repository = manager?.getRepository(Pago) ?? this.pagosRepository;
+    const pago = await repository.findOneBy({ pedidoId });
+    return pago === null ? null : PagoResponseDto.fromEntity(pago);
   }
 }

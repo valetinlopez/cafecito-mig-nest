@@ -82,13 +82,15 @@ rompería el front y mezclaría transición manual con cobro.
 
 ## D-08 — Dependencias sin `forwardRef`
 
-**Decisión:** `pedidos` importa `MesasModule`, `ProductosModule`, `CajaModule` y
-`PagosModule`; ninguno de esos importa `pedidos` a nivel de módulo.
+**Decisión:** `pedidos` importa `MesasModule`, `CajaModule` y `PagosModule`;
+productos se consulta con el repositorio obtenido del `EntityManager` de cada
+transacción. `MesasModule` resuelve `ACTIVE_ORDERS_PORT` con un adapter propio
+que inyecta el repositorio de `Pedido`, sin importar `PedidosModule`.
 
-**Motivo:** los efectos sobre la mesa los ejecuta `pedidos`; `mesas` no necesita
-importar `pedidos` si la validación de "pedido activo" se resuelve con una
-consulta al repositorio de pedidos o un método exportado sin dependencia
-circular.
+**Motivo:** los efectos sobre la mesa los ejecuta `pedidos`; la validación de
+"pedido activo" de `mesas` consulta las mismas filas mediante un adapter de
+repositorio, sin depender del service de pedidos. El acceso a productos usa el
+manager transaccional para no escribir fuera de la unidad de trabajo.
 
 **Regla:** si aparece un ciclo, se mueve la regla al módulo dueño, no se usa
 `forwardRef` (constitución §3).

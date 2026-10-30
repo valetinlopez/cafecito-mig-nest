@@ -3,35 +3,35 @@
 > Estado vivo, no documentación de diseño. Se actualiza en cada sesión y en cada
 > PR. Si algo no está acá ni en la documentación del módulo, se asume **no hecho**.
 
-| Campo       | Valor                                                |
-| ----------- | ---------------------------------------------------- |
-| Actualizado | 2026-10-29                                           |
-| Sprint      | S3 — Pedidos, Pagos & Caja                           |
-| Epic        | MIG-7 — E7: Módulo Pagos & Caja                      |
-| Foco actual | MIG-45: arnés DevelopAI (SDD + agentes con permisos) |
+| Campo       | Valor                                                                      |
+| ----------- | -------------------------------------------------------------------------- |
+| Actualizado | 2026-10-30                                                                 |
+| Sprint      | S3 — Pedidos, Pagos & Caja                                                 |
+| Epic        | MIG-7 — E7: Módulo Pagos & Caja                                            |
+| Foco actual | MIG-33: implementación integral lista; veredicto SDD pendiente de revisión |
 
 ---
 
 ## 1. Estado por módulo
 
-| Módulo     | Estado                                | Tests | Doc | Próximo paso                                         |
-| ---------- | ------------------------------------- | ----- | --- | ---------------------------------------------------- |
-| test       | Implementado (MIG-21)                 | ✅    | ✅  | Ampliar helpers cuando aparezcan nuevas operaciones  |
-| health     | Implementado                          | ✅    | ✅  | —                                                    |
-| config     | Implementado                          | ✅    | ✅  | —                                                    |
-| database   | Implementado                          | ✅    | ✅  | Validar tablas en MIG-44                             |
-| categorias | Implementado (solo lectura + JWT)     | ✅    | ✅  | Relación `OneToMany` diferida a MIG-44               |
-| common     | Implementado (MIG-20 + guards MIG-23) | ✅    | ✅  | Aplicar a futuros controllers                        |
-| auth       | Implementado (MIG-23/25)              | ✅    | ✅  | —                                                    |
-| users      | Implementado (MIG-22/25)              | ✅    | ✅  | Consumido por `empleados` (MIG-26)                   |
-| empleados  | Implementado en rama MIG-26           | ✅    | ✅  | Revisión e integración                               |
-| mesas      | Implementado en rama MIG-27           | ✅    | ✅  | Revisión e integración                               |
-| productos  | Parcial MIG-29 (GET/POST/PATCH)       | ✅    | ✅  | DELETE pendiente; relación/transformer MIG-44        |
-| pedidos    | Entities + DTOs (MIG-30)              | ✅    | ✅  | Service + controller (MIG-33)                        |
-| pagos      | Entity + DTOs + esqueleto (MIG-31)    | ✅    | ✅  | Cobro y movimientos en MIG-32/33                     |
-| caja       | Implementado (MIG-32; rama actual)    | ✅    | ✅  | Revisar, integrar manualmente; MIG-44 valida esquema |
-| dashboard  | Scaffold (módulo vacío)               | ❌    | ✅  | Solo lectura                                         |
-| reportes   | Scaffold (módulo vacío)               | ❌    | ✅  | Depende de pagos/caja                                |
+| Módulo     | Estado                                         | Tests | Doc | Próximo paso                                         |
+| ---------- | ---------------------------------------------- | ----- | --- | ---------------------------------------------------- |
+| test       | Implementado (MIG-21)                          | ✅    | ✅  | Ampliar helpers cuando aparezcan nuevas operaciones  |
+| health     | Implementado                                   | ✅    | ✅  | —                                                    |
+| config     | Implementado                                   | ✅    | ✅  | —                                                    |
+| database   | Implementado                                   | ✅    | ✅  | Validar tablas en MIG-44                             |
+| categorias | Implementado (solo lectura + JWT)              | ✅    | ✅  | Relación `OneToMany` diferida a MIG-44               |
+| common     | Implementado (MIG-20 + guards MIG-23)          | ✅    | ✅  | Aplicar a futuros controllers                        |
+| auth       | Implementado (MIG-23/25)                       | ✅    | ✅  | —                                                    |
+| users      | Implementado (MIG-22/25)                       | ✅    | ✅  | Consumido por `empleados` (MIG-26)                   |
+| empleados  | Implementado en rama MIG-26                    | ✅    | ✅  | Revisión e integración                               |
+| mesas      | Implementado MIG-27/33                         | ✅    | ✅  | Adapter de pedidos integrado sin ciclo DI            |
+| productos  | Parcial MIG-29 (GET/POST/PATCH)                | ✅    | ✅  | DELETE pendiente; relación/transformer MIG-44        |
+| pedidos    | Ciclo completo implementado (MIG-30/33)        | ✅    | ✅  | Revisión final SDD; esquema en MIG-44                |
+| pagos      | Entity, proyecciones y registro (MIG-31/32/33) | ✅    | ✅  | Confirmar esquema/FKs en MIG-44                      |
+| caja       | Implementado (MIG-32; rama actual)             | ✅    | ✅  | Revisar, integrar manualmente; MIG-44 valida esquema |
+| dashboard  | Scaffold (módulo vacío)                        | ❌    | ✅  | Solo lectura                                         |
+| reportes   | Scaffold (módulo vacío)                        | ❌    | ✅  | Depende de pagos/caja                                |
 
 ---
 
@@ -76,7 +76,7 @@
 | 2026-10-29 | Adopción de SDD + orquestación multiagente con permisos por rol         | ADR 0008                   |
 | 2026-10-29 | `numericTransformer` compartido se adelanta a MIG-31 (`Pago.monto`)     | `src/common/DECISIONS.md`  |
 | 2026-10-29 | `pagos`: `caja_id`/`usuario_id` nullable; `cajas` sin relación ORM      | `src/pagos/DECISIONS.md`   |
-| 2026-10-29 | Esqueleto de `PagosService` responde `501` hasta MIG-32/33              | `src/pagos/DECISIONS.md`   |
+| 2026-10-29 | `PagosService` registra dentro del manager transaccional (MIG-33)       | `src/pagos/DECISIONS.md`   |
 | 2026-10-29 | `pagos`: relación `Pago.pedido` / `Pedido.pagos` declarada en MIG-30    | `src/pagos/DECISIONS.md`   |
 | 2026-10-29 | `pedidos`: FK escalar + relación sobre la misma columna; cascade insert | `src/pedidos/DECISIONS.md` |
 | 2026-10-29 | `pedidos`: `subtotal` histórico, nunca se recalcula                     | `src/pedidos/DECISIONS.md` |
@@ -111,21 +111,16 @@
 | 2   | ¿Los movimientos de caja son tabla propia o derivan de `pagos`?                        | `caja`                | MIG-44   |
 | 3   | ¿El front tolera `X-Response-Time-ms` ausente? (D-11 opcional)                         | Nada                  | Front    |
 | 4   | ¿Hay refresh token previsto?                                                           | `auth`                | Producto |
-| 5   | ¿Se permite cobrar un pedido con `total = 0`? (spec 033, S-04)                         | Nada (supuesto)       | Producto |
+| 5   | ¿Se permite cobrar un pedido con `total = 0`?                                          | Resuelto: permitido   | MIG-33   |
 
 ---
 
 ## 6. Próximo paso
 
-1. **MIG-45:** revisar el PR del arnés DevelopAI (ADR 0008, skills, agentes,
-   comandos, `specs/033-cobro` y CI) y mergear a `develop`.
-2. **MIG-33:** implementar el cobro con `specs/033-cobro/tasks.md`; MIG-30 ya
-   dejó las entities y los DTOs en la rama
-   `MIG-30-entities-pedido-detalle-pedido-dt-os`. El primer paso es `T1` (DTO) y
-   `T2` (`PagosService.registrarPago` con `EntityManager`).
-3. **MIG-32:** módulo `caja` completo, incluido `findAbierta(manager?)` que
-   consume el cobro, y los movimientos derivados de `pagos`.
-4. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
+1. **MIG-33:** revisar el veredicto SDD en `specs/033-pedidos/validate.md`;
+   todos los gates implementativos están en verde. Rollback físico/concurrencia
+   PostgreSQL no se ejercitaron.
+2. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
    productos/pedidos/caja y confirmar columnas, nulabilidad y FKs de `pagos`.
 
 **MIG-32 en `feature/MIG-32-caja`:** entity/DTOs, cinco endpoints admin,
@@ -159,3 +154,5 @@ commit ni push; esperar confirmación explícita antes del push. El merge a
 | 2026-10-29 | MIG-31 en `MIG-31-entity-pago-dt-os`: entity `Pago` (unique `pagos_pedido_id_key`, `numericTransformer` para `monto`, `utcTimestampTransformer` para `fecha`), `PagoResponseDto`, `METODOS_PAGO` y esqueleto de `PagosService` con `501`. `numericTransformer` se adelanta a `common`. 266 unit + 65 e2e en verde. |
 | 2026-10-29 | MIG-30: entities `Pedido`/`DetallePedido` con relaciones a `mesas`, `usuarios`, `productos` y `pagos`; `PEDIDO_ESTADOS`, 6 DTOs y 49 unit en verde. `Pago` gana su `@ManyToOne(Pedido)` y se documentan D-09..D-14 de `pedidos`.                                                                                   |
 | 2026-10-29 | MIG-45: se adopta DevelopAI (ADR 0008). Skills `sdd` y `nestjs-esm`, agentes `coordinator/planner/implementer/reviewer` con permisos, nueve comandos `/sdd-*`, spec piloto `specs/033-cobro` (cobro atómico, 11 RF) y CI con los cuatro gates + build. Se corrige la referencia del cobro de MIG-32 a MIG-33.      |
+| 2026-10-30 | MIG-33 integral: gates finales OK (390 unitarios; 74 e2e, 2 omitidos; lint, typecheck, build y diff-check). Rollback físico/concurrencia PostgreSQL no verificados; sin commit, push ni cambios Jira.                                                                                                              |
+| 2026-10-29 | MIG-33 integral: service/controller de pedidos, stock/transiciones/cobro atómicos, adapter de pedidos para mesas, unitarios y e2e; quality gates finales pendientes.                                                                                                                                               |
