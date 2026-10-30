@@ -146,6 +146,18 @@ describe('CajaService', () => {
     );
   });
 
+  it('busca caja abierta dentro del manager transaccional con lock pesimista', async () => {
+    manager.find.mockResolvedValueOnce([OPEN_CAJA]);
+
+    await expect(
+      service.findAbierta(manager as unknown as EntityManager),
+    ).resolves.toBe(OPEN_CAJA);
+    expect(manager.find).toHaveBeenCalledWith(Caja, {
+      where: { estado: 'abierta' },
+      lock: { mode: 'pessimistic_write' },
+    });
+  });
+
   it('rechaza cerrar si no hay caja abierta', async () => {
     manager.find.mockResolvedValueOnce([]);
 

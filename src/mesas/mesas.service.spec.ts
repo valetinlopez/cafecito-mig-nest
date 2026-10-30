@@ -9,6 +9,7 @@ import type { Mesa } from './entities/mesa.entity.js';
 import { Mesa as MesaEntity } from './entities/mesa.entity.js';
 import { MesasModule } from './mesas.module.js';
 import { MesasService, TRANSICIONES_MESA } from './mesas.service.js';
+import { Pedido } from '../pedidos/entities/pedido.entity.js';
 import {
   createMockRepository,
   type MockRepository,
@@ -23,6 +24,7 @@ describe('MesasService', () => {
   let service: MesasService;
   let repository: MockRepository<Mesa>;
   let repositoryForDefaultProvider: MockRepository<Mesa>;
+  let pedidosRepositoryForDefaultProvider: MockRepository<Pedido>;
   let activeOrders: ActiveOrdersPort & {
     hasUnpaidActiveOrderForTable: ReturnType<typeof vi.fn>;
   };
@@ -30,6 +32,7 @@ describe('MesasService', () => {
   beforeEach(async () => {
     repository = createMockRepository<Mesa>();
     repositoryForDefaultProvider = createMockRepository<Mesa>();
+    pedidosRepositoryForDefaultProvider = createMockRepository<Pedido>();
     activeOrders = {
       hasUnpaidActiveOrderForTable: vi.fn().mockResolvedValue(false),
     };
@@ -181,12 +184,14 @@ describe('MesasService', () => {
     expect(save.mock.calls).toHaveLength(0);
   });
 
-  it('rechaza limpieza con el provider temporal fail-closed', async () => {
+  it('falla cerrado si el adapter real no puede consultar pedidos', async () => {
     const moduleWithDefaultPort = await Test.createTestingModule({
       imports: [MesasModule],
     })
       .overrideProvider(getRepositoryToken(MesaEntity))
       .useValue(repositoryForDefaultProvider)
+      .overrideProvider(getRepositoryToken(Pedido))
+      .useValue(pedidosRepositoryForDefaultProvider)
       .compile();
     const serviceWithDefaultPort = moduleWithDefaultPort.get(MesasService);
     repositoryForDefaultProvider.findOneBy.mockResolvedValue({
@@ -194,6 +199,9 @@ describe('MesasService', () => {
       numero: 2,
       estado: 'ocupada',
     });
+    pedidosRepositoryForDefaultProvider.findOne.mockRejectedValue(
+      new Error('repository unavailable'),
+    );
 
     await expect(
       serviceWithDefaultPort.update(2, { estado: 'en_limpieza' }),

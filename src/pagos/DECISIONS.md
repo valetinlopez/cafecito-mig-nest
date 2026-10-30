@@ -122,8 +122,8 @@ que el contrato no dependa del transformer.
 ## D-11 — El service migra por responsabilidad de ticket
 
 **Decisión:** `findByCaja`, `getTotalVentas` y `getTotalesVentas` leen la
-proyección de pagos para Caja en MIG-32. `registrarPago` y `findByPedido`
-rechazan con `NotImplementedException` (501) hasta MIG-33.
+proyección de pagos para Caja en MIG-32. `registrarPago` y `findByPedido` se
+implementan en MIG-33.
 
 **Motivo:** el service implementa las consultas que requiere caja sin adelantar
 el flujo de cobro de pedidos. Los movimientos se proyectan con joins a pedido,
@@ -131,4 +131,13 @@ mesa y usuario; los totales del historial se agrupan por caja y se convierten a
 `number`, normalizando ausencia de pagos a cero.
 
 **Consecuencia:** la tabla real, columnas y FKs se verifican en MIG-44; no se
-agrega relación ORM de `Pago` a `Caja` en MIG-32.
+agrega relación ORM de `Pago` a `Caja`.
+
+## D-12 — El manager transaccional es obligatorio al registrar
+
+**Decisión:** `registrarPago(manager, input)` persiste con el repositorio del
+`EntityManager` recibido. `findByPedido(id, manager?)` usa el mismo manager
+cuando el cobro necesita verificar dentro de su transacción.
+
+**Motivo:** impedir que el pago se escriba fuera de la transacción que cambia el
+pedido a `pagado` y libera su mesa.

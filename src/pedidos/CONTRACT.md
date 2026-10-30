@@ -146,3 +146,5 @@ Errores:
 - `fecha` ISO-8601 UTC con `Z` (D-06).
 - Estados en `snake_case` y sin traducir.
 - `POST /pago` responde `200`, no `201` (D-07).
+- GET/POST/PATCH requieren JWT; `POST /pago` requiere JWT con rol `admin`.
+- Las colecciones aceptan paths con y sin barra final, sin redirect (ADR 0005).

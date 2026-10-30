@@ -21,3 +21,11 @@ export const PEDIDO_ESTADOS = [
 ] as const;
 
 export type PedidoEstado = (typeof PEDIDO_ESTADOS)[number];
+
+/** Estados que mantienen una comanda activa para las consultas operativas. */
+export const ACTIVE_PEDIDO_ESTADOS = [
+  'pendiente',
+  'en_preparacion',
+  'listo',
+  'entregado',
+] as const satisfies readonly PedidoEstado[];
