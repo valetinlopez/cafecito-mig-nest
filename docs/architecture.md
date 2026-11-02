@@ -144,7 +144,7 @@ Puntos de borde:
 | Pedidos    | `src/pedidos`    | Implementado (MIG-30/33)                         | Comandas, stock, transiciones y cobro             | `mesas`, `caja`, `pagos`; producto vía `EntityManager` |
 | Pagos      | `src/pagos`      | Implementado (MIG-31/32/33)                      | Persistencia y proyecciones de cobros (sin rutas) | `Pedido` (relación ORM); integrado desde pedidos/caja  |
 | Caja       | `src/caja`       | **Implementado (MIG-32)**                        | Apertura, cierre, historial, movimientos y ventas | `pagos`, `common`                                      |
-| Dashboard  | `src/dashboard`  | Scaffold (módulo vacío)                          | KPIs de solo lectura                              | `mesas`, `pedidos`, `pagos`, `caja`                    |
+| Dashboard  | `src/dashboard`  | Implementado (MIG-34)                              | KPIs de solo lectura                              | `mesas`, `pedidos`, `pagos`, `caja`                    |
 | Reportes   | `src/reportes`   | Scaffold (módulo vacío)                          | Reporte de ventas por período                     | `pagos`, `caja`, `pedidos`                             |
 | Common     | `src/common`     | **Implementado**                                 | Filtros, pipes, guards, decoradores               | —                                                      |
 

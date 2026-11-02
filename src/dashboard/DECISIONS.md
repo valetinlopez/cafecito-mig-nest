@@ -30,18 +30,21 @@ al endpoint más visitado del admin. Es la misma regla de la constitución §3.
 **Motivo:** "ventas del día" para el negocio es el día del salón, no el día UTC.
 Un corte UTC a las 21:00 locales partiría el turno de la noche.
 
-**Riesgo:** el contrato no fija la zona. Se documenta acá y se confirma con
-producto antes de implementar. Si el legacy usaba UTC, debe decidirse
-explícitamente y registrarse como ADR.
+**Aplicación (MIG-34):** se calcula el inicio local del día y el inicio del día
+siguiente, y se consultan pagos en el intervalo semiabierto `[inicio, fin)`
+después de convertir ambos límites a UTC. El contrato de `pagos.fecha` conserva
+el eje UTC establecido por ADR 0007.
 
 ---
 
-## D-04 — `ultimos_pedidos` con límite
+## D-04 — `ultimos_pedidos` limitados a 50
 
-**Decisión:** top 5 ordenado por `fecha DESC` (ajustar al valor del legacy).
+**Decisión:** top 50 de todos los estados, ordenado por `fecha DESC` y luego
+`id DESC` para desempatar. `items` es la suma de cantidades de los detalles.
 
-**Motivo:** es un widget de la home, no un listado. Sin límite, el response crece
-sin control.
+**Motivo:** MIG-34 fija el límite de 50. Es un widget de la home, no un listado;
+el límite controla el tamaño de la respuesta. El contrato vigente nombra la
+cantidad agregada `items` y el número de mesa `mesa`.
 
 ---
 
@@ -59,5 +62,17 @@ render; los ceros son el estado vacío natural.
 **Decisión:** `caja.estado = 'cerrada'` con `monto_inicial: null` y
 `fecha_apertura: null`.
 
-**Motivo:** el contrato tipa ambos como nullable. Se debe verificar el
-comportamiento del legacy para no cambiar lo que el front ya renderiza.
+**Motivo:** el contrato tipa ambos como nullable y el frontend consume
+`DashboardCajaEstado`.
+
+---
+
+## D-07 — Selección determinista de caja abierta
+
+**Decisión:** consultar las cajas abiertas con `find()`, ordenadas por
+`fechaApertura DESC` y `id DESC` como desempate, y representar la primera si
+existe.
+
+**Motivo:** MIG-34 requiere que el dashboard no falle si hay múltiples cajas
+abiertas. Ordenar hace determinista la proyección sin lanzar una excepción por
+cardinalidad ni cambiar la invariante del módulo de caja.

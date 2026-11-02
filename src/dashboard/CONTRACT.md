@@ -86,3 +86,9 @@ interface DashboardResumen {
 | Sin caja abierta → `estado` y montos nulos | `caja: { estado: 'cerrada', monto_inicial: null, fecha_apertura: null }` (a confirmar con legacy) |
 | Listas vacías, no `null`                   | `ultimos_pedidos: []`                                                                             |
 | Solo lectura                               | No hay otros métodos                                                                              |
+| Pedidos recientes                          | Hasta 50, cualquier estado, `fecha DESC` y `id DESC`; `items` suma las cantidades de detalle      |
+| Caja abierta múltiple                      | Se muestra la de `fecha_apertura` más reciente                                                     |
+
+El número de mesa y la suma de cantidades se exponen como `mesa` e `items`,
+respectivamente, según el contrato global (aunque la descripción de MIG-34 use
+los nombres `numero_mesa` y `cantidad_items`).
