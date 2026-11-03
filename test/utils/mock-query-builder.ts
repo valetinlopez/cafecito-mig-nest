@@ -32,6 +32,7 @@ export interface MockQueryBuilder<T extends ObjectLiteral> {
   orderBy: ChainableMethod<MockQueryBuilder<T>>;
   addOrderBy: ChainableMethod<MockQueryBuilder<T>>;
   groupBy: ChainableMethod<MockQueryBuilder<T>>;
+  addGroupBy: ChainableMethod<MockQueryBuilder<T>>;
   having: ChainableMethod<MockQueryBuilder<T>>;
   setParameter: ChainableMethod<MockQueryBuilder<T>>;
   setParameters: ChainableMethod<MockQueryBuilder<T>>;
@@ -79,6 +80,7 @@ export function createMockQueryBuilder<
   queryBuilder.orderBy = chainable();
   queryBuilder.addOrderBy = chainable();
   queryBuilder.groupBy = chainable();
+  queryBuilder.addGroupBy = chainable();
   queryBuilder.having = chainable();
   queryBuilder.setParameter = chainable();
   queryBuilder.setParameters = chainable();

@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { Repository } from 'typeorm';
 import { Caja } from '../caja/entities/caja.entity.js';
+import { getBusinessDayRange } from '../common/time/business-timezone.js';
 import { Mesa } from '../mesas/entities/mesa.entity.js';
 import { Pago } from '../pagos/entities/pago.entity.js';
 import { ACTIVE_PEDIDO_ESTADOS } from '../pedidos/pedido-estado.js';
@@ -15,7 +16,6 @@ import {
   type DashboardVentasDiaData,
 } from './dto/dashboard-resumen-response.dto.js';
 
-const BUSINESS_TIME_ZONE = 'America/Argentina/Buenos_Aires';
 const RECENT_ORDERS_LIMIT = 50;
 
 interface PagoResumenRaw {
@@ -44,12 +44,6 @@ interface PedidoRecienteRaw {
   items: number | string | null;
   total: number | string;
   estado: PedidoEstado;
-}
-
-interface LocalDateParts {
-  year: number;
-  month: number;
-  day: number;
 }
 
 @Injectable()
@@ -177,63 +171,4 @@ export class DashboardService {
       estado: row.estado,
     }));
   }
-}
-
-function getBusinessDayRange(now: Date): { start: Date; end: Date } {
-  const { year, month, day } = getLocalDateParts(now);
-  const nextDay = new Date(Date.UTC(year, month - 1, day + 1));
-  return {
-    start: localDateTimeToUtc({ year, month, day }),
-    end: localDateTimeToUtc({
-      year: nextDay.getUTCFullYear(),
-      month: nextDay.getUTCMonth() + 1,
-      day: nextDay.getUTCDate(),
-    }),
-  };
-}
-
-function getLocalDateParts(date: Date): LocalDateParts {
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: BUSINESS_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).formatToParts(date);
-  const values = new Map(parts.map(({ type, value }) => [type, value]));
-  return {
-    year: Number(values.get('year')),
-    month: Number(values.get('month')),
-    day: Number(values.get('day')),
-  };
-}
-
-function localDateTimeToUtc(parts: LocalDateParts): Date {
-  const targetUtc = Date.UTC(parts.year, parts.month - 1, parts.day);
-  let candidate = targetUtc;
-
-  // Two offset corrections account for zones whose UTC offset changes at DST.
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const rendered = new Intl.DateTimeFormat('en-CA', {
-      timeZone: BUSINESS_TIME_ZONE,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hourCycle: 'h23',
-    }).formatToParts(new Date(candidate));
-    const values = new Map(rendered.map(({ type, value }) => [type, value]));
-    const renderedAsUtc = Date.UTC(
-      Number(values.get('year')),
-      Number(values.get('month')) - 1,
-      Number(values.get('day')),
-      Number(values.get('hour')),
-      Number(values.get('minute')),
-      Number(values.get('second')),
-    );
-    candidate += targetUtc - renderedAsUtc;
-  }
-
-  return new Date(candidate);
 }

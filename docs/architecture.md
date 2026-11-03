@@ -145,7 +145,7 @@ Puntos de borde:
 | Pagos      | `src/pagos`      | Implementado (MIG-31/32/33)                      | Persistencia y proyecciones de cobros (sin rutas) | `Pedido` (relación ORM); integrado desde pedidos/caja  |
 | Caja       | `src/caja`       | **Implementado (MIG-32)**                        | Apertura, cierre, historial, movimientos y ventas | `pagos`, `common`                                      |
 | Dashboard  | `src/dashboard`  | Implementado (MIG-34)                              | KPIs de solo lectura                              | `mesas`, `pedidos`, `pagos`, `caja`                    |
-| Reportes   | `src/reportes`   | Scaffold (módulo vacío)                          | Reporte de ventas por período                     | `pagos`, `caja`, `pedidos`                             |
+| Reportes   | `src/reportes`   | Implementado (MIG-37)                             | Reporte de ventas por período                     | `pagos`, `caja`, `pedidos`                             |
 | Common     | `src/common`     | **Implementado**                                 | Filtros, pipes, guards, decoradores               | —                                                      |
 
 **Leyenda:** _Implementado_ = código + tests + doc. _Scaffold_ = el módulo

@@ -15,6 +15,7 @@ Cada carpeta es una funcionalidad entregable, nombrada con el número del ticket
 | [`033-pedidos`](033-pedidos/spec.md) | MIG-33 | Implementación en curso                     | Spec integral aprobada; gates pendientes     |
 | [`034-dashboard`](034-dashboard/spec.md) | MIG-34 | Implementación completa; revisión pendiente | Gates OK; revisión humana del veredicto SDD pendiente |
 | [`035-regresion-services`](035-regresion-services/spec.md) | MIG-35 | Implementación completa; revisión pendiente | Gates OK; revisión humana SDD pendiente |
+| [`037-reportes`](037-reportes/spec.md) | MIG-37 | Implementación completa; revisión pendiente | Gates OK; `APROBADO` por el agente, revisión humana pendiente |
 
 > Este índice se actualiza al cerrar cada fase. `/sdd-status` lo reconstruye
 > leyendo los archivos.

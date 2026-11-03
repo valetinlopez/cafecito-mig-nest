@@ -8,7 +8,7 @@
 | Actualizado | 2026-11-03                                                                 |
 | Sprint      | S4 — Reportes & QA                                                         |
 | Epic        | MIG-9 — E9: Testing & QA                                                   |
-| Foco actual | MIG-36: tests de Auth Service cerrados; sigue MIG-37 (Reportes)            |
+| Foco actual | MIG-37 (Reportes) implementado; sigue MIG-38 (smoke E2E)                   |
 
 ---
 
@@ -31,7 +31,7 @@
 | pagos      | Entity, proyecciones y registro (MIG-31/32/33) | ✅    | ✅  | Confirmar esquema/FKs en MIG-44                      |
 | caja       | Implementado (MIG-32; rama actual)             | ✅    | ✅  | Revisar, integrar manualmente; MIG-44 valida esquema |
 | dashboard  | Implementado (MIG-34; revisión SDD pendiente)   | ✅    | ✅  | Revisión humana del veredicto SDD                    |
-| reportes   | Scaffold (módulo vacío)                        | ❌    | ✅  | Depende de pagos/caja                                |
+| reportes   | Implementado (MIG-37)                          | ✅    | ✅  | Revisión humana del veredicto SDD                    |
 
 ---
 
@@ -55,6 +55,7 @@
 | MIG-34 | Dashboard con KPIs agregados, endpoint admin y E2E                    | Implementado; gates OK, revisión SDD pendiente |
 | MIG-35 | Tests de regresión de servicios, locks y decimales                    | Implementado; gates OK, revisión SDD pendiente |
 | MIG-36 | Tests de Auth Service: 19 casos + tokens JWT reales; cobertura 100 %   | Implementado; gates OK |
+| MIG-37 | Reporte de ventas por rango: 5 bloques, cajas y diferencia            | Implementado; gates OK, revisión SDD pendiente |
 | MIG-45 | Arnés DevelopAI: ADR 0008, skills, agentes, comandos, spec piloto y CI  | Cerrado                               |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs)  | Cerrado                               |
 
@@ -76,6 +77,8 @@
 
 | Fecha      | Decisión                                                                | Registro                   |
 | ---------- | ----------------------------------------------------------------------- | -------------------------- |
+| 2026-11-03 | `reportes`: eje en `pagos.fecha`, ticket por cobros y top 20 productos   | `src/reportes/DECISIONS.md` |
+| 2026-11-03 | Rango de fechas del negocio compartido entre `dashboard` y `reportes`   | `src/common/time/business-timezone.ts` |
 | 2026-10-29 | Adopción de SDD + orquestación multiagente con permisos por rol         | ADR 0008                   |
 | 2026-10-29 | `numericTransformer` compartido se adelanta a MIG-31 (`Pago.monto`)     | `src/common/DECISIONS.md`  |
 | 2026-10-29 | `pagos`: `caja_id`/`usuario_id` nullable; `cajas` sin relación ORM      | `src/pagos/DECISIONS.md`   |
