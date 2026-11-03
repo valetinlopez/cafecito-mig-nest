@@ -411,8 +411,52 @@ describe('PedidosService', () => {
       status: 400,
       response: { message: 'La mesa ya tiene un pedido activo' },
     });
+    expect(pedidosRepository.findOne).toHaveBeenCalledWith({
+      select: { id: true },
+      where: {
+        mesaId: 8,
+        estado: In(['pendiente', 'en_preparacion', 'listo', 'entregado']),
+      },
+    });
     expect(productosRepository.findOne).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ['inexistente', null, 'Producto 20 no encontrado'],
+    [
+      'no disponible',
+      {
+        id: 20,
+        nombre: 'Café',
+        precio: '12.50',
+        stock: 8,
+        disponible: false,
+      } as Producto,
+      'Producto 20 no disponible',
+    ],
+  ] as const)(
+    'rechaza producto %s sin persistir cambios',
+    async (_reason, producto, message) => {
+      mesasRepository.findOne.mockResolvedValue({
+        id: 8,
+        numero: 8,
+        estado: 'libre',
+      });
+      pedidosRepository.findOne.mockResolvedValue(null);
+      productosRepository.findOne.mockResolvedValue(producto);
+
+      await expect(
+        service.createPedido(
+          { mesa_id: 8, detalles: [{ producto_id: 20, cantidad: 1 }] },
+          5,
+        ),
+      ).rejects.toMatchObject({ status: 400, response: { message } });
+
+      expect(productosRepository.update).not.toHaveBeenCalled();
+      expect(pedidosRepository.save).not.toHaveBeenCalled();
+      expect(mesasRepository.save).not.toHaveBeenCalled();
+    },
+  );
 
   it('al entregar cambia la mesa a pendiente_cobro dentro de la transacción', async () => {
     const pedido = pedidoFixture(12);

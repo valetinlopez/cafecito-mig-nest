@@ -175,23 +175,33 @@ describe('DashboardService', () => {
     );
   });
 
-  it('tolera varias cajas y selecciona la más reciente', async () => {
+  it('tolera varias cajas y elige la fecha más reciente con desempate por id', async () => {
     const olderCaja = Object.assign(new Caja(), {
       id: 1,
       estado: 'abierta',
       montoInicial: 1000,
-      fechaApertura: new Date('2026-10-19T11:00:00.000Z'),
+      fechaApertura: new Date('2026-10-19T12:00:00.000Z'),
     });
     const latestCaja = Object.assign(new Caja(), {
       id: 2,
       estado: 'abierta',
       montoInicial: 5000,
-      fechaApertura: new Date('2026-10-19T11:00:00.000Z'),
+      fechaApertura: new Date('2026-10-19T12:00:00.000Z'),
     });
-    cajasRepository.find.mockResolvedValue([latestCaja, olderCaja]);
+    const previousDayCaja = Object.assign(new Caja(), {
+      id: 99,
+      estado: 'abierta',
+      montoInicial: 9000,
+      fechaApertura: new Date('2026-10-18T12:00:00.000Z'),
+    });
+    cajasRepository.find.mockResolvedValue([
+      latestCaja,
+      olderCaja,
+      previousDayCaja,
+    ]);
 
     await expect(service.getDashboardResumen()).resolves.toMatchObject({
-      caja: { monto_inicial: 5000 },
+      caja: { estado: 'abierta', monto_inicial: 5000 },
     });
     expect(cajasRepository.find).toHaveBeenCalledWith({
       where: { estado: 'abierta' },
