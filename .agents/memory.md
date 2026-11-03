@@ -8,7 +8,7 @@
 | Actualizado | 2026-11-03                                                                 |
 | Sprint      | S4 — Reportes & QA                                                         |
 | Epic        | MIG-9 — E9: Testing & QA                                                   |
-| Foco actual | MIG-37 (Reportes) implementado; sigue MIG-38 (smoke E2E)                   |
+| Foco actual | MIG-38 (smoke E2E) implementado; falta el smoke contra base real           |
 
 ---
 
@@ -16,7 +16,7 @@
 
 | Módulo     | Estado                                         | Tests | Doc | Próximo paso                                         |
 | ---------- | ---------------------------------------------- | ----- | --- | ---------------------------------------------------- |
-| test       | Implementado (MIG-21); regresiones MIG-35/36    | ✅    | ✅  | —                                                    |
+| test       | Implementado (MIG-21); MIG-35/36; smoke MIG-38  | ✅    | ✅  | Ejecutar `docs/workflows/smoke-manual.md`            |
 | health     | Implementado                                   | ✅    | ✅  | —                                                    |
 | config     | Implementado                                   | ✅    | ✅  | —                                                    |
 | database   | Implementado                                   | ✅    | ✅  | Validar tablas en MIG-44                             |
@@ -26,7 +26,7 @@
 | users      | Implementado (MIG-22/25)                       | ✅    | ✅  | Consumido por `empleados` (MIG-26)                   |
 | empleados  | Implementado en rama MIG-26                    | ✅    | ✅  | Revisión e integración                               |
 | mesas      | Implementado MIG-27/33                         | ✅    | ✅  | Adapter de pedidos integrado sin ciclo DI            |
-| productos  | Parcial MIG-29 (GET/POST/PATCH)                | ✅    | ✅  | DELETE pendiente; relación/transformer MIG-44        |
+| productos  | Implementado (MIG-29; DELETE MIG-38)           | ✅    | ✅  | Relación/transformer MIG-44                          |
 | pedidos    | Ciclo completo implementado (MIG-30/33)        | ✅    | ✅  | Revisión final SDD; esquema en MIG-44                |
 | pagos      | Entity, proyecciones y registro (MIG-31/32/33) | ✅    | ✅  | Confirmar esquema/FKs en MIG-44                      |
 | caja       | Implementado (MIG-32; rama actual)             | ✅    | ✅  | Revisar, integrar manualmente; MIG-44 valida esquema |
@@ -56,6 +56,7 @@
 | MIG-35 | Tests de regresión de servicios, locks y decimales                    | Implementado; gates OK, revisión SDD pendiente |
 | MIG-36 | Tests de Auth Service: 19 casos + tokens JWT reales; cobertura 100 %   | Implementado; gates OK |
 | MIG-37 | Reporte de ventas por rango: 5 bloques, cajas y diferencia            | Implementado; gates OK, revisión SDD pendiente |
+| MIG-38 | Smoke de compatibilidad con el frontend + `DELETE /productos/{id}`    | Implementado; gates OK, falta smoke contra base real |
 | MIG-45 | Arnés DevelopAI: ADR 0008, skills, agentes, comandos, spec piloto y CI  | Cerrado                               |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs)  | Cerrado                               |
 
@@ -77,6 +78,8 @@
 
 | Fecha      | Decisión                                                                | Registro                   |
 | ---------- | ----------------------------------------------------------------------- | -------------------------- |
+| 2026-11-03 | `productos`: DELETE con chequeo explícito, port anti-ciclo y red de FK   | `src/productos/DECISIONS.md` D-08 |
+| 2026-11-03 | Smoke e2e: `AppModule` real con solo el `DataSource` en memoria          | `specs/038-smoke-e2e/plan.md` §4.4 |
 | 2026-11-03 | `reportes`: eje en `pagos.fecha`, ticket por cobros y top 20 productos   | `src/reportes/DECISIONS.md` |
 | 2026-11-03 | Rango de fechas del negocio compartido entre `dashboard` y `reportes`   | `src/common/time/business-timezone.ts` |
 | 2026-10-29 | Adopción de SDD + orquestación multiagente con permisos por rol         | ADR 0008                   |
@@ -123,12 +126,13 @@
 
 ## 6. Próximo paso
 
-1. **MIG-36:** tests de Auth Service cerrados (19 casos del legacy + JWT real,
+1. **MIG-38:** revisión humana del veredicto en `specs/038-smoke-e2e/validate.md`.
+   Ejecutar `docs/workflows/smoke-manual.md` cuando haya base (MIG-39/MIG-44).
+2. **MIG-36:** tests de Auth Service cerrados (19 casos del legacy + JWT real,
    cobertura del service 100 %). Falta revisión humana del PR.
-2. **MIG-37:** implementar Reportes: ventas por rango de fechas.
-3. **MIG-35 / MIG-34 / MIG-33:** revisar los veredictos SDD pendientes en
-   `specs/035-regresion-services/`, `specs/034-dashboard/` y
-   `specs/033-pedidos/`.
+3. **MIG-37 / MIG-35 / MIG-34 / MIG-33:** revisar los veredictos SDD pendientes en
+   `specs/037-reportes/`, `specs/035-regresion-services/`,
+   `specs/034-dashboard/` y `specs/033-pedidos/`.
 4. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
    productos/pedidos/caja y confirmar columnas, nulabilidad y FKs de `pagos`.
 
@@ -146,6 +150,7 @@ commit ni push; esperar confirmación explícita antes del push. El merge a
 
 | Fecha      | Cambio                                                                                                                                                                                                                                                                                                             |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-03 | MIG-38 en `feature/MIG-38-smoke-e2e`: `DELETE /productos/{id}` (breaking change detectado), smoke sobre el `AppModule` real con persistencia en memoria, 28 endpoints contra una copia de `frontend/types/api.ts` y guía manual. 483 unitarios y 129 e2e (2 omitidos), lint/typecheck/build OK. Sin ejecutar contra base real; sin commit/push/Jira. |
 | 2026-11-03 | MIG-36: migrados los 19 casos de `test_auth_service.py` a Vitest con `UsersService` mockeado; nuevo `auth.service.tokens.spec.ts` con `JwtService` real (3 partes, claims, firma alterada, vencido, secreto ajeno). Cobertura de `auth.service.ts` 100 % (stmts/branch/funcs/lines); 426 unitarios y 82 e2e (2 omitidos) en verde, lint y typecheck OK. Sin cambios de contrato, sin commit/push/Jira. |
 | 2026-11-02 | MIG-35: regresiones de mesas/productos/pedidos/caja/dashboard, pool DB y tipos decimales; 411 unitarios, 82 e2e (2 omitidos), lint/typecheck/build OK; líneas de services 93.69 %. Revisión SDD pendiente; sin commit/push/Jira. |
 | 2026-11-02 | MIG-34: endpoint dashboard implementado con agregaciones SQL, día Buenos Aires, selección determinista de caja y últimos 50 pedidos; lint/typecheck/build OK, 396 unitarios y 76 e2e OK (2 omitidos). Revisión SDD pendiente; sin commit/push/Jira. |

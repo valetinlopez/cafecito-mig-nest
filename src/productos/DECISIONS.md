@@ -50,6 +50,8 @@ habría dos escrituras no atómicas.
 
 ## D-05 — DELETE pendiente de MIG-30
 
+> **Reemplazada por D-08** (MIG-38): el endpoint ya está implementado.
+
 **Decisión:** conservar el endpoint en el contrato, pero no implementarlo hasta
 MIG-30, que aportará la entidad/consulta de pedidos asociados.
 
@@ -75,3 +77,28 @@ del front.
 **Motivo:** el contrato exige `400`, no el `500` de una violación de FK. La
 validación explícita se mantiene aunque el mapeo de la FK/relación ORM se
 posponga hasta validar el esquema en MIG-44.
+
+---
+
+## D-08 — DELETE con chequeo explícito, port anti-ciclo y red de FK
+
+**Decisión:** `remove()` responde `404` si el producto no existe; consulta
+`ProductUsagePort` y responde `400` si figura en cualquier pedido, sea cual sea
+su estado; y traduce a ese mismo `400` una violación de FK (`23503`). Si el
+`DELETE` no afecta filas, responde `404`. `DetallePedidoUsageAdapter` implementa
+el port registrando la entity `DetallePedido`, sin importar `PedidosModule`.
+
+**Motivo:**
+
+- `pedidos` depende de `productos`: importar su módulo crearía un ciclo. Es la
+  excepción de adapters de lectura de `docs/architecture.md` §6, el mismo patrón
+  que `PedidoActiveOrdersAdapter` en `mesas`.
+- El legacy dependía solo de la FK, pero acá su mapeo es provisional hasta MIG-44:
+  el chequeo explícito no depende de que la restricción exista.
+- La FK sigue siendo necesaria: una venta entre el chequeo y el borrado la
+  dispararía y, sin traducirla, el frontend recibiría un `500`.
+- Se cuenta cualquier estado de pedido porque el `subtotal` histórico y los
+  reportes siguen referenciando al producto.
+
+**Origen:** breaking change detectado en MIG-38; `productoStore.eliminarProducto`
+recibía `404`.

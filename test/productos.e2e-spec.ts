@@ -1,3 +1,4 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { INestApplication } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtModule, JwtService } from '@nestjs/jwt';
@@ -64,6 +65,7 @@ describe('Productos API (e2e)', () => {
     findById: vi.fn(),
     create: vi.fn(),
     update: vi.fn(),
+    remove: vi.fn(),
   };
   const usersService = { findById: vi.fn<UsersService['findById']>() };
 
@@ -167,6 +169,72 @@ describe('Productos API (e2e)', () => {
       .set('Authorization', authorization)
       .expect(200)
       .expect(product);
+  });
+
+  describe('DELETE /productos/:id', () => {
+    const IN_USE_DETAIL =
+      'No se puede eliminar: el producto tiene pedidos asociados. Marcalo como no disponible en su lugar.';
+
+    it('responde 204 sin body para un administrador', async () => {
+      usuario.rol = 'admin';
+      productosService.remove.mockResolvedValue(undefined);
+      const token = await signToken();
+
+      const response = await request(server)
+        .delete('/api/v1/productos/1')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(204);
+
+      expect(response.text).toBe('');
+      expect(productosService.remove).toHaveBeenCalledWith(1);
+    });
+
+    it('responde 400 con el detail del contrato si tiene pedidos asociados', async () => {
+      usuario.rol = 'admin';
+      productosService.remove.mockRejectedValue(
+        new BadRequestException(IN_USE_DETAIL),
+      );
+      const token = await signToken();
+
+      await request(server)
+        .delete('/api/v1/productos/1')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(400)
+        .expect({ detail: IN_USE_DETAIL });
+    });
+
+    it('responde 404 si el producto no existe', async () => {
+      usuario.rol = 'admin';
+      productosService.remove.mockRejectedValue(
+        new NotFoundException('Producto no encontrado'),
+      );
+      const token = await signToken();
+
+      await request(server)
+        .delete('/api/v1/productos/404')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(404)
+        .expect({ detail: 'Producto no encontrado' });
+    });
+
+    it('responde 401 sin token', async () => {
+      await request(server)
+        .delete('/api/v1/productos/1')
+        .expect(401)
+        .expect({ detail: 'Token inválido o expirado' });
+      expect(productosService.remove).not.toHaveBeenCalled();
+    });
+
+    it('responde 403 con rol mozo', async () => {
+      const token = await signToken();
+
+      await request(server)
+        .delete('/api/v1/productos/1')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(403)
+        .expect({ detail: 'Se requiere rol de administrador' });
+      expect(productosService.remove).not.toHaveBeenCalled();
+    });
   });
 
   it.each([

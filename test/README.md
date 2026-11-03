@@ -167,3 +167,25 @@ npm test
 npm run test:cov
 npm run test:e2e
 ```
+
+---
+
+## 8. Smoke de compatibilidad con el frontend (MIG-38)
+
+`frontend-compat.e2e-spec.ts` levanta el `AppModule` real y reemplaza **solo el
+`DataSource`**. Controllers, guards, pipes, services y DTOs son los de producción.
+
+| Archivo                            | Para qué                                                        |
+| ---------------------------------- | --------------------------------------------------------------- |
+| `utils/in-memory-data-source.ts`   | Doble de TypeORM: guarda, filtra y ordena filas, sin negocio.   |
+| `utils/frontend-compat.fixtures.ts` | Datos del seed legacy y resolvers de las agregaciones.         |
+| `utils/frontend-shapes.ts`         | Copia en runtime de `frontend/types/api.ts` (commit `3dfdb1f`). |
+
+**Lo que no prueba:** SQL, mapeo de columnas, transformers, restricciones, bloqueos
+ni rollback. Los resolvers están escritos a mano, así que los valores de dashboard
+y reportes verifican shape y conversión, no el cálculo. Eso se cubre con
+[`docs/workflows/smoke-manual.md`](../docs/workflows/smoke-manual.md).
+
+Al agregar código que use otro operador o una agregación nueva, el doble falla con
+`Operador sin soporte` o `Consulta agregada sin resolver`: ampliar el doble o el
+fixture, no silenciar el error.

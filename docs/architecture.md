@@ -140,7 +140,7 @@ Puntos de borde:
 | Users      | `src/users`      | **Implementado** (MIG-22/25)                     | Entity/gestión de usuarios                        | `database`                                             |
 | Empleados  | `src/empleados`  | Implementado en rama MIG-26 (pendiente revisión) | ABM de empleados (`rol = mozo`)                   | `users`, `common`                                      |
 | Mesas      | `src/mesas`      | Implementado (MIG-27/33)                         | Estados y ABM; consulta pedidos activos           | `PedidoActiveOrdersAdapter` (sin ciclo DI)             |
-| Productos  | `src/productos`  | Parcial (MIG-29: GET/POST/PATCH; DELETE MIG-30)  | Catálogo, stock, precios                          | `categorias` (lookup); schema/transformer MIG-44       |
+| Productos  | `src/productos`  | Implementado (MIG-29; DELETE en MIG-38)          | Catálogo, stock, precios                          | `categorias` (lookup); `DetallePedidoUsageAdapter`     |
 | Pedidos    | `src/pedidos`    | Implementado (MIG-30/33)                         | Comandas, stock, transiciones y cobro             | `mesas`, `caja`, `pagos`; producto vía `EntityManager` |
 | Pagos      | `src/pagos`      | Implementado (MIG-31/32/33)                      | Persistencia y proyecciones de cobros (sin rutas) | `Pedido` (relación ORM); integrado desde pedidos/caja  |
 | Caja       | `src/caja`       | **Implementado (MIG-32)**                        | Apertura, cierre, historial, movimientos y ventas | `pagos`, `common`                                      |
@@ -198,7 +198,8 @@ Reglas de dependencia:
 2. Un feature module **no importa otro feature module** salvo por su service
    exportado, y solo cuando hay una regla de negocio compartida. Excepción
    acotada: adapters de lectura anti-ciclo pueden registrar una entity de otro
-   módulo y consultar con su propio repositorio (como `PedidoActiveOrdersAdapter`);
+   módulo y consultar con su propio repositorio (como `PedidoActiveOrdersAdapter`
+   y `DetallePedidoUsageAdapter`);
    no exponen ni duplican lógica de negocio.
 3. Las dependencias circulares se resuelven **moviendo la regla al módulo
    dueño**, nunca con `forwardRef`.
@@ -283,6 +284,8 @@ local. Contra Neon (aunque sea un `.env` de desarrollo), queda en `false`.
 | Config   | `src/config/*.spec.ts`      | Resolución de entorno y defaults.               |
 | e2e      | `test/*.e2e-spec.ts`        | Contrato HTTP, sin PostgreSQL por defecto.      |
 | Smoke DB | `test/database.e2e-spec.ts` | Solo con `E2E_DATABASE=true`.                   |
+| Smoke frontend | `test/frontend-compat.e2e-spec.ts` | `AppModule` real con persistencia en memoria (MIG-38). |
+| Smoke manual | `docs/workflows/smoke-manual.md` | Flujo contra base real; antes del cutover. |
 | Helpers  | `test/utils/*.ts`           | Mocks tipados de `Repository` y `QueryBuilder`. |
 
 Los unitarios usan los helpers de `test/utils/` y se documentan en

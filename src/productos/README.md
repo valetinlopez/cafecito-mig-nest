@@ -2,11 +2,11 @@
 
 | Campo        | Valor                                                |
 | ------------ | ---------------------------------------------------- |
-| Estado       | **Parcial (MIG-29)**: GET/POST/PATCH                 |
+| Estado       | **Implementado**: GET/POST/PATCH (MIG-29), DELETE (MIG-38) |
 | Entity       | `Producto` → tabla `productos` (mapeo por validar en MIG-44) |
-| Endpoints    | 4 implementados; DELETE pendiente de MIG-30          |
-| Dependencias | `categorias`, `common/guards`                        |
-| Tests        | Unitarios y e2e para endpoints implementados        |
+| Endpoints    | 5 implementados                                      |
+| Dependencias | `categorias`, `common/guards`; `DetallePedido` por adapter de lectura |
+| Tests        | Unitarios y e2e de los 5 endpoints                   |
 
 ---
 
@@ -19,9 +19,8 @@ de datos de `pedidos` para calcular subtotales y descontar stock.
 
 ## 2. Estado actual
 
-GET colección/detalle, POST y PATCH están implementados. DELETE se conserva en
-el contrato global pero espera MIG-30 para verificar pedidos asociados. La
-relación ORM de categoría y el transformer numérico compartido esperan MIG-44.
+GET colección/detalle, POST, PATCH y DELETE están implementados. La relación ORM
+de categoría y el transformer numérico compartido esperan MIG-44.
 Mientras tanto, `categoria_id` es scalar, `CategoriasService` hidrata el objeto
 anidado y el response DTO convierte temporalmente `precio` a `number`.
 
@@ -35,6 +34,9 @@ src/productos/
 ├── productos.controller.ts
 ├── productos.service.ts
 ├── productos.service.spec.ts
+├── product-usage.port.ts              # ¿el producto figura en algún pedido?
+├── detalle-pedido-usage.adapter.ts    # implementación sin importar PedidosModule
+├── detalle-pedido-usage.adapter.spec.ts
 ├── dto/
 │   ├── create-producto.dto.ts
 │   ├── update-producto.dto.ts
@@ -66,8 +68,8 @@ src/productos/
 
 - `precio > 0`; `stock >= 0`; `stock_minimo >= 0`; `nombre` mínimo 1.
 - `categoria_id` debe existir → `400` `La categoría indicada no existe`.
-- `DELETE` está definido en el contrato, pero no implementado hasta MIG-30,
-  cuando se confirme el acceso a pedidos asociados.
+- `DELETE` solo borra productos que no figuran en ningún pedido; si figuran,
+  responde `400` y hay que marcarlos como no disponibles (D-08).
 - El stock se descuenta desde `pedidos`, no desde `productos`.
 - `disponible = false` oculta el producto del alta de pedidos sin borrar
   historial.
@@ -92,8 +94,8 @@ src/productos/
 - Lista vacía.
 - Alta con categoría inexistente → `400`.
 - Alta con `precio <= 0` → `422`.
-- DELETE y sus casos de pedidos asociados → MIG-30.
-- e2e de `403` con rol `mozo` en `POST`/`PATCH`.
+- `DELETE`: borra sin uso, `400` con uso o violación de FK, `404` inexistente.
+- e2e de `403` con rol `mozo` en `POST`/`PATCH`/`DELETE`.
 
 ---
 
