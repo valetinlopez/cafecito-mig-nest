@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import type { DatabaseConfig } from '../config/database.config.js';
 import {
   createDataSourceOptions,
@@ -31,6 +32,14 @@ describe('createTypeOrmOptions', () => {
       connectTimeoutMS: 10_000,
       applicationName: 'cafecito-backend-nest',
     });
+    expect(options.extra).toEqual({
+      idleTimeoutMillis: 240_000,
+      keepAlive: true,
+    });
+  });
+
+  it('descarta conexiones inactivas antes del timeout de Neon (CFB-157)', () => {
+    const options = createDataSourceOptions(DATABASE_CONFIG);
     expect(options.extra).toEqual({
       idleTimeoutMillis: 240_000,
       keepAlive: true,
@@ -73,10 +82,23 @@ describe('createTypeOrmOptions', () => {
     ).toBeUndefined();
   });
 
-  it('instala un handler que evita que un error del pool tire el proceso', () => {
+  it('registra errores del pool sin propagar la excepción', () => {
     const options = createDataSourceOptions(DATABASE_CONFIG);
+    const warn = vi
+      .spyOn(Logger.prototype, 'warn')
+      .mockImplementation(() => {});
+    const handler = options.poolErrorHandler as unknown as (
+      error: unknown,
+    ) => void;
 
-    expect(typeof options.poolErrorHandler).toBe('function');
+    expect(handler).toBeTypeOf('function');
+    expect(() => {
+      handler(new Error('connection reset'));
+    }).not.toThrow();
+    expect(warn).toHaveBeenCalledWith(
+      'Error en el pool de PostgreSQL: Error: connection reset',
+    );
+    warn.mockRestore();
   });
 
   it('falla con un mensaje claro si no hay URL de conexión', () => {

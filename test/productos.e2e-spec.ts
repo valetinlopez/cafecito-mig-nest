@@ -116,7 +116,9 @@ describe('Productos API (e2e)', () => {
   });
 
   it('requiere autenticación', async () => {
-    const response = await request(server).get('/api/v1/productos/').expect(401);
+    const response = await request(server)
+      .get('/api/v1/productos/')
+      .expect(401);
     expect(response.body).toEqual({ detail: 'Token inválido o expirado' });
     expect(productosService.findAll).not.toHaveBeenCalled();
   });
@@ -166,4 +168,45 @@ describe('Productos API (e2e)', () => {
       .expect(200)
       .expect(product);
   });
+
+  it.each([
+    ['precio', { precio: 0 }],
+    ['stock', { stock: -1 }],
+    ['stock_minimo', { stock_minimo: -1 }],
+  ])(
+    'rechaza %s inválido al crear sin invocar el servicio',
+    async (_field, invalidFields) => {
+      usuario.rol = 'admin';
+      const token = await signToken();
+      await request(server)
+        .post('/api/v1/productos')
+        .set('Authorization', `Bearer ${token}`)
+        .send({
+          nombre: 'Café',
+          precio: 850,
+          categoria_id: 1,
+          ...invalidFields,
+        })
+        .expect(422);
+      expect(productosService.create).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['precio', { precio: 0 }],
+    ['stock', { stock: -1 }],
+    ['stock_minimo', { stock_minimo: -1 }],
+  ])(
+    'rechaza %s inválido al actualizar sin invocar el servicio',
+    async (_field, invalidFields) => {
+      usuario.rol = 'admin';
+      const token = await signToken();
+      await request(server)
+        .patch('/api/v1/productos/1')
+        .set('Authorization', `Bearer ${token}`)
+        .send(invalidFields)
+        .expect(422);
+      expect(productosService.update).not.toHaveBeenCalled();
+    },
+  );
 });

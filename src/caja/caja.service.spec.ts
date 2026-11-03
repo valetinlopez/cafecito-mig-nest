@@ -87,6 +87,31 @@ describe('CajaService', () => {
     });
   });
 
+  it('representa las ventas en cero cuando la caja no tiene pagos', async () => {
+    cajaRepository.find.mockResolvedValue([OPEN_CAJA]);
+    pagosService.getTotalVentas.mockResolvedValue(0);
+
+    await expect(service.getCajaAbierta()).resolves.toMatchObject({
+      id: 2,
+      total_ventas: 0,
+    });
+    expect(pagosService.getTotalVentas).toHaveBeenCalledWith(2);
+  });
+
+  it('tolera varias cajas abiertas sin error de cardinalidad', async () => {
+    const anotherOpenCaja = Object.assign(new Caja(), {
+      ...OPEN_CAJA,
+      id: 3,
+      montoInicial: 2000,
+    });
+    cajaRepository.find.mockResolvedValue([OPEN_CAJA, anotherOpenCaja]);
+
+    await expect(service.getCajaAbierta()).resolves.toMatchObject({
+      id: OPEN_CAJA.id,
+      estado: 'abierta',
+    });
+  });
+
   it('ordena el historial por fecha de apertura descendente y agrega totales en lote', async () => {
     cajaRepository.find.mockResolvedValue([OPEN_CAJA]);
     pagosService.getTotalesVentas.mockResolvedValue(new Map([[2, 900]]));
@@ -172,5 +197,33 @@ describe('CajaService', () => {
     await expect(service.getMovimientosCaja(99)).rejects.toThrow(
       new NotFoundException('Caja no encontrada'),
     );
+  });
+
+  it('mapea los movimientos de caja al contrato de respuesta', async () => {
+    cajaRepository.findOneBy.mockResolvedValue(OPEN_CAJA);
+    pagosService.findByCaja.mockResolvedValue([
+      {
+        id: 9,
+        fecha: new Date('2026-10-19T16:45:00.000Z'),
+        pedido_id: 12,
+        mesa_numero: 4,
+        monto: 950,
+        metodo_pago: 'efectivo',
+        usuario_nombre: 'Valentín',
+      },
+    ]);
+
+    await expect(service.getMovimientosCaja(2)).resolves.toEqual([
+      {
+        id: 9,
+        fecha: '2026-10-19T16:45:00.000Z',
+        pedido_id: 12,
+        mesa_numero: 4,
+        monto: 950,
+        metodo_pago: 'efectivo',
+        usuario_nombre: 'Valentín',
+      },
+    ]);
+    expect(pagosService.findByCaja).toHaveBeenCalledWith(2);
   });
 });

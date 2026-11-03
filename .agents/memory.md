@@ -8,7 +8,7 @@
 | Actualizado | 2026-11-02                                                                 |
 | Sprint      | S3 — Pedidos, Pagos & Caja                                                 |
 | Epic        | MIG-7 — E7: Módulo Pagos & Caja                                            |
-| Foco actual | MIG-34: implementación dashboard lista; revisión final SDD pendiente        |
+| Foco actual | MIG-35: tests de regresión completos; revisión final SDD pendiente           |
 
 ---
 
@@ -16,7 +16,7 @@
 
 | Módulo     | Estado                                         | Tests | Doc | Próximo paso                                         |
 | ---------- | ---------------------------------------------- | ----- | --- | ---------------------------------------------------- |
-| test       | Implementado (MIG-21)                          | ✅    | ✅  | Ampliar helpers cuando aparezcan nuevas operaciones  |
+| test       | Implementado (MIG-21); regresiones MIG-35       | ✅    | ✅  | Revisión humana SDD; luego MIG-36 (Auth)             |
 | health     | Implementado                                   | ✅    | ✅  | —                                                    |
 | config     | Implementado                                   | ✅    | ✅  | —                                                    |
 | database   | Implementado                                   | ✅    | ✅  | Validar tablas en MIG-44                             |
@@ -53,6 +53,7 @@
 | MIG-30 | Entities `Pedido`/`DetallePedido` + DTOs + relación con `Pago`          | Cerrado                               |
 | MIG-32 | Caja: entity, DTOs, service, controller, movimientos y ventas derivadas | Implementado en `feature/MIG-32-caja` |
 | MIG-34 | Dashboard con KPIs agregados, endpoint admin y E2E                    | Implementado; gates OK, revisión SDD pendiente |
+| MIG-35 | Tests de regresión de servicios, locks y decimales                    | Implementado; gates OK, revisión SDD pendiente |
 | MIG-45 | Arnés DevelopAI: ADR 0008, skills, agentes, comandos, spec piloto y CI  | Cerrado                               |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs)  | Cerrado                               |
 
@@ -118,12 +119,13 @@
 
 ## 6. Próximo paso
 
-1. **MIG-34:** revisión humana del veredicto SDD en `specs/034-dashboard/validate.md`;
-   gates completos en verde. Sin commit, push ni cambios Jira; el merge lo realiza
-   manualmente el desarrollador.
-2. **MIG-33:** revisar el veredicto SDD en `specs/033-pedidos/validate.md`;
+1. **MIG-35:** revisión humana del veredicto SDD en `specs/035-regresion-services/validate.md`;
+   gates completos en verde. MIG-36 aborda los tests de Auth pendientes.
+2. **MIG-34:** revisión humana del veredicto SDD en `specs/034-dashboard/validate.md`;
+   el merge lo realiza manualmente el desarrollador.
+3. **MIG-33:** revisar el veredicto SDD en `specs/033-pedidos/validate.md`;
    rollback físico/concurrencia PostgreSQL no se ejercitaron.
-3. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
+4. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
    productos/pedidos/caja y confirmar columnas, nulabilidad y FKs de `pagos`.
 
 **MIG-32 en `feature/MIG-32-caja`:** entity/DTOs, cinco endpoints admin,
@@ -140,6 +142,7 @@ commit ni push; esperar confirmación explícita antes del push. El merge a
 
 | Fecha      | Cambio                                                                                                                                                                                                                                                                                                             |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-02 | MIG-35: regresiones de mesas/productos/pedidos/caja/dashboard, pool DB y tipos decimales; 411 unitarios, 82 e2e (2 omitidos), lint/typecheck/build OK; líneas de services 93.69 %. Revisión SDD pendiente; sin commit/push/Jira. |
 | 2026-11-02 | MIG-34: endpoint dashboard implementado con agregaciones SQL, día Buenos Aires, selección determinista de caja y últimos 50 pedidos; lint/typecheck/build OK, 396 unitarios y 76 e2e OK (2 omitidos). Revisión SDD pendiente; sin commit/push/Jira. |
 | 2026-10-20 | Se crea el harness: `AGENTS.md`, constitución, arquitectura, glosario, workflows, `agent.md`, `memory.md`, ADRs y los tres documentos por módulo.                                                                                                                                                                  |
 | 2026-10-21 | Se completan los documentos de los 15 directorios de `src/` y se enlaza el harness desde el `README.md`.                                                                                                                                                                                                           |

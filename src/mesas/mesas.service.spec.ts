@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from '@nestjs/common';
+import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import type { TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -126,8 +126,9 @@ describe('MesasService', () => {
   });
 
   it.each([
-    ['ocupada', 'pendiente_cobro'],
+    ['libre', 'pendiente_cobro'],
     ['pendiente_cobro', 'libre'],
+    ['ocupada', 'pendiente_cobro'],
     ['libre', 'en_limpieza'],
   ] as const)(
     'rechaza transición automática/ilegal %s → %s',
@@ -140,10 +141,32 @@ describe('MesasService', () => {
       });
 
       const update = service.update(2, { estado: to });
-      await expect(update).rejects.toBeInstanceOf(BadRequestException);
+      await expect(update).rejects.toMatchObject({
+        status: 400,
+        response: {
+          message: `No se puede cambiar el estado de '${from}' a '${to}'`,
+        },
+      });
       expect(save.mock.calls).toHaveLength(0);
     },
   );
+
+  it('permite pasar a limpieza cuando no existe un pedido activo', async () => {
+    const mesa = { id: 2, numero: 2, estado: 'ocupada' as const };
+    repository.findOneBy.mockResolvedValue(mesa);
+    repository.save.mockImplementation((saved) =>
+      Promise.resolve(saved as Mesa),
+    );
+
+    await expect(
+      service.update(2, { estado: 'en_limpieza' }),
+    ).resolves.toMatchObject({ estado: 'en_limpieza' });
+    expect(activeOrders.hasUnpaidActiveOrderForTable.mock.calls).toEqual([[2]]);
+    expect(repository.save).toHaveBeenCalledWith({
+      ...mesa,
+      estado: 'en_limpieza',
+    });
+  });
 
   it('bloquea limpieza cuando existe un pedido activo sin cobrar', async () => {
     const save = repository.save;
