@@ -120,3 +120,10 @@ interface ReporteVentasResponse {
 - Arrays vacíos, nunca `null`.
 - `fecha_apertura`/`fecha_cierre` ISO-8601 UTC con `Z`.
 - Montos como `number`.
+- `ticket_promedio = total_vendido / cantidad_cobros`; `0` si no hay cobros.
+- `productos_mas_vendidos`: máximo 20, ordenado por `cantidad DESC`.
+- `cajas`: solo las que intersectan el período; `ventas_efectivo` es de toda la
+  caja y `diferencia = monto_final - (monto_inicial + ventas_efectivo)`, `null`
+  si la caja sigue abierta.
+- Un pedido cuenta como vendido si tiene un pago dentro del período
+  (`pagos.fecha`), no por su estado actual.
