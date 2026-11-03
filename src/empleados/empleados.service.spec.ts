@@ -167,6 +167,22 @@ describe('EmpleadosService', () => {
       expect(usersService.update).not.toHaveBeenCalled();
     });
 
+    it('permite desactivar a otro empleado', async () => {
+      usersService.findById.mockResolvedValue(buildUsuario({ id: 2 }));
+      usersService.update.mockResolvedValue(
+        buildUsuario({ id: 2, activo: false }),
+      );
+
+      const response = await service.updateEmpleado(2, 1, { activo: false });
+
+      expect(usersService.update).toHaveBeenCalledWith(2, {
+        nombre: undefined,
+        email: undefined,
+        activo: false,
+      });
+      expect(response.activo).toBe(false);
+    });
+
     it('rechaza email usado por otro usuario', async () => {
       usersService.findById.mockResolvedValue(buildUsuario());
       usersService.existsByEmail.mockResolvedValue(true);

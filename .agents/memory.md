@@ -5,10 +5,10 @@
 
 | Campo       | Valor                                                                      |
 | ----------- | -------------------------------------------------------------------------- |
-| Actualizado | 2026-11-02                                                                 |
-| Sprint      | S3 — Pedidos, Pagos & Caja                                                 |
-| Epic        | MIG-7 — E7: Módulo Pagos & Caja                                            |
-| Foco actual | MIG-35: tests de regresión completos; revisión final SDD pendiente           |
+| Actualizado | 2026-11-03                                                                 |
+| Sprint      | S4 — Reportes & QA                                                         |
+| Epic        | MIG-9 — E9: Testing & QA                                                   |
+| Foco actual | MIG-36: tests de Auth Service cerrados; sigue MIG-37 (Reportes)            |
 
 ---
 
@@ -16,13 +16,13 @@
 
 | Módulo     | Estado                                         | Tests | Doc | Próximo paso                                         |
 | ---------- | ---------------------------------------------- | ----- | --- | ---------------------------------------------------- |
-| test       | Implementado (MIG-21); regresiones MIG-35       | ✅    | ✅  | Revisión humana SDD; luego MIG-36 (Auth)             |
+| test       | Implementado (MIG-21); regresiones MIG-35/36    | ✅    | ✅  | —                                                    |
 | health     | Implementado                                   | ✅    | ✅  | —                                                    |
 | config     | Implementado                                   | ✅    | ✅  | —                                                    |
 | database   | Implementado                                   | ✅    | ✅  | Validar tablas en MIG-44                             |
 | categorias | Implementado (solo lectura + JWT)              | ✅    | ✅  | Relación `OneToMany` diferida a MIG-44               |
 | common     | Implementado (MIG-20 + guards MIG-23)          | ✅    | ✅  | Aplicar a futuros controllers                        |
-| auth       | Implementado (MIG-23/25)                       | ✅    | ✅  | —                                                    |
+| auth       | Implementado (MIG-23/25); tests MIG-36         | ✅    | ✅  | —                                                    |
 | users      | Implementado (MIG-22/25)                       | ✅    | ✅  | Consumido por `empleados` (MIG-26)                   |
 | empleados  | Implementado en rama MIG-26                    | ✅    | ✅  | Revisión e integración                               |
 | mesas      | Implementado MIG-27/33                         | ✅    | ✅  | Adapter de pedidos integrado sin ciclo DI            |
@@ -54,6 +54,7 @@
 | MIG-32 | Caja: entity, DTOs, service, controller, movimientos y ventas derivadas | Implementado en `feature/MIG-32-caja` |
 | MIG-34 | Dashboard con KPIs agregados, endpoint admin y E2E                    | Implementado; gates OK, revisión SDD pendiente |
 | MIG-35 | Tests de regresión de servicios, locks y decimales                    | Implementado; gates OK, revisión SDD pendiente |
+| MIG-36 | Tests de Auth Service: 19 casos + tokens JWT reales; cobertura 100 %   | Implementado; gates OK |
 | MIG-45 | Arnés DevelopAI: ADR 0008, skills, agentes, comandos, spec piloto y CI  | Cerrado                               |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs)  | Cerrado                               |
 
@@ -119,12 +120,12 @@
 
 ## 6. Próximo paso
 
-1. **MIG-35:** revisión humana del veredicto SDD en `specs/035-regresion-services/validate.md`;
-   gates completos en verde. MIG-36 aborda los tests de Auth pendientes.
-2. **MIG-34:** revisión humana del veredicto SDD en `specs/034-dashboard/validate.md`;
-   el merge lo realiza manualmente el desarrollador.
-3. **MIG-33:** revisar el veredicto SDD en `specs/033-pedidos/validate.md`;
-   rollback físico/concurrencia PostgreSQL no se ejercitaron.
+1. **MIG-36:** tests de Auth Service cerrados (19 casos del legacy + JWT real,
+   cobertura del service 100 %). Falta revisión humana del PR.
+2. **MIG-37:** implementar Reportes: ventas por rango de fechas.
+3. **MIG-35 / MIG-34 / MIG-33:** revisar los veredictos SDD pendientes en
+   `specs/035-regresion-services/`, `specs/034-dashboard/` y
+   `specs/033-pedidos/`.
 4. **MIG-44:** `schema:log` contra la base real; aplicar `numericTransformer` a
    productos/pedidos/caja y confirmar columnas, nulabilidad y FKs de `pagos`.
 
@@ -142,6 +143,7 @@ commit ni push; esperar confirmación explícita antes del push. El merge a
 
 | Fecha      | Cambio                                                                                                                                                                                                                                                                                                             |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-03 | MIG-36: migrados los 19 casos de `test_auth_service.py` a Vitest con `UsersService` mockeado; nuevo `auth.service.tokens.spec.ts` con `JwtService` real (3 partes, claims, firma alterada, vencido, secreto ajeno). Cobertura de `auth.service.ts` 100 % (stmts/branch/funcs/lines); 426 unitarios y 82 e2e (2 omitidos) en verde, lint y typecheck OK. Sin cambios de contrato, sin commit/push/Jira. |
 | 2026-11-02 | MIG-35: regresiones de mesas/productos/pedidos/caja/dashboard, pool DB y tipos decimales; 411 unitarios, 82 e2e (2 omitidos), lint/typecheck/build OK; líneas de services 93.69 %. Revisión SDD pendiente; sin commit/push/Jira. |
 | 2026-11-02 | MIG-34: endpoint dashboard implementado con agregaciones SQL, día Buenos Aires, selección determinista de caja y últimos 50 pedidos; lint/typecheck/build OK, 396 unitarios y 76 e2e OK (2 omitidos). Revisión SDD pendiente; sin commit/push/Jira. |
 | 2026-10-20 | Se crea el harness: `AGENTS.md`, constitución, arquitectura, glosario, workflows, `agent.md`, `memory.md`, ADRs y los tres documentos por módulo.                                                                                                                                                                  |
