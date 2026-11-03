@@ -1,7 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import type { TestingModule } from '@nestjs/testing';
+import { QueryFailedError } from 'typeorm';
 import { CategoriasService } from '../categorias/categorias.service.js';
 import { Producto } from './entities/producto.entity.js';
+import { PRODUCT_USAGE_PORT } from './product-usage.port.js';
+import type { ProductUsagePort } from './product-usage.port.js';
 import { ProductosService } from './productos.service.js';
 import {
   createMockRepository,
@@ -20,8 +23,31 @@ describe('ProductosService', () => {
     findById: ReturnType<typeof vi.fn<CategoriasService['findById']>>;
     findManyByIds: ReturnType<typeof vi.fn<CategoriasService['findManyByIds']>>;
   };
+  let productUsage: {
+    isProductInAnyOrder: ReturnType<
+      typeof vi.fn<ProductUsagePort['isProductInAnyOrder']>
+    >;
+  };
 
   const category = { id: 1, nombre: 'Bebidas' };
+  const producto: Producto = {
+    id: 1,
+    nombre: 'Café',
+    descripcion: null,
+    precio: '850.00',
+    stock: 5,
+    stockMinimo: 2,
+    disponible: true,
+    categoriaId: 1,
+  };
+
+  function queryFailedWith(code: string): QueryFailedError {
+    return new QueryFailedError(
+      'DELETE FROM productos',
+      [],
+      Object.assign(new Error('violación de restricción'), { code }),
+    );
+  }
 
   beforeEach(async () => {
     repository = createMockRepository<Producto>();
@@ -31,10 +57,15 @@ describe('ProductosService', () => {
     };
     categoriasService.findById.mockResolvedValue(category);
     categoriasService.findManyByIds.mockResolvedValue([category]);
+    productUsage = {
+      isProductInAnyOrder: vi.fn<ProductUsagePort['isProductInAnyOrder']>(),
+    };
+    productUsage.isProductInAnyOrder.mockResolvedValue(false);
 
     ({ module, service } = await createServiceTestModule(ProductosService, [
       provideMockRepository(Producto, repository),
       { provide: CategoriasService, useValue: categoriasService },
+      { provide: PRODUCT_USAGE_PORT, useValue: productUsage },
     ]));
   });
 
@@ -168,5 +199,68 @@ describe('ProductosService', () => {
       service.update(1, { categoria_id: 404 }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(repository.save.mock.calls).toHaveLength(0);
+  });
+
+  describe('remove', () => {
+    const IN_USE_DETAIL =
+      'No se puede eliminar: el producto tiene pedidos asociados. Marcalo como no disponible en su lugar.';
+
+    it('elimina un producto que no figura en ningún pedido', async () => {
+      repository.findOneBy.mockResolvedValue(producto);
+      repository.delete.mockResolvedValue({ affected: 1, raw: [] });
+
+      await expect(service.remove(1)).resolves.toBeUndefined();
+
+      expect(productUsage.isProductInAnyOrder).toHaveBeenCalledWith(1);
+      expect(repository.delete).toHaveBeenCalledWith({ id: 1 });
+    });
+
+    it('responde 404 si el producto no existe, sin consultar pedidos ni borrar', async () => {
+      repository.findOneBy.mockResolvedValue(null);
+
+      await expect(service.remove(404)).rejects.toThrow(
+        new NotFoundException('Producto no encontrado'),
+      );
+
+      expect(productUsage.isProductInAnyOrder).not.toHaveBeenCalled();
+      expect(repository.delete).not.toHaveBeenCalled();
+    });
+
+    it('responde 400 si el producto figura en un pedido, sin borrarlo', async () => {
+      repository.findOneBy.mockResolvedValue(producto);
+      productUsage.isProductInAnyOrder.mockResolvedValue(true);
+
+      await expect(service.remove(1)).rejects.toThrow(
+        new BadRequestException(IN_USE_DETAIL),
+      );
+
+      expect(repository.delete).not.toHaveBeenCalled();
+    });
+
+    it('traduce a 400 la violación de FK de una venta simultánea', async () => {
+      repository.findOneBy.mockResolvedValue(producto);
+      repository.delete.mockRejectedValue(queryFailedWith('23503'));
+
+      await expect(service.remove(1)).rejects.toThrow(
+        new BadRequestException(IN_USE_DETAIL),
+      );
+    });
+
+    it('responde 404 si otro borrado simultáneo ganó la carrera', async () => {
+      repository.findOneBy.mockResolvedValue(producto);
+      repository.delete.mockResolvedValue({ affected: 0, raw: [] });
+
+      await expect(service.remove(1)).rejects.toThrow(
+        new NotFoundException('Producto no encontrado'),
+      );
+    });
+
+    it('propaga cualquier otro error de la base', async () => {
+      const failure = queryFailedWith('08006');
+      repository.findOneBy.mockResolvedValue(producto);
+      repository.delete.mockRejectedValue(failure);
+
+      await expect(service.remove(1)).rejects.toBe(failure);
+    });
   });
 });

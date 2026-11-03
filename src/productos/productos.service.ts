@@ -1,17 +1,23 @@
 import {
   BadRequestException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { CategoriasService } from '../categorias/categorias.service.js';
 import type { CreateProductoDto } from './dto/create-producto.dto.js';
 import type { UpdateProductoDto } from './dto/update-producto.dto.js';
 import { Producto } from './entities/producto.entity.js';
+import { PRODUCT_USAGE_PORT } from './product-usage.port.js';
+import type { ProductUsagePort } from './product-usage.port.js';
 
 const CATEGORY_NOT_FOUND_DETAIL = 'La categoría indicada no existe';
 const PRODUCT_NOT_FOUND_DETAIL = 'Producto no encontrado';
+const PRODUCT_IN_USE_DETAIL =
+  'No se puede eliminar: el producto tiene pedidos asociados. Marcalo como no disponible en su lugar.';
+const FOREIGN_KEY_VIOLATION = '23503';
 
 @Injectable()
 export class ProductosService {
@@ -19,6 +25,8 @@ export class ProductosService {
     @InjectRepository(Producto)
     private readonly repository: Repository<Producto>,
     private readonly categoriasService: CategoriasService,
+    @Inject(PRODUCT_USAGE_PORT)
+    private readonly productUsage: ProductUsagePort,
   ) {}
 
   async findAll(): Promise<Producto[]> {
@@ -82,6 +90,29 @@ export class ProductosService {
     return saved;
   }
 
+  async remove(id: number): Promise<void> {
+    const producto = await this.repository.findOneBy({ id });
+    if (producto === null) {
+      throw new NotFoundException(PRODUCT_NOT_FOUND_DETAIL);
+    }
+    if (await this.productUsage.isProductInAnyOrder(id)) {
+      throw new BadRequestException(PRODUCT_IN_USE_DETAIL);
+    }
+
+    try {
+      const { affected } = await this.repository.delete({ id });
+      if (affected === 0) {
+        throw new NotFoundException(PRODUCT_NOT_FOUND_DETAIL);
+      }
+    } catch (error) {
+      // Una venta entre el chequeo y el borrado llega como violación de FK.
+      if (isForeignKeyViolation(error)) {
+        throw new BadRequestException(PRODUCT_IN_USE_DETAIL);
+      }
+      throw error;
+    }
+  }
+
   private async findCategory(id: number): Promise<{ id: number; nombre: string }> {
     const categoria = await this.categoriasService.findById(id);
     if (categoria === null) {
@@ -111,4 +142,13 @@ export class ProductosService {
       return producto;
     });
   }
+}
+
+function isForeignKeyViolation(error: unknown): boolean {
+  if (!(error instanceof QueryFailedError)) {
+    return false;
+  }
+
+  const driverError = error.driverError as { code?: unknown };
+  return driverError.code === FOREIGN_KEY_VIOLATION;
 }

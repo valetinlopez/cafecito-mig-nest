@@ -14,9 +14,9 @@
 | `PATCH`  | `/api/v1/productos/{id}` | admin | `200` · `Producto`   | `400`, `401`, `403`, `404`, `422` |
 | `DELETE` | `/api/v1/productos/{id}` | admin | `204` sin body       | `400`, `401`, `403`, `404`        |
 
-> El contrato global incluye DELETE, pero la implementación de MIG-29 se limita
-> a GET/POST/PATCH. DELETE queda pendiente de MIG-30 por la dependencia de
-> pedidos asociados; esto no cambia el contrato.
+> GET/POST/PATCH se implementaron en MIG-29 y DELETE en MIG-38. Si el producto
+> figura en un pedido, DELETE responde `400` con `No se puede eliminar: el
+> producto tiene pedidos asociados. Marcalo como no disponible en su lugar.`
 
 ---
 

@@ -25,6 +25,9 @@
 - Imports relativos con `.js`, también en `test/`.
 - Si falta una operación de `Repository`, ampliar el helper; no duplicar mocks.
 - Los e2e van en `test/*.e2e-spec.ts` y no requieren base por defecto.
+- Si el frontend cambia `types/api.ts`, actualizar `utils/frontend-shapes.ts` en
+  el mismo PR. Una agregación nueva necesita su resolver en
+  `utils/frontend-compat.fixtures.ts` (README §8).
 
 ## Verificación
 

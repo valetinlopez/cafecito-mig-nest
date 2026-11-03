@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
@@ -14,6 +17,7 @@ import {
   ApiCreatedResponse,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
+  ApiNoContentResponse,
   ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
@@ -103,5 +107,26 @@ export class ProductosController {
     return ProductoResponseDto.fromEntity(
       await this.productosService.update(id, input),
     );
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @UseGuards(RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    operationId: 'deleteProducto',
+    summary: 'Eliminar producto (admin)',
+    description:
+      'Solo elimina productos que no figuran en ningún pedido. Si tiene pedidos asociados, hay que marcarlo como no disponible.',
+  })
+  @ApiNoContentResponse({ description: 'Producto eliminado.' })
+  @ApiBadRequestResponse({
+    description: 'El producto tiene pedidos asociados.',
+  })
+  @ApiUnauthorizedResponse({ description: 'Token ausente o inválido.' })
+  @ApiForbiddenResponse({ description: 'Se requiere rol de administrador.' })
+  @ApiNotFoundResponse({ description: 'Producto no encontrado.' })
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.productosService.remove(id);
   }
 }
