@@ -199,3 +199,21 @@ se repite en el código.
 
 **Motivo:** el front muestra `detail` tal cual y algunos flujos comparan el
 texto. Una copia desactualizada cambia el contrato en silencio.
+
+---
+
+## D-18 — Tests de tokens con `JwtService` real (MIG-36)
+
+**Decisión:** `auth.service.spec.ts` mantiene `JwtService` mockeado para aislar
+las reglas de negocio, y `auth.service.tokens.spec.ts` usa un `JwtService` real
+con secreto de test para verificar firma, formato de tres partes, claims
+(`sub`, `rol`, `purpose`) y vigencias (480 min access, 15 min reset).
+
+**Motivo:** mockear `signAsync`/`verifyAsync` deja sin cubrir justo lo que el
+legacy verificaba: que el token sea un JWT válido, decodificable y con los
+claims contractuales. Los casos de firma alterada, token vencido y secreto ajeno
+no se pueden simular de forma representativa con un mock.
+
+**Nota:** el runner sigue siendo Vitest (ADR 0006). El ticket MIG-36 nombra
+"Jest" porque el backlog se redactó antes de la decisión del runner; no se
+agrega Jest ni `ts-jest`.

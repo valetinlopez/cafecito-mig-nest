@@ -280,6 +280,21 @@ describe('AuthService', () => {
         }),
       ).rejects.toBeInstanceOf(QueryFailedError);
     });
+
+    it('propaga los errores que no vienen de la base', async () => {
+      usersService.existsByEmail.mockResolvedValue(false);
+      const failure = new Error('fallo inesperado');
+      usersService.create.mockRejectedValue(failure);
+
+      await expect(
+        service.register({
+          nombre: 'Valentín',
+          email: 'valentin@cafecito.com',
+          password: PLAIN_PASSWORD,
+          rol: 'mozo',
+        }),
+      ).rejects.toBe(failure);
+    });
   });
 
   describe('getProfile', () => {
@@ -340,6 +355,17 @@ describe('AuthService', () => {
       });
       expect(usuario.nombre).toBe('Valentín G.');
       expect(usuario.email).toBe('nuevo@cafecito.com');
+    });
+
+    it('responde 401 si el usuario desaparece al guardar el perfil', async () => {
+      usersService.findById.mockResolvedValue(buildUsuario());
+      usersService.update.mockResolvedValue(null);
+
+      await expect(
+        service.updateProfile(1, { nombre: 'Valentín G.' }),
+      ).rejects.toEqual(
+        new UnauthorizedException(USER_NOT_FOUND_OR_INACTIVE_DETAIL),
+      );
     });
   });
 
@@ -444,6 +470,21 @@ describe('AuthService', () => {
       await expect(
         service.resetPassword({
           token: 'access-token',
+          password_nueva: 'nuevaClave123',
+        }),
+      ).rejects.toEqual(new BadRequestException(RESET_TOKEN_INVALID_DETAIL));
+      expect(usersService.update).not.toHaveBeenCalled();
+    });
+
+    it('rechaza un token de reseteo con sub inválido', async () => {
+      jwtService.verifyAsync.mockResolvedValue({
+        sub: 'no-es-un-id',
+        purpose: 'password_reset',
+      });
+
+      await expect(
+        service.resetPassword({
+          token: 'token-con-sub-invalido',
           password_nueva: 'nuevaClave123',
         }),
       ).rejects.toEqual(new BadRequestException(RESET_TOKEN_INVALID_DETAIL));

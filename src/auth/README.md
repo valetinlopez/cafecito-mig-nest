@@ -27,7 +27,8 @@ src/auth/
 ├── auth.module.ts                 # UsersModule + PassportModule + JwtModule
 ├── auth.controller.ts             # los 7 endpoints
 ├── auth.service.ts                # negocio: bcrypt, JWT, reset tokens
-├── auth.service.spec.ts
+├── auth.service.spec.ts           # reglas de negocio con JwtService mockeado
+├── auth.service.tokens.spec.ts    # JWT real: firma, claims y vigencias
 ├── auth-messages.ts               # literales del contrato
 ├── jwt-payload.ts                 # payloads y constantes de expiración
 ├── strategies/
@@ -118,6 +119,10 @@ users (entity + UsersService) → auth (login/JWT/controller) → guards → res
 - `auth.service.spec.ts`: login (ok, credenciales, inactivo), registro
   (duplicado, UNIQUE race, hash), perfil, cambio de contraseña, forgot/reset con
   y sin `reset_token`, token de reseteo no intercambiable.
+- `auth.service.tokens.spec.ts`: `JwtService` real con secreto de test — formato
+  de tres partes, `sub`/`rol` del access token, `purpose`/`usuario_id` del reset
+  token, vigencia 480 min/15 min, firma alterada, token vencido, secreto ajeno y
+  rechazo del access token como reset.
 - `jwt.strategy.spec.ts`: payload público, `purpose`, `sub` y usuario activo.
 
 **e2e (`test/auth.e2e-spec.ts`):** los 7 endpoints, paths con/sin barra final,
