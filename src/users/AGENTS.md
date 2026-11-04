@@ -14,8 +14,8 @@
 1. [`README.md`](./README.md) — responsabilidad y modelo.
 2. [`CONTRACT.md`](./CONTRACT.md) — shape `Usuario` y DTOs.
 3. [`DECISIONS.md`](./DECISIONS.md) — dueño de la entity y normalización.
-4. Validar el mapeo contra la base con `npm run schema:log` (MIG-44); no usar
-   `synchronize` contra Neon.
+4. Si cambia la entity, repetir `npm run schema:log` contra una branch de Neon; no
+   usar `synchronize` contra Neon.
 
 ## Reglas locales
 

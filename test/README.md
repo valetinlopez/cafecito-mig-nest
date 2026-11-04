@@ -189,3 +189,11 @@ y reportes verifican shape y conversión, no el cálculo. Eso se cubre con
 Al agregar código que use otro operador o una agregación nueva, el doble falla con
 `Operador sin soporte` o `Consulta agregada sin resolver`: ampliar el doble o el
 fixture, no silenciar el error.
+
+## 9. Mapeo contra el esquema real
+
+`test/esquema-real.spec.ts` fija en CI lo que MIG-44 validó con `schema:log` contra una
+copia de producción: índices, nulabilidad, largos y ausencia de defaults. El doble de
+`frontend-compat` tampoco simula defaults, porque la base real no los tiene
+(ADR 0009). Ninguno de los dos ejecuta SQL: si cambia una entity o una consulta, hay
+que repetir `docs/workflows/smoke-manual.md`.

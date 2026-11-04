@@ -54,9 +54,9 @@ contra lo esperado se calcula en reportes, no se corrige acá.
 
 ## D-05 — Movimientos derivados de `pagos`
 
-**Decisión:** no crear una tabla `movimientos_caja`; los movimientos son pagos
-filtrados por `caja_id`, proyectados con pedido, mesa y usuario nullable y
-ordenados por fecha descendente.
+**Decisión:** no crear una tabla `movimientos_caja`; los movimientos son los pagos
+del período de la caja (ADR 0009), proyectados con pedido, mesa y usuario del
+pedido, y ordenados por fecha descendente.
 
 **Motivo:** un movimiento no tiene datos propios: es un pago del período. Una
 tabla espejo duplicaría información y podría desincronizarse.

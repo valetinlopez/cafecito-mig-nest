@@ -97,7 +97,7 @@ La base de Neon es **compartida con producción**. El esquema no se modifica sol
 
 - `synchronize` únicamente en desarrollo local.
 - Todo cambio de esquema va por migración revisada.
-- `schema:log` debe quedar limpio (MIG-44).
+- `schema:log` contra una branch de producción debe quedar limpio (MIG-44, ADR 0009).
 
 ---
 

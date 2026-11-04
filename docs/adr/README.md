@@ -16,6 +16,7 @@ lo reemplaza y se marca el anterior como `Reemplazado por NNNN`.
 | 0006 | [Vitest como runner único de tests](0006-vitest-runner-tests.md)                            | Aceptado | 2026-10-21 |
 | 0007 | [Zona horaria del proceso y columnas `timestamp` compartidas](0007-zona-horaria-proceso.md) | Aceptado | 2026-10-21 |
 | 0008 | [Adopción de DevelopAI: SDD y orquestación multiagente](0008-adopcion-developai-sdd.md) | Aceptado | 2026-10-29 |
+| 0009 | [Las entities siguen al esquema legacy y los pagos se asignan a la caja por período](0009-entities-siguen-esquema-legacy.md) | Aceptado | 2026-11-03 |
 
 > El ADR 0007 complementa la **implementación** del ADR 0003: el contrato
 > (ISO-8601 UTC con `Z`) sigue vigente, pero las columnas compartidas con el

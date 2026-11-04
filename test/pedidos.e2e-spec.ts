@@ -196,10 +196,8 @@ describe('Pedidos API (e2e)', () => {
       .send({ metodo_pago: 'efectivo' })
       .expect(200)
       .expect({ ...pedido, estado: 'pagado' });
-    expect(pedidosService.cobrarPedido).toHaveBeenCalledWith(
-      12,
-      { metodo_pago: 'efectivo' },
-      5,
-    );
+    expect(pedidosService.cobrarPedido).toHaveBeenCalledWith(12, {
+      metodo_pago: 'efectivo',
+    });
   });
 });

@@ -6,6 +6,7 @@ import type { CajaEstado } from '../caja/estado-caja.js';
 import { getBusinessDateRange } from '../common/time/business-timezone.js';
 import { parseUtcTimestamp, toIsoUtc } from '../common/time/utc-date.js';
 import { Pago } from '../pagos/entities/pago.entity.js';
+import { PAGO_EN_PERIODO_DE_CAJA } from '../pagos/pago-periodo-caja.js';
 import type { MetodoPago } from '../pagos/metodo-pago.js';
 import { DetallePedido } from '../pedidos/entities/detalle-pedido.entity.js';
 import { Pedido } from '../pedidos/entities/pedido.entity.js';
@@ -236,7 +237,7 @@ export class ReportesService {
   ): Promise<ReporteCajaDetalleData[]> {
     const rows = await this.cajasRepository
       .createQueryBuilder('caja')
-      .leftJoin(Pago, 'pago', 'pago.cajaId = caja.id')
+      .leftJoin(Pago, 'pago', PAGO_EN_PERIODO_DE_CAJA)
       .select('caja.id', 'caja_id')
       .addSelect('caja.estado', 'estado')
       .addSelect('caja.fechaApertura', 'fecha_apertura')
@@ -252,6 +253,7 @@ export class ReportesService {
         start,
       })
       .setParameter('metodoEfectivo', METODO_EFECTIVO)
+      .setParameter('ahora', new Date())
       .groupBy('caja.id')
       .orderBy('caja.fechaApertura', 'ASC')
       .addOrderBy('caja.id', 'ASC')

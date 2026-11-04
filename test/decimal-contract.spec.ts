@@ -96,8 +96,6 @@ describe('Contrato arquitectónico de decimales en JSON', () => {
         const pago = Object.assign(new Pago(), {
           id: 5,
           pedidoId: 12,
-          cajaId: 3,
-          usuarioId: 2,
           metodoPago: 'efectivo',
           monto: '12.50' as unknown as number,
           fecha: KNOWN_INSTANT,

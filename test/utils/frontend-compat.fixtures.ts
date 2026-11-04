@@ -35,6 +35,20 @@ function esActivo(pedido: Pedido): boolean {
   );
 }
 
+/** Misma regla que `PAGO_EN_PERIODO_DE_CAJA`, sobre las filas en memoria. */
+function pagosDeCaja(
+  db: InMemoryDataSource,
+  cajaId: unknown,
+  ahora: unknown,
+): Pago[] {
+  const caja = db.rows(Caja).find(({ id }) => id === cajaId);
+  if (caja === undefined) return [];
+  const fin = caja.fechaCierre ?? (ahora as Date);
+  return db
+    .rows(Pago)
+    .filter((pago) => pago.fecha >= caja.fechaApertura && pago.fecha <= fin);
+}
+
 /**
  * Reemplazo escrito a mano de cada `createQueryBuilder` de la aplicación.
  *
@@ -44,40 +58,28 @@ function esActivo(pedido: Pedido): boolean {
  * manual (`docs/workflows/smoke-manual.md`).
  */
 const RAW_QUERIES: Record<string, RawQueryResolver> = {
-  'pago:total_ventas': ({ cajaId }, db) => [
+  'pago:total_ventas': ({ cajaId, ahora }, db) => [
     {
       total_ventas: money(
-        sum(
-          db
-            .rows(Pago)
-            .filter((pago) => pago.cajaId === cajaId)
-            .map((pago) => pago.monto),
-        ),
+        sum(pagosDeCaja(db, cajaId, ahora).map((pago) => pago.monto)),
       ),
     },
   ],
-  'pago:caja_id': ({ cajaIds }, db) =>
+  'pago:caja_id': ({ cajaIds, ahora }, db) =>
     (cajaIds as number[]).map((cajaId) => ({
       caja_id: String(cajaId),
       total_ventas: money(
-        sum(
-          db
-            .rows(Pago)
-            .filter((pago) => pago.cajaId === cajaId)
-            .map((pago) => pago.monto),
-        ),
+        sum(pagosDeCaja(db, cajaId, ahora).map((pago) => pago.monto)),
       ),
     })),
-  'pago:id': ({ cajaId }, db) =>
-    db
-      .rows(Pago)
-      .filter((pago) => pago.cajaId === cajaId)
+  'pago:id': ({ cajaId, ahora }, db) =>
+    pagosDeCaja(db, cajaId, ahora)
       .map((pago) => {
         const pedido = db.rows(Pedido).find(({ id }) => id === pago.pedidoId);
         const mesa = db.rows(Mesa).find(({ id }) => id === pedido?.mesaId);
         const usuario = db
           .rows(Usuario)
-          .find(({ id }) => id === pago.usuarioId);
+          .find(({ id }) => id === pedido?.usuarioId);
         return {
           id: pago.id,
           fecha: pago.fecha,
@@ -171,7 +173,7 @@ const RAW_QUERIES: Record<string, RawQueryResolver> = {
         cantidad_pedidos: '1',
         total: money(pedido.total),
       })),
-  'caja:caja_id': (_params, db) =>
+  'caja:caja_id': ({ ahora }, db) =>
     db.rows(Caja).map((caja) => ({
       caja_id: String(caja.id),
       estado: caja.estado,
@@ -181,12 +183,8 @@ const RAW_QUERIES: Record<string, RawQueryResolver> = {
       monto_final: caja.montoFinal === null ? null : money(caja.montoFinal),
       ventas_efectivo: money(
         sum(
-          db
-            .rows(Pago)
-            .filter(
-              (pago) =>
-                pago.cajaId === caja.id && pago.metodoPago === 'efectivo',
-            )
+          pagosDeCaja(db, caja.id, ahora)
+            .filter((pago) => pago.metodoPago === 'efectivo')
             .map((pago) => pago.monto),
         ),
       ),
@@ -196,9 +194,7 @@ const RAW_QUERIES: Record<string, RawQueryResolver> = {
 export function createCafecitoDataSource(): InMemoryDataSource {
   return createInMemoryDataSource({
     entities: {
-      [Usuario.name]: { defaults: () => ({ activo: true }) },
       [Pedido.name]: {
-        defaults: () => ({ fecha: new Date() }),
         relations: {
           mesa: { kind: 'one', target: Mesa, foreignKey: 'mesaId' },
           usuario: { kind: 'one', target: Usuario, foreignKey: 'usuarioId' },
@@ -209,10 +205,10 @@ export function createCafecitoDataSource(): InMemoryDataSource {
           },
         },
       },
-      [Pago.name]: { defaults: () => ({ fecha: new Date() }) },
+      // La base real no asigna defaults: solo quedan en NULL las columnas que
+      // la aplicación no completa al insertar (ADR 0009).
       [Caja.name]: {
         defaults: () => ({
-          fechaApertura: new Date(),
           fechaCierre: null,
           montoFinal: null,
         }),

@@ -139,6 +139,7 @@ describe('UsersService', () => {
         email: 'valentin@cafecito.com',
         passwordHash: '$2b$10$hash',
         rol: 'mozo',
+        activo: true,
       });
       expect(repository.save).toHaveBeenCalledWith(created);
       expect(usuario).toBe(created);

@@ -93,8 +93,7 @@ Detalle y ejemplos en [`CONTRACT.md`](./CONTRACT.md).
 
 | Pendiente                           | Ticket |
 | ----------------------------------- | ------ |
-| `@OneToMany` hacia `Producto`       | MIG-44 |
-| Verificar el esquema contra la base | MIG-44 |
+| `@OneToMany` hacia `Producto`       | Sin ticket; no lo necesita el esquema |
 
 ---
 

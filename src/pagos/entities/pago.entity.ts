@@ -2,10 +2,10 @@ import type { Relation } from 'typeorm';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
-  Unique,
 } from 'typeorm';
 import { numericTransformer } from '../../common/transformers/numeric.transformer.js';
 import { utcTimestampTransformer } from '../../common/transformers/utc-timestamp.transformer.js';
@@ -19,45 +19,27 @@ import type { MetodoPago } from '../metodo-pago.js';
  * | Propiedad    | Columna       | Tipo            | Restricciones                    |
  * | ------------ | ------------- | --------------- | -------------------------------- |
  * | `id`         | `id`          | `serial`        | PK, autoincremental              |
- * | `pedidoId`   | `pedido_id`   | `int`           | `UNIQUE`, not null               |
- * | `cajaId`     | `caja_id`     | `int`           | nullable (provisional)           |
- * | `usuarioId`  | `usuario_id`  | `int`           | nullable (provisional)           |
+ * | `pedidoId`   | `pedido_id`   | `int`           | FK → `pedidos`, not null         |
  * | `metodoPago` | `metodo_pago` | `varchar(30)`   | 5 valores del glosario           |
  * | `monto`      | `monto`       | `numeric(10,2)` | `number` vía `numericTransformer` |
- * | `fecha`      | `fecha`       | `timestamp`     | default `now()`, UTC naive       |
+ * | `fecha`      | `fecha`       | `timestamp`     | la asigna la aplicación, UTC naive |
  *
- * El nombre de la restricción unique se declara explícito
- * (`pagos_pedido_id_key`) porque es el que PostgreSQL generó al crear la tabla
- * desde Python. Sin el nombre, `schema:log` (MIG-44) propone recrearla.
+ * **Esquema real (ADR 0009):** la tabla no guarda la caja ni quién cobró, y no
+ * tiene restricción única sobre `pedido_id`. La caja se deduce por el período
+ * (`pago-periodo-caja.ts`), el usuario sale del pedido y el doble cobro lo impide
+ * el bloqueo del pedido en la transacción del cobro.
  *
- * **Relaciones:** `pedido` se declara acá desde MIG-30, cuando `Pedido` pasó a
- * existir, para completar el `@OneToMany(() => Pago)` que pide el ticket. La
- * relación reutiliza la columna física `pedido_id` (`@JoinColumn`), no agrega
- * DDL duplicado y se declara con FK explícita (`pagos_pedido_id_fkey`); MIG-44
- * confirma el nombre contra la base real. La relación con `cajas` sigue
- * diferida a MIG-32/MIG-44 porque esa entity todavía no existe; `cajaId` y
- * `usuarioId` permanecen escalares y nullable (ver `DECISIONS.md` D-09).
- *
- * `cajaId` y `usuarioId` son nullable a propósito: hay pagos históricos previos
- * a la apertura de caja y usuarios dados de baja lógicamente (el contrato ya
- * tipa `usuario_nombre: string | null`, ver `DECISIONS.md` D-08). La regla
- * "todo cobro nuevo pertenece a la caja abierta" se valida en el service del
- * cobro, no con un `NOT NULL`.
+ * **Relaciones:** `pedido` reutiliza la columna física `pedido_id`
+ * (`@JoinColumn`), sin DDL duplicado, con la FK real `pagos_pedido_id_fkey`.
  */
 @Entity('pagos')
-@Unique('pagos_pedido_id_key', ['pedidoId'])
+@Index('ix_pagos_id', ['id'])
 export class Pago {
   @PrimaryGeneratedColumn()
   id!: number;
 
   @Column({ name: 'pedido_id', type: 'int' })
   pedidoId!: number;
-
-  @Column({ name: 'caja_id', type: 'int', nullable: true })
-  cajaId!: number | null;
-
-  @Column({ name: 'usuario_id', type: 'int', nullable: true })
-  usuarioId!: number | null;
 
   @Column({ name: 'metodo_pago', type: 'varchar', length: 30 })
   metodoPago!: MetodoPago;
@@ -72,7 +54,7 @@ export class Pago {
 
   @Column({
     type: 'timestamp',
-    default: () => 'now()',
+    nullable: true,
     transformer: utcTimestampTransformer,
   })
   fecha!: Date;

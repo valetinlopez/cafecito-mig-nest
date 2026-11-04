@@ -8,6 +8,7 @@ import {
 } from '../../test/utils/test-module.helper.js';
 import { Caja } from '../caja/entities/caja.entity.js';
 import { Pago } from '../pagos/entities/pago.entity.js';
+import { PAGO_EN_PERIODO_DE_CAJA } from '../pagos/pago-periodo-caja.js';
 import { DetallePedido } from '../pedidos/entities/detalle-pedido.entity.js';
 import { Pedido } from '../pedidos/entities/pedido.entity.js';
 import { ReporteVentasQueryDto } from './dto/reporte-ventas-query.dto.js';
@@ -205,6 +206,15 @@ describe('ReportesService', () => {
     expect(cajasRepository.queryBuilder.addSelect).toHaveBeenCalledWith(
       'COALESCE(SUM(CASE WHEN pago.metodoPago = :metodoEfectivo THEN pago.monto ELSE 0 END), 0)',
       'ventas_efectivo',
+    );
+    expect(cajasRepository.queryBuilder.leftJoin).toHaveBeenCalledWith(
+      Pago,
+      'pago',
+      PAGO_EN_PERIODO_DE_CAJA,
+    );
+    expect(cajasRepository.queryBuilder.setParameter).toHaveBeenCalledWith(
+      'ahora',
+      expect.any(Date),
     );
   });
 

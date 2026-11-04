@@ -103,9 +103,8 @@ export class PedidosController {
   @ApiUnprocessableEntityResponse({ description: 'Método de pago inválido.' })
   cobrarPedido(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() usuario: AuthenticatedUser,
     @Body() input: PedidoPagoDto,
   ): Promise<PedidoResponseDto> {
-    return this.pedidosService.cobrarPedido(id, input, usuario.id);
+    return this.pedidosService.cobrarPedido(id, input);
   }
 }

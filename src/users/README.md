@@ -3,7 +3,7 @@
 | Campo         | Valor                                                           |
 | ------------- | --------------------------------------------------------------- |
 | Estado        | **Implementado** (entity + DTOs en MIG-22; service en MIG-25)   |
-| Entity        | `Usuario` → tabla `usuarios` (validar con `schema:log`, MIG-44) |
+| Entity        | `Usuario` → tabla `usuarios` (validado en MIG-44)               |
 | Endpoints     | Ninguno propio (ver [`CONTRACT.md`](./CONTRACT.md))             |
 | Dependencias  | `database`                                                      |
 | Consumido por | `auth`, `empleados`, `pedidos`                                  |
@@ -66,15 +66,14 @@ src/users/
 | -------------- | --------------- | -------------- | ------------------------------- |
 | `id`           | `id`            | `serial`       | PK autoincremental              |
 | `nombre`       | `nombre`        | `varchar(100)` | not null                        |
-| `email`        | `email`         | `varchar(150)` | `UNIQUE` (`usuarios_email_key`) |
+| `email`        | `email`         | `varchar(150)` | índice único `ix_usuarios_email` |
 | `passwordHash` | `password_hash` | `varchar(255)` | not null, **nunca al JSON**     |
 | `rol`          | `rol`           | `varchar(20)`  | `admin` \| `mozo` (tipo `Rol`)  |
-| `activo`       | `activo`        | `boolean`      | default `true`                  |
+| `activo`       | `activo`        | `boolean`      | lo asigna `UsersService.create` |
 
 > El largo de `email` es **150**, según el modelo `usuario.py` y MIG-22. La
 > versión anterior de este README decía 255; se corrigió (ver `DECISIONS.md`
-> D-07). Los nombres reales de tabla/columnas se validan con `schema:log` en
-> MIG-44 (constitución §4).
+> D-07). MIG-44 validó el mapeo con `schema:log` (ADR 0009).
 
 ---
 

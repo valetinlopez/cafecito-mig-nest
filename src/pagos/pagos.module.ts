@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { Caja } from '../caja/entities/caja.entity.js';
 import { Pago } from './entities/pago.entity.js';
 import { PagosService } from './pagos.service.js';
 
@@ -12,10 +13,13 @@ import { PagosService } from './pagos.service.js';
  * para que `pedidos` y `caja` dependan del contrato del servicio y no del
  * mapeo de la tabla.
  *
+ * Registra `Caja` solo para calcular el período de un pago (ADR 0009). No importa
+ * `CajaModule`, que ya depende de este módulo.
+ *
  * No tiene controller: el contrato no define endpoints `/pagos` (D-01).
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([Pago])],
+  imports: [TypeOrmModule.forFeature([Pago, Caja])],
   providers: [PagosService],
   exports: [PagosService],
 })

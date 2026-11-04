@@ -18,9 +18,9 @@
 
 ## Reglas locales
 
-- `precio` se almacena como string `numeric(10,2)` y el response DTO lo convierte temporalmente a `number`; transformer compartido pendiente MIG-44.
+- `precio` se almacena como string `numeric(10,2)` y el response DTO lo convierte temporalmente a `number`; transformer compartido pendiente, sin ticket.
 - Response con `categoria: { id, nombre }`; request con `categoria_id`.
-- `categoria_id` permanece scalar, sin relación ORM hasta MIG-44; hidratar categoría vía `CategoriasService`.
+- La relación ORM con categoría solo declara la FK (D-03); hidratar categoría vía `CategoriasService`.
 - El stock lo descuenta `pedidos`, no este módulo.
 - `DELETE` consulta pedidos asociados por `ProductUsagePort`, sin importar
   `PedidosModule` (D-08): `pedidos` ya depende de `productos`.

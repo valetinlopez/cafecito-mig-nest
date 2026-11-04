@@ -7,8 +7,6 @@ function buildPago(overrides: Partial<Pago> = {}): Pago {
   return Object.assign(new Pago(), {
     id: 5,
     pedidoId: 12,
-    cajaId: 3,
-    usuarioId: 2,
     metodoPago: 'efectivo',
     monto: 950,
     fecha: KNOWN_INSTANT,

@@ -2,6 +2,7 @@ import type { Relation } from 'typeorm';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   OneToMany,
@@ -24,9 +25,12 @@ import { DetallePedido } from './detalle-pedido.entity.js';
  * | `id`        | `id`         | `serial`        | PK, autoincremental                  |
  * | `mesaId`    | `mesa_id`    | `int`           | FK → `mesas`, not null               |
  * | `usuarioId` | `usuario_id` | `int`           | FK → `usuarios`, not null            |
- * | `estado`    | `estado`     | `varchar(30)`   | default `pendiente`, 6 estados       |
- * | `total`     | `total`      | `numeric(10,2)` | default `0`, `number` con transformer|
- * | `fecha`     | `fecha`      | `timestamp`     | default `now()`, UTC naive           |
+ * | `estado`    | `estado`     | `varchar(30)`   | 6 estados                            |
+ * | `total`     | `total`      | `numeric(10,2)` | `number` con transformer             |
+ * | `fecha`     | `fecha`      | `timestamp`     | UTC naive                            |
+ *
+ * La base admite `NULL` en `estado`, `total` y `fecha`, y no tiene defaults. Los
+ * asigna siempre la aplicación, por eso conservan su tipo no nulo (ADR 0009).
  *
  * **FK escalar + relación:** `mesaId` y `usuarioId` se mapean como columnas
  * explícitas y además como `@ManyToOne` con `@JoinColumn` sobre la misma columna
@@ -40,14 +44,11 @@ import { DetallePedido } from './detalle-pedido.entity.js';
  * dejaría reescribir ventas históricas. No hay endpoint de borrado de pedidos.
  *
  * **`pagos`:** relación inversa de solo lectura. El pago se crea dentro de la
- * transacción del cobro (MIG-33), no por cascada desde el pedido. La unicidad
- * `pagos_pedido_id_key` es la que impide cobrar dos veces.
- *
- * Sin `@Unique` propio: el legacy no define una restricción única sobre
- * `pedidos`. Los nombres de FK siguen el default de PostgreSQL
- * (`<tabla>_<columna>_fkey`) y MIG-44 los confirma contra la base real.
+ * transacción del cobro (MIG-33), no por cascada desde el pedido. El bloqueo del
+ * pedido en esa transacción es lo que impide cobrar dos veces (ADR 0009).
  */
 @Entity('pedidos')
+@Index('ix_pedidos_id', ['id'])
 export class Pedido {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -58,21 +59,21 @@ export class Pedido {
   @Column({ name: 'usuario_id', type: 'int' })
   usuarioId!: number;
 
-  @Column({ type: 'varchar', length: 30, default: 'pendiente' })
+  @Column({ type: 'varchar', length: 30, nullable: true })
   estado!: PedidoEstado;
 
   @Column({
     type: 'numeric',
     precision: 10,
     scale: 2,
-    default: 0,
+    nullable: true,
     transformer: numericTransformer,
   })
   total!: number;
 
   @Column({
     type: 'timestamp',
-    default: () => 'now()',
+    nullable: true,
     transformer: utcTimestampTransformer,
   })
   fecha!: Date;

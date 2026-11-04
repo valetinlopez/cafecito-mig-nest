@@ -3,9 +3,9 @@
 | Campo        | Valor                                                   |
 | ------------ | ------------------------------------------------------- |
 | Estado       | **Implementado** (MIG-31 + MIG-32 + MIG-33)             |
-| Entity       | `Pago` → tabla `pagos` (mapeo a confirmar en MIG-44)    |
+| Entity       | `Pago` → tabla `pagos` (validado en MIG-44)             |
 | Endpoints    | **Ninguno propio** (ver [`CONTRACT.md`](./CONTRACT.md)) |
-| Dependencias | `pedidos`, `caja`, `users`                              |
+| Dependencias | `pedidos`; entity `Caja` para calcular el período       |
 | Tests        | Unitarios (entity, DTO, método, service)                |
 
 ---
@@ -48,23 +48,16 @@ Sin controller y sin DTOs de request: la entrada es el DTO de `pedidos`.
 | Propiedad    | Columna       | Tipo            | Restricción                       |
 | ------------ | ------------- | --------------- | --------------------------------- |
 | `id`         | `id`          | `serial`        | PK                                |
-| `pedidoId`   | `pedido_id`   | `int`           | `UNIQUE`, not null                |
-| `cajaId`     | `caja_id`     | `int`           | FK a `cajas`, **nullable**        |
-| `usuarioId`  | `usuario_id`  | `int`           | FK a `usuarios`, **nullable**     |
+| `pedidoId`   | `pedido_id`   | `int`           | FK a `pedidos`, not null          |
 | `metodoPago` | `metodo_pago` | `varchar(30)`   | 5 valores del glosario            |
 | `monto`      | `monto`       | `numeric(10,2)` | `number` vía `numericTransformer` |
-| `fecha`      | `fecha`       | `timestamp`     | default `now()`, UTC naive        |
+| `fecha`      | `fecha`       | `timestamp`     | la asigna el service, UTC naive   |
 
-- La restricción se declara con el nombre real de PostgreSQL
-  (`pagos_pedido_id_key`) para que `schema:log` no proponga recrearla.
+- La tabla no guarda la caja ni quién cobró, y no tiene restricción única: ver
+  `DECISIONS.md` D-13 y ADR 0009.
 - `monto` y `fecha` usan los transformers compartidos de `src/common/`: el JSON
   nunca expone un string ni un `Date` crudo (D-05, D-06).
-- `caja_id` y `usuario_id` son nullable por los pagos históricos; la regla
-  "todo cobro nuevo pertenece a la caja abierta" se valida en el service
-  (`DECISIONS.md` D-08).
-
-> Nombres y tipos exactos se confirman contra la base en MIG-44. Las relaciones
-> ORM (`@ManyToOne`) se agregan cuando existan las entities `Pedido` y `Caja`.
+- Un pago pertenece a la caja de su período (`pago-periodo-caja.ts`).
 
 ---
 
@@ -73,11 +66,11 @@ Sin controller y sin DTOs de request: la entrada es el DTO de `pedidos`.
 | Método                             | Uso                         | Estado              |
 | ---------------------------------- | --------------------------- | ------------------- |
 | `registrarPago(manager, data)`     | Desde el cobro en `pedidos` | Implementado MIG-33 |
-| `findByCaja(cajaId)`               | Movimientos de una caja     | MIG-32              |
+| `findByCaja(cajaId)`               | Movimientos de una caja     | MIG-32; MIG-44      |
 | `findByPedido(pedidoId, manager?)` | Verificar cobro existente   | Implementado MIG-33 |
 
-`findByCaja(cajaId)`, `getTotalVentas(cajaId)` y `getTotalesVentas(cajaIds)` están
-implementados en MIG-32. El registro del pago requiere el `EntityManager` del
+`findByCaja(cajaId)`, `getTotalVentas(cajaId)` y `getTotalesVentas(cajaIds)` calculan
+sobre el período de la caja desde MIG-44. El registro del pago requiere el `EntityManager` del
 cobro para pertenecer a la misma transacción; la búsqueda puede reutilizarlo.
 
 ---
@@ -86,7 +79,7 @@ cobro para pertenecer a la misma transacción; la búsqueda puede reutilizarlo.
 
 - Un pedido tiene **como máximo un pago** (no hay cobros parciales).
 - El monto es el total del pedido; no se acepta un monto del cliente.
-- Requiere una caja `abierta`; el id se resuelve en el service, no en el request.
+- Requiere una caja `abierta`, verificada en el cobro; no se guarda ni se recibe su id.
 - El pago y el cambio de estado del pedido ocurren en la **misma transacción**.
 - `metodo_pago` debe ser uno de los 5 valores; si no, `422`.
 

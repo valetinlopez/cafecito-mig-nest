@@ -78,5 +78,4 @@ un rediseño fuera de alcance (constitución §2).
 
 | Tema                         | Ticket |
 | ---------------------------- | ------ |
-| `@OneToMany(() => Producto)` | MIG-29 |
-| Validar esquema real         | MIG-44 |
+| `@OneToMany(() => Producto)` | Sin ticket |

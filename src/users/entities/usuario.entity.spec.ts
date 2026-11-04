@@ -54,7 +54,7 @@ describe('Usuario (entity)', () => {
     });
     expect(columnOf('activo').options).toMatchObject({
       type: 'boolean',
-      default: true,
+      nullable: true,
     });
   });
 
@@ -65,13 +65,14 @@ describe('Usuario (entity)', () => {
     expect(columnOf('id').options.primary).toBe(true);
   });
 
-  it('declara el unique del email con el nombre de PostgreSQL', () => {
-    const unique = storage.uniques.find(
-      (candidate) => candidate.target === Usuario,
+  it('declara el índice único del email con el nombre de PostgreSQL', () => {
+    const index = storage.indices.find(
+      (candidate) =>
+        candidate.target === Usuario && candidate.name === 'ix_usuarios_email',
     );
 
-    expect(unique?.name).toBe('usuarios_email_key');
-    expect(unique?.columns).toEqual(['email']);
+    expect(index?.unique).toBe(true);
+    expect(index?.columns).toEqual(['email']);
   });
 
   it('expone los roles del contrato', () => {

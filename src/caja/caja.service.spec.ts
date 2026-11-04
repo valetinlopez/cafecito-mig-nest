@@ -140,6 +140,11 @@ describe('CajaService', () => {
       'SELECT pg_advisory_xact_lock($1, $2)',
       [1128351301, 32],
     );
+    expect(manager.create).toHaveBeenCalledWith(Caja, {
+      montoInicial: 1000,
+      estado: 'abierta',
+      fechaApertura: expect.any(Date) as Date,
+    });
 
     manager.find.mockResolvedValueOnce([OPEN_CAJA]);
     await expect(service.abrirCaja({ monto_inicial: 1000 })).rejects.toThrow(

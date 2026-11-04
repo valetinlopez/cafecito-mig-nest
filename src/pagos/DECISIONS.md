@@ -141,3 +141,18 @@ cuando el cobro necesita verificar dentro de su transacción.
 
 **Motivo:** impedir que el pago se escriba fuera de la transacción que cambia el
 pedido a `pagado` y libera su mesa.
+
+---
+
+## D-13 — El esquema real manda (MIG-44)
+
+**Decisión:** `pagos` no tiene `caja_id`, `usuario_id` ni restricción única sobre
+`pedido_id`, y la entity no los declara. La caja se deduce por el período, el usuario
+sale del pedido y el doble cobro lo impide el bloqueo del pedido. Reemplaza lo que
+D-02, D-05, D-08, D-09 y D-11 dicen sobre esas columnas y esa restricción.
+
+**Motivo:** la validación contra una copia de producción mostró que nunca existieron.
+Ver [ADR 0009](../../docs/adr/0009-entities-siguen-esquema-legacy.md).
+
+**Consecuencia:** todo cobro debe pasar por la transacción con bloqueo de
+`PedidosService.cobrarPedido`. No se registra quién cobró.
