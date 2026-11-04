@@ -112,12 +112,11 @@ aparecería N+1 en el listado.
 **Consecuencia:** `Pago` incorpora su `@ManyToOne(Pedido)` (se actualiza
 `src/pagos/DECISIONS.md` D-09) y `Pedido.pagos` queda como inversa de solo
 lectura. Las relaciones son metadata de TypeORM, no providers de Nest, así que
-no hay `forwardRef`. MIG-44 confirma las FK contra la base real.
+no hay `forwardRef`. MIG-44 confirmó las FK contra la base real.
 
 **Nota:** `pagos` se declara `@OneToMany` como pide el ticket y como lo modela
-el legacy (`Pedido.pagos`), aunque la restricción `pagos_pedido_id_key` lo
-restringe a 0..1. Se conserva la forma de colección para no divergir del modelo
-heredado; la unicidad es la que impide registrar dos cobros.
+el legacy (`Pedido.pagos`). La base no restringe a un pago por pedido: lo impide el
+bloqueo del pedido en la transacción del cobro (ADR 0009).
 
 ---
 
@@ -171,7 +170,7 @@ incompleto que rompería el front.
 
 ---
 
-## D-14 — Nombres de tabla y FK provisionales
+## D-14 — Nombres de tabla y FK
 
 **Decisión:** las tablas son `pedidos` y `detalle_pedidos`; las FK se declaran
 con el default de PostgreSQL (`pedidos_mesa_id_fkey`,
@@ -182,6 +181,5 @@ con el default de PostgreSQL (`pedidos_mesa_id_fkey`,
 del módulo; el default de PostgreSQL evita que `schema:log` proponga recrear
 restricciones con nombres generados por TypeORM.
 
-**Consecuencia:** MIG-44 valida nombres, nulabilidad y tipos contra la base
-compartida. Si alguno difiere, se corrige en una migración revisada, no con
-`synchronize` contra Neon (constitución §4).
+**Consecuencia:** MIG-44 validó nombres, nulabilidad y tipos contra la base
+compartida. Las diferencias se corrigieron en las entities (ADR 0009).

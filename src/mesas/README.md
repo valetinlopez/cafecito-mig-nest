@@ -3,7 +3,7 @@
 | Campo        | Valor                                               |
 | ------------ | --------------------------------------------------- |
 | Estado       | **Implementado (MIG-27)**                           |
-| Entity       | `Mesa` → tabla `mesas` (unique por validar en MIG-44) |
+| Entity       | `Mesa` → tabla `mesas` (validado en MIG-44)         |
 | Endpoints    | 4 (ver [`CONTRACT.md`](./CONTRACT.md))              |
 | Dependencias | `ACTIVE_ORDERS_PORT`, `common/guards`                |
 | Tests        | Unitarios + e2e                                     |
@@ -56,7 +56,7 @@ src/mesas/
 | --------- | -------- | ------------ | -------------------------- |
 | `id`      | `id`     | `serial`     | PK autoincremental         |
 | `numero`  | `numero` | `int`        | `UNIQUE`, `> 0`            |
-| `estado`  | `estado` | enum/varchar | default `libre`, 5 valores |
+| `estado`  | `estado` | `varchar(30)` | lo asigna el service, 5 valores |
 
 ```ts
 type MesaEstado =

@@ -66,8 +66,8 @@ caja está abierta (`monto_final = null`), devolver `null`.
 **Motivo:** una diferencia negativa es información válida (faltante de caja). No
 se debe normalizar a 0 ni a valor absoluto.
 
-**Alcance de `ventas_efectivo`:** todos los cobros en efectivo de la caja, no
-solo los del período. La conciliación de cierre compara el `monto_final` contra
+**Alcance de `ventas_efectivo`:** todos los cobros en efectivo del turno de la caja
+(ADR 0009), no solo los del rango consultado. La conciliación de cierre compara el `monto_final` contra
 todo lo que entró en efectivo durante el turno; limitarlo al rango haría que
 `diferencia` no cerrara nunca.
 

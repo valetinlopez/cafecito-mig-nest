@@ -209,30 +209,29 @@ Reglas de dependencia:
 
 ## 7. Modelo de datos (estado conocido)
 
-Solo `categorias` y `usuarios` tienen entity implementada. El resto se infiere
-del contrato y del legacy, y debe validarse contra la base en MIG-44 antes de
-considerar definitivo su mapeo. Productos ya tiene entity provisional en esta
-rama; sus columnas y relaciones siguen sujetas a esa validación.
+Todas las entities mapean tablas reales y se validaron contra una copia de
+producción en MIG-44: `schema:log` no propone cambios
+([ADR 0009](adr/0009-entities-siguen-esquema-legacy.md)).
 
-| Tabla legacy (a confirmar) | Entity           | Módulo     | Estado                               |
-| -------------------------- | ---------------- | ---------- | ------------------------------------ |
-| `categorias`               | `Categoria`      | categorias | Implementada                         |
-| `usuarios`                 | `Usuario`        | users      | Implementada (MIG-22)                |
-| `mesas`                    | `Mesa`           | mesas      | Pendiente                            |
-| `productos`                | `Producto`       | productos  | Provisional (MIG-29; validar MIG-44) |
-| `pedidos`                  | `Pedido`         | pedidos    | Pendiente                            |
-| `detalle_pedidos`          | `DetallePedido`  | pedidos    | Pendiente                            |
-| `pagos`                    | `Pago`           | pagos      | Provisional (MIG-31; validar MIG-44) |
-| `cajas`                    | `Caja`           | caja       | Pendiente                            |
-| `movimientos_caja`*        | `MovimientoCaja` | caja       | Pendiente                            |
+| Tabla             | Entity          | Módulo     |
+| ----------------- | --------------- | ---------- |
+| `categorias`      | `Categoria`     | categorias |
+| `usuarios`        | `Usuario`       | users      |
+| `mesas`           | `Mesa`          | mesas      |
+| `productos`       | `Producto`      | productos  |
+| `pedidos`         | `Pedido`        | pedidos    |
+| `detalle_pedidos` | `DetallePedido` | pedidos    |
+| `pagos`           | `Pago`          | pagos      |
+| `cajas`           | `Caja`          | caja       |
 
-\* El contrato expone movimientos derivados de pagos; la tabla real se confirma
-en MIG-44.
+No hay tabla de movimientos: un movimiento es un pago del período de una caja, y
+`pagos` no guarda la caja.
 
 Reglas transversales de persistencia:
 
 - `@Entity('<tabla>')` explícito y `snake_case`.
 - Restricciones (`@Unique`, `@Index`) con el nombre real de PostgreSQL.
+- Sin `default` en las entities: la base no tiene ninguno y los asigna la aplicación.
 - `numeric` → transformer a `number` (ADR 0004).
 - Fechas `timestamp without time zone` → `utcTimestampTransformer` + proceso en UTC; ISO-8601 con `Z` en el DTO (ADR 0003, ADR 0007).
 - Sin `eager: true`; las relaciones se piden explícitamente.
@@ -319,7 +318,6 @@ El detalle de criterios está en
 | Paginación                        | Fuera de alcance en S0 (D-10)   | Contrato D-10   |
 | Envelope de éxito                 | No se usa; arrays planos        | Contrato D-10   |
 | Rediseño de paths                 | Prohibido en la migración       | Constitución §2 |
-| Nombres de tablas reales          | A confirmar contra la base      | MIG-44          |
 | Estrategia de refresh token       | No definida (solo access token) | Pendiente       |
 | Observabilidad (métricas/tracing) | No definida en S0               | Pendiente       |
 

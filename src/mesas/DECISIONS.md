@@ -54,8 +54,8 @@ con el detalle contractual y no persiste el estado.
 
 ## D-05 — `numero` único con restricción nombrada
 
-**Decisión:** usar provisionalmente `@Unique('mesas_numero_key', ['numero'])`;
-confirmar el nombre contra la base en MIG-44.
+**Decisión:** usar `@Unique('mesas_numero_key', ['numero'])`. MIG-44 confirmó el
+nombre contra la base.
 
 **Motivo:** misma regla que `categorias`: el nombre real evita que `schema:log`
 proponga recrear la restricción.

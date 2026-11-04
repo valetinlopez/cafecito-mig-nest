@@ -24,14 +24,13 @@ tocar tipos y stores.
 
 ---
 
-## D-03 — Categoría scalar hasta MIG-44
+## D-03 — Relación con categoría solo para declarar la FK
 
-**Decisión:** no declarar relación ORM todavía. `categoria_id` es scalar y se
-valida/hidrata vía `CategoriasService`; revisar relación luego de validar el
-esquema compartido en MIG-44.
+**Decisión:** MIG-44 declara la relación con la FK real
+(`productos_categoria_id_fkey`), porque `schema:log` proponía borrarla. La categoría
+se sigue validando e hidratando vía `CategoriasService`, no con `relations`.
 
-**Motivo:** la tabla compartida aún no se validó y no se debe crear una relación
-especulativa. El lookup en lote evita N+1 en la colección.
+**Motivo:** el lookup en lote evita N+1 en la colección y no hacía falta cambiarlo.
 
 ---
 

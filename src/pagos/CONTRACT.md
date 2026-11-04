@@ -106,8 +106,8 @@ interface MovimientoCaja {
 
 | Pieza             | Estado                                                |
 | ----------------- | ----------------------------------------------------- |
-| `Pago` entity     | ✅ Columnas, unique y transformers                    |
+| `Pago` entity     | ✅ Validada contra la base real (MIG-44)              |
 | `PagoResponseDto` | ✅ `fromEntity()` con `number` y `Z`                  |
 | `MetodoPago`      | ✅ 5 valores cerrados                                 |
-| `PagosService`    | ✅ Movimientos/totales MIG-32; cobro MIG-33 pendiente |
-| Relaciones ORM    | ⏳ MIG-32/MIG-44 (faltan `Pedido` y `Caja`)           |
+| `PagosService`    | ✅ Movimientos y totales por período; cobro MIG-33    |
+| Relaciones ORM    | ✅ `Pedido`; `Caja` se deduce por período (ADR 0009)  |

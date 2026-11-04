@@ -17,6 +17,7 @@ Cada carpeta es una funcionalidad entregable, nombrada con el número del ticket
 | [`035-regresion-services`](035-regresion-services/spec.md) | MIG-35 | Implementación completa; revisión pendiente | Gates OK; revisión humana SDD pendiente |
 | [`037-reportes`](037-reportes/spec.md) | MIG-37 | Implementación completa; revisión pendiente | Gates OK; `APROBADO` por el agente, revisión humana pendiente |
 | [`038-smoke-e2e`](038-smoke-e2e/spec.md) | MIG-38 | Implementación completa; revisión pendiente | Gates OK; `APROBADO` por el agente; smoke contra base real pendiente |
+| [`044-esquema-real`](044-esquema-real/spec.md) | MIG-44 | Implementación completa; revisión pendiente | Gates OK; `APROBADO` por el agente; falta borrar la branch de Neon |
 
 > Este índice se actualiza al cerrar cada fase. `/sdd-status` lo reconstruye
 > leyendo los archivos.

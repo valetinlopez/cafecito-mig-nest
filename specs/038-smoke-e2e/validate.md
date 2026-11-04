@@ -102,3 +102,10 @@ independiente; **falta la revisión humana**.
 El criterio del ticket "Flujo E2E completo sin errores" queda cumplido sobre la
 aplicación real con persistencia simulada. No queda cumplido contra PostgreSQL
 hasta ejecutar la guía manual.
+
+## Actualización por MIG-44
+
+La guía manual se ejecutó contra una copia de producción el 2026-11-03. Encontró lo
+que esta validación había dejado sin verificar: el mapeo de `pagos` y los defaults de
+columna no coincidían con la base. Se corrigió en
+[`specs/044-esquema-real`](../044-esquema-real/validate.md).

@@ -2,6 +2,7 @@ import type { Relation } from 'typeorm';
 import {
   Column,
   Entity,
+  Index,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
@@ -27,14 +28,11 @@ import { Pedido } from './pedido.entity.js';
  * producto sube de precio, la venta ya registrada no cambia. Esa regla la
  * implementa `PedidosService` (MIG-33); la entity solo la persiste.
  *
- * El nombre `detalle_pedidos` es el que declara el ticket y la documentación del
- * módulo; MIG-44 lo confirma contra la base real (pregunta abierta del
- * `.agents/memory.md`).
- *
  * Igual que en `Pedido`, el FK escalar convive con la relación `@ManyToOne`
  * sobre la misma columna física: no hay DDL duplicado y evita `eager`.
  */
 @Entity('detalle_pedidos')
+@Index('ix_detalle_pedidos_id', ['id'])
 export class DetallePedido {
   @PrimaryGeneratedColumn()
   id!: number;

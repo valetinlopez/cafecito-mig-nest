@@ -69,9 +69,9 @@ Los métodos pueden ajustarse al implementar, pero:
 
 | Invariante                         | Verificación                       |
 | ---------------------------------- | ---------------------------------- |
-| `email` único                      | `UNIQUE` en base + `existsByEmail` |
+| `email` único                      | índice único + `existsByEmail`     |
 | `rol` ∈ `{admin, mozo}`            | validación + tipo                  |
-| `activo` boolean, default `true`   | columna con default                |
+| `activo` boolean, `true` al crear  | lo asigna `UsersService.create`    |
 | `password_hash` nunca en respuesta | DTO `fromEntity()`                 |
 
 ---

@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn, Unique } from 'typeorm';
 
 /**
  * Categoría de productos. Mapea 1 a 1 la tabla `categorias` del backend legacy:
@@ -19,6 +19,7 @@ import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
  * desarrollo corre `synchronize`, TypeORM podría alterar columnas reales.
  */
 @Entity('categorias')
+@Index('ix_categorias_id', ['id'])
 @Unique('categorias_nombre_key', ['nombre'])
 export class Categoria {
   @PrimaryGeneratedColumn()

@@ -223,6 +223,7 @@ describe('PedidosService', () => {
         usuarioId: 5,
         estado: 'pendiente',
         total: 62.5,
+        fecha: expect.any(Date) as Date,
       }),
     );
     expect(mesa.estado).toBe('ocupada');
@@ -614,11 +615,9 @@ describe('PedidosService', () => {
     pagosService.findByPedido.mockResolvedValue(null);
     pagosService.registrarPago.mockResolvedValue({});
 
-    const result = await service.cobrarPedido(
-      12,
-      { metodo_pago: 'efectivo' },
-      5,
-    );
+    const result = await service.cobrarPedido(12, {
+      metodo_pago: 'efectivo',
+    });
 
     expect(pedidosRepository.findOne).toHaveBeenNthCalledWith(1, {
       where: { id: 12 },
@@ -631,8 +630,6 @@ describe('PedidosService', () => {
       expect.any(Object),
       {
         pedidoId: 12,
-        cajaId: 6,
-        usuarioId: 5,
         monto: 0,
         metodoPago: 'efectivo',
       },
@@ -646,7 +643,7 @@ describe('PedidosService', () => {
     pedidosRepository.findOne.mockResolvedValueOnce(pedidoFixture(12));
 
     await expect(
-      service.cobrarPedido(12, { metodo_pago: 'efectivo' }, 5),
+      service.cobrarPedido(12, { metodo_pago: 'efectivo' }),
     ).rejects.toMatchObject({
       status: 400,
       response: {
@@ -665,7 +662,7 @@ describe('PedidosService', () => {
     cajaService.findAbierta.mockResolvedValue(null);
 
     await expect(
-      service.cobrarPedido(12, { metodo_pago: 'efectivo' }, 5),
+      service.cobrarPedido(12, { metodo_pago: 'efectivo' }),
     ).rejects.toMatchObject({
       status: 400,
       response: {
@@ -683,7 +680,7 @@ describe('PedidosService', () => {
     pagosService.findByPedido.mockResolvedValue({ id: 33 });
 
     await expect(
-      service.cobrarPedido(12, { metodo_pago: 'efectivo' }, 5),
+      service.cobrarPedido(12, { metodo_pago: 'efectivo' }),
     ).rejects.toMatchObject({
       status: 400,
       response: { message: 'El pedido ya fue cobrado' },
@@ -700,7 +697,7 @@ describe('PedidosService', () => {
     pagosService.registrarPago.mockRejectedValue(new Error('insert failed'));
 
     await expect(
-      service.cobrarPedido(12, { metodo_pago: 'efectivo' }, 5),
+      service.cobrarPedido(12, { metodo_pago: 'efectivo' }),
     ).rejects.toThrow('insert failed');
     expect(dataSource.transaction).toHaveBeenCalledOnce();
     expect(pedidosRepository.save).not.toHaveBeenCalled();
@@ -722,7 +719,7 @@ describe('PedidosService', () => {
     mesasRepository.save.mockRejectedValue(new Error('mesa release failed'));
 
     await expect(
-      service.cobrarPedido(12, { metodo_pago: 'efectivo' }, 5),
+      service.cobrarPedido(12, { metodo_pago: 'efectivo' }),
     ).rejects.toThrow('mesa release failed');
     expect(dataSource.transaction).toHaveBeenCalledOnce();
     expect(pagosService.registrarPago).toHaveBeenCalledOnce();

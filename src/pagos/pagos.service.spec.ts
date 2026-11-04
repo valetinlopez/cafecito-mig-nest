@@ -5,14 +5,14 @@ import {
   createServiceTestModule,
   provideMockRepository,
 } from '../../test/utils/test-module.helper.js';
+import { Caja } from '../caja/entities/caja.entity.js';
 import { Pago } from './entities/pago.entity.js';
+import { PAGO_EN_PERIODO_DE_CAJA } from './pago-periodo-caja.js';
 import { PagosService } from './pagos.service.js';
 import type { RegistrarPagoInput } from './pagos.service.js';
 
 const PAGO_INPUT: RegistrarPagoInput = {
   pedidoId: 12,
-  cajaId: 3,
-  usuarioId: 2,
   monto: 950,
   metodoPago: 'efectivo',
 };
@@ -33,6 +33,18 @@ describe('PagosService', () => {
     await module.close();
   });
 
+  function expectConsultaPorPeriodo(): void {
+    expect(pagosRepository.queryBuilder.innerJoin).toHaveBeenCalledWith(
+      Caja,
+      'caja',
+      PAGO_EN_PERIODO_DE_CAJA,
+    );
+    expect(pagosRepository.queryBuilder.setParameter).toHaveBeenCalledWith(
+      'ahora',
+      expect.any(Date),
+    );
+  }
+
   it('expone las operaciones de cobro y consulta de pago', () => {
     expect(typeof service.registrarPago).toBe('function');
     expect(typeof service.findByCaja).toBe('function');
@@ -43,8 +55,6 @@ describe('PagosService', () => {
     const pago = {
       id: 33,
       pedidoId: PAGO_INPUT.pedidoId,
-      cajaId: PAGO_INPUT.cajaId,
-      usuarioId: PAGO_INPUT.usuarioId,
       monto: PAGO_INPUT.monto,
       metodoPago: PAGO_INPUT.metodoPago,
       fecha: new Date('2026-10-29T12:00:00.000Z'),
@@ -66,11 +76,16 @@ describe('PagosService', () => {
     expect(getRepository).toHaveBeenCalledWith(Pago);
     expect(pagosRepository.create).toHaveBeenCalledWith({
       pedidoId: 12,
-      cajaId: 3,
-      usuarioId: 2,
       monto: 950,
       metodoPago: 'efectivo',
+      fecha: expect.any(Date) as Date,
     });
+  });
+
+  it('define el período de la caja con ambos límites incluidos y sin cierre hasta ahora', () => {
+    expect(PAGO_EN_PERIODO_DE_CAJA).toBe(
+      'pago.fecha >= caja.fechaApertura AND pago.fecha <= COALESCE(caja.fechaCierre, :ahora)',
+    );
   });
 
   it('consulta movimientos de caja con pedido, mesa y usuario y ordena fecha DESC', async () => {
@@ -109,6 +124,15 @@ describe('PagosService', () => {
       'pedido.mesa',
       'mesa',
     );
+    expect(pagosRepository.queryBuilder.leftJoin).toHaveBeenCalledWith(
+      'pedido.usuario',
+      'usuario',
+    );
+    expectConsultaPorPeriodo();
+    expect(pagosRepository.queryBuilder.where).toHaveBeenCalledWith(
+      'caja.id = :cajaId',
+      { cajaId: 3 },
+    );
   });
 
   it('calcula total de ventas y normaliza cero cuando no hay pagos', async () => {
@@ -120,6 +144,11 @@ describe('PagosService', () => {
     expect(pagosRepository.queryBuilder.select).toHaveBeenCalledWith(
       'COALESCE(SUM(pago.monto), 0)',
       'total_ventas',
+    );
+    expectConsultaPorPeriodo();
+    expect(pagosRepository.queryBuilder.where).toHaveBeenCalledWith(
+      'caja.id = :cajaId',
+      { cajaId: 3 },
     );
   });
 
@@ -135,6 +164,14 @@ describe('PagosService', () => {
         [4, 0],
       ]),
     );
+    expectConsultaPorPeriodo();
+    expect(pagosRepository.queryBuilder.where).toHaveBeenCalledWith(
+      'caja.id IN (:...cajaIds)',
+      { cajaIds: [2, 4] },
+    );
+    expect(pagosRepository.queryBuilder.groupBy).toHaveBeenCalledWith(
+      'caja.id',
+    );
   });
 
   it('no consulta pagos cuando el listado de cajas está vacío', async () => {
@@ -146,8 +183,6 @@ describe('PagosService', () => {
     pagosRepository.findOneBy.mockResolvedValueOnce({
       id: 33,
       pedidoId: 12,
-      cajaId: 3,
-      usuarioId: 2,
       monto: 950,
       metodoPago: 'efectivo',
       fecha: new Date('2026-10-29T12:00:00.000Z'),

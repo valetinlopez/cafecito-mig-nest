@@ -1,10 +1,16 @@
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import { numericTransformer } from '../../common/transformers/numeric.transformer.js';
 import { utcTimestampTransformer } from '../../common/transformers/utc-timestamp.transformer.js';
 import type { CajaEstado } from '../estado-caja.js';
 
-/** Turno de caja independiente; `total_ventas` se deriva de pagos. */
+/**
+ * Turno de caja independiente; `total_ventas` se deriva de los pagos de su período.
+ *
+ * La base admite `NULL` y no tiene defaults: `fechaApertura` y `estado` los asigna
+ * siempre la aplicación, por eso conservan su tipo no nulo (ADR 0009).
+ */
 @Entity('cajas')
+@Index('ix_cajas_id', ['id'])
 export class Caja {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -12,7 +18,7 @@ export class Caja {
   @Column({
     name: 'fecha_apertura',
     type: 'timestamp',
-    default: () => 'now()',
+    nullable: true,
     transformer: utcTimestampTransformer,
   })
   fechaApertura!: Date;
@@ -44,6 +50,6 @@ export class Caja {
   })
   montoFinal!: number | null;
 
-  @Column({ name: 'estado', type: 'varchar', length: 20, default: 'abierta' })
+  @Column({ name: 'estado', type: 'varchar', length: 20, nullable: true })
   estado!: CajaEstado;
 }

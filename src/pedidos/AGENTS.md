@@ -28,7 +28,8 @@
 - `PedidoResponseDto.fromEntity()` exige `mesa`, `usuario` y `detalles`
   hidratados; se piden con `relations` explícitas, nunca con `eager`.
 - `METODOS_PAGO` se importa de `pagos`; `PedidoPagoDto` no declara `monto`.
-- Nombres `detalle_pedidos` y FK se confirman con `schema:log` en MIG-44.
+- Nombres `detalle_pedidos` y FK validados con `schema:log` en MIG-44.
+- La fecha del pedido y del pago las asigna la aplicación: la base no tiene defaults (ADR 0009).
 - Sin `forwardRef`: las relaciones son metadata, no providers.
 
 ## Verificación

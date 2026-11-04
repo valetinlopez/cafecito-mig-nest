@@ -1,5 +1,5 @@
 import { Exclude } from 'class-transformer';
-import { Column, Entity, PrimaryGeneratedColumn, Unique } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import type { Rol } from '../rol.js';
 
 /**
@@ -13,12 +13,11 @@ import type { Rol } from '../rol.js';
  * | `email`        | `email`         | `varchar(150)` | `UNIQUE`, not null  |
  * | `passwordHash` | `password_hash` | `varchar(255)` | not null            |
  * | `rol`          | `rol`           | `varchar(20)`  | `admin` \| `mozo`   |
- * | `activo`       | `activo`        | `boolean`      | default `true`      |
+ * | `activo`       | `activo`        | `boolean`      | lo asigna la app    |
  *
- * El nombre de la restricción unique se declara explícito
- * (`usuarios_email_key`) porque es el que PostgreSQL generó al crear la tabla
- * desde Python. Sin el nombre, TypeORM propone recrearla en `schema:log`
- * (MIG-44).
+ * La unicidad del email es un índice único (`ix_usuarios_email`), no una
+ * restricción: es lo que creó el legacy. `activo` admite `NULL` en la base y no
+ * tiene default; la aplicación siempre lo asigna (ADR 0009).
  *
  * `passwordHash` lleva `@Exclude()` como segunda barrera: aunque el borde HTTP
  * siempre pasa por `UsuarioResponseDto.fromEntity()` (constitución §8), si
@@ -29,7 +28,8 @@ import type { Rol } from '../rol.js';
  * compartida con producción (convenciones §6.1).
  */
 @Entity('usuarios')
-@Unique('usuarios_email_key', ['email'])
+@Index('ix_usuarios_id', ['id'])
+@Index('ix_usuarios_email', ['email'], { unique: true })
 export class Usuario {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -47,6 +47,6 @@ export class Usuario {
   @Column({ type: 'varchar', length: 20 })
   rol!: Rol;
 
-  @Column({ type: 'boolean', default: true })
+  @Column({ type: 'boolean', nullable: true })
   activo!: boolean;
 }

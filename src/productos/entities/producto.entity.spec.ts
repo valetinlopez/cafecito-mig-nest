@@ -2,7 +2,7 @@ import { getMetadataArgsStorage } from 'typeorm';
 import { Producto } from './producto.entity.js';
 
 describe('Producto entity', () => {
-  it('mapea tabla y columnas sin inventar relaciones ni cascadas', () => {
+  it('mapea tabla, columnas y la relación real con categorias, sin cascadas', () => {
     const metadata = getMetadataArgsStorage();
     const table = metadata.tables.find((entry) => entry.target === Producto);
     const columns = metadata.columns.filter(
@@ -23,6 +23,9 @@ describe('Producto entity', () => {
       'disponible',
       'categoriaId',
     ]);
-    expect(relations).toEqual([]);
+    expect(relations.map((relation) => relation.propertyName)).toEqual([
+      'categoria',
+    ]);
+    expect(relations[0]?.options.cascade).toBeUndefined();
   });
 });

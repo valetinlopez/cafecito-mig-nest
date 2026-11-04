@@ -86,6 +86,7 @@ export class CajaService {
       const nuevaCaja = manager.create(Caja, {
         montoInicial: dto.monto_inicial,
         estado: 'abierta',
+        fechaApertura: new Date(),
       });
       return manager.save(Caja, nuevaCaja);
     });

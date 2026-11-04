@@ -158,6 +158,7 @@ export class PedidosService {
         usuarioId,
         estado: 'pendiente',
         total: totalCentavos / 100,
+        fecha: new Date(),
         detalles,
       });
       const saved = await pedidosRepository.save(pedido);
@@ -226,7 +227,6 @@ export class PedidosService {
   async cobrarPedido(
     id: number,
     input: PedidoPagoDto,
-    usuarioId: number,
   ): Promise<PedidoResponseDto> {
     await this.dataSource.transaction(async (manager) => {
       const pedidosRepository = manager.getRepository(Pedido);
@@ -257,8 +257,6 @@ export class PedidosService {
 
       await this.pagosService.registrarPago(manager, {
         pedidoId: pedido.id,
-        cajaId: caja.id,
-        usuarioId,
         monto: Number(pedido.total),
         metodoPago: input.metodo_pago,
       });

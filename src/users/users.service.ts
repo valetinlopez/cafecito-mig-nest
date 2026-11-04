@@ -77,6 +77,7 @@ export class UsersService {
       email: normalizeEmail(data.email),
       passwordHash: data.passwordHash,
       rol: data.rol,
+      activo: true,
     });
 
     return this.usuariosRepository.save(usuario);

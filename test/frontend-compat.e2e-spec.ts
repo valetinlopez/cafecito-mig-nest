@@ -570,9 +570,9 @@ describe('Compatibilidad con el frontend (e2e)', () => {
       expect(db.rows(Pago)).toEqual([
         expect.objectContaining({
           pedidoId: pedido.id,
-          cajaId,
           monto: 2150,
           metodoPago: 'efectivo',
+          fecha: expect.any(Date) as Date,
         }),
       ]);
 
@@ -591,6 +591,7 @@ describe('Compatibilidad con el frontend (e2e)', () => {
           mesa_numero: 1,
           monto: 2150,
           metodo_pago: 'efectivo',
+          usuario_nombre: 'Administrador',
         }),
       ]);
       const cierre = await api

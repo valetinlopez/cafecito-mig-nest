@@ -23,19 +23,32 @@ describe('Pago entity', () => {
     expect(columns).toEqual([
       ['id', 'id'],
       ['pedidoId', 'pedido_id'],
-      ['cajaId', 'caja_id'],
-      ['usuarioId', 'usuario_id'],
       ['metodoPago', 'metodo_pago'],
       ['monto', 'monto'],
       ['fecha', 'fecha'],
     ]);
   });
 
-  it('declara el unique de pedido_id con el nombre real de PostgreSQL', () => {
-    const unique = metadata.uniques.find((entry) => entry.target === Pago);
+  it('no declara restricciones que la base real no tiene', () => {
+    expect(metadata.uniques.filter((entry) => entry.target === Pago)).toEqual(
+      [],
+    );
+  });
 
-    expect(unique?.name).toBe('pagos_pedido_id_key');
-    expect(unique?.columns).toEqual(['pedidoId']);
+  it('declara el índice real de la tabla', () => {
+    const index = metadata.indices.find((entry) => entry.target === Pago);
+
+    expect(index?.name).toBe('ix_pagos_id');
+    expect(index?.columns).toEqual(['id']);
+  });
+
+  it('deja que la aplicación asigne la fecha, porque la base no tiene default', () => {
+    const fecha = metadata.columns.find(
+      (entry) => entry.target === Pago && entry.propertyName === 'fecha',
+    );
+
+    expect(fecha?.options.default).toBeUndefined();
+    expect(fecha?.options.nullable).toBe(true);
   });
 
   it('convierte monto y fecha en los bordes de persistencia', () => {

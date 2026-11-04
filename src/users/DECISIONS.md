@@ -142,3 +142,16 @@ cada módulo decida: `auth` responde `401 Usuario no encontrado o inactivo` y
 hardcodeado en `users` acoplaría la persistencia al contrato de otro módulo.
 
 **Verificación:** `users.service.spec.ts` cubre el `null` y el `excludeId`.
+
+---
+
+## D-13 — El email único es un índice, y `activo` lo asigna la aplicación (MIG-44)
+
+**Decisión:** la entity declara `ix_usuarios_email` en lugar de `usuarios_email_key`,
+y `UsersService.create` asigna `activo: true`.
+
+**Motivo:** es lo que tiene la base real. Sin default en la columna, `activo` quedaba
+en `NULL` y el empleado nuevo no podía iniciar sesión. Ver ADR 0009.
+
+**Consecuencia:** el índice único responde el mismo error `23505`, que es lo único que
+miran `auth` y `empleados`.

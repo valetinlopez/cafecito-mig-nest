@@ -1,4 +1,5 @@
 import { DataSource, getMetadataArgsStorage } from 'typeorm';
+import { Categoria } from '../../categorias/entities/categoria.entity.js';
 import { numericTransformer } from '../../common/transformers/numeric.transformer.js';
 import { utcTimestampTransformer } from '../../common/transformers/utc-timestamp.transformer.js';
 import { Mesa } from '../../mesas/entities/mesa.entity.js';
@@ -87,7 +88,7 @@ describe('Pedido entity', () => {
     expect(fecha?.options.transformer).toBe(utcTimestampTransformer);
   });
 
-  it('exige total con precisión decimal(10,2) y default 0', () => {
+  it('exige total con precisión decimal(10,2) y sin default', () => {
     const total = metadata.columns.find(
       (entry) => entry.target === Pedido && entry.propertyName === 'total',
     );
@@ -95,23 +96,23 @@ describe('Pedido entity', () => {
     expect(total?.options.type).toBe('numeric');
     expect(total?.options.precision).toBe(10);
     expect(total?.options.scale).toBe(2);
-    expect(total?.options.default).toBe(0);
+    expect(total?.options.default).toBeUndefined();
   });
 
-  it('arranca en pendiente con varchar(30)', () => {
+  it('mapea estado como varchar(30) sin default', () => {
     const estado = metadata.columns.find(
       (entry) => entry.target === Pedido && entry.propertyName === 'estado',
     );
 
     expect(estado?.options.type).toBe('varchar');
     expect(estado?.options.length).toBe(30);
-    expect(estado?.options.default).toBe('pendiente');
+    expect(estado?.options.default).toBeUndefined();
   });
 
   it('resuelve el metadata de TypeORM con las relaciones cruzadas', async () => {
     const dataSource = new DataSource({
       type: 'postgres',
-      entities: [Pedido, DetallePedido, Mesa, Usuario, Producto, Pago],
+      entities: [Pedido, DetallePedido, Mesa, Usuario, Producto, Pago, Categoria],
     });
 
     await (

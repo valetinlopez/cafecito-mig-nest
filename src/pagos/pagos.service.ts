@@ -1,23 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import type { EntityManager, Repository } from 'typeorm';
+import { Caja } from '../caja/entities/caja.entity.js';
 import { parseUtcTimestamp } from '../common/time/utc-date.js';
-import { Usuario } from '../users/entities/usuario.entity.js';
 import { PagoResponseDto } from './dto/pago-response.dto.js';
 import { Pago } from './entities/pago.entity.js';
 import type { MetodoPago } from './metodo-pago.js';
+import { PAGO_EN_PERIODO_DE_CAJA } from './pago-periodo-caja.js';
 
 /**
  * Datos que el cobro (`PedidosService`) entrega para registrar un pago.
  *
  * `monto` lo calcula el servidor a partir de `pedido.total` (D-03): no se
- * acepta un monto del cliente. `cajaId` y `usuarioId` los resuelve el servicio
- * del cobro; el request HTTP solo envía `metodo_pago`.
+ * acepta un monto del cliente; el request HTTP solo envía `metodo_pago`.
  */
 export interface RegistrarPagoInput {
   pedidoId: number;
-  cajaId: number;
-  usuarioId: number;
   monto: number;
   metodoPago: MetodoPago;
 }
@@ -81,24 +79,25 @@ export class PagosService {
     const repository = manager.getRepository(Pago);
     const pago = repository.create({
       pedidoId: input.pedidoId,
-      cajaId: input.cajaId,
-      usuarioId: input.usuarioId,
       monto: input.monto,
       metodoPago: input.metodoPago,
+      fecha: new Date(),
     });
     const saved = await repository.save(pago);
     return PagoResponseDto.fromEntity(saved);
   }
 
   /**
-   * Devuelve los pagos de una caja, del más reciente al más antiguo (MIG-32).
+   * Devuelve los pagos del período de una caja, del más reciente al más antiguo.
+   * `usuario_nombre` es quien registró el pedido, como en el legacy (ADR 0009).
    */
   async findByCaja(cajaId: number): Promise<PagoMovimiento[]> {
     const rows = await this.pagosRepository
       .createQueryBuilder('pago')
       .leftJoin('pago.pedido', 'pedido')
       .leftJoin('pedido.mesa', 'mesa')
-      .leftJoin(Usuario, 'usuario', 'usuario.id = pago.usuarioId')
+      .leftJoin('pedido.usuario', 'usuario')
+      .innerJoin(Caja, 'caja', PAGO_EN_PERIODO_DE_CAJA)
       .select('pago.id', 'id')
       .addSelect('pago.fecha', 'fecha')
       .addSelect('pedido.id', 'pedido_id')
@@ -106,7 +105,8 @@ export class PagosService {
       .addSelect('pago.monto', 'monto')
       .addSelect('pago.metodoPago', 'metodo_pago')
       .addSelect('usuario.nombre', 'usuario_nombre')
-      .where('pago.cajaId = :cajaId', { cajaId })
+      .where('caja.id = :cajaId', { cajaId })
+      .setParameter('ahora', new Date())
       .orderBy('pago.fecha', 'DESC')
       .getRawMany<PagoMovimientoRaw>();
 
@@ -125,8 +125,10 @@ export class PagosService {
   async getTotalVentas(cajaId: number): Promise<number> {
     const result = await this.pagosRepository
       .createQueryBuilder('pago')
+      .innerJoin(Caja, 'caja', PAGO_EN_PERIODO_DE_CAJA)
       .select('COALESCE(SUM(pago.monto), 0)', 'total_ventas')
-      .where('pago.cajaId = :cajaId', { cajaId })
+      .where('caja.id = :cajaId', { cajaId })
+      .setParameter('ahora', new Date())
       .getRawOne<TotalVentasRaw>();
 
     return Number(result?.total_ventas ?? 0);
@@ -138,10 +140,12 @@ export class PagosService {
 
     const rows = await this.pagosRepository
       .createQueryBuilder('pago')
-      .select('pago.cajaId', 'caja_id')
+      .innerJoin(Caja, 'caja', PAGO_EN_PERIODO_DE_CAJA)
+      .select('caja.id', 'caja_id')
       .addSelect('COALESCE(SUM(pago.monto), 0)', 'total_ventas')
-      .where('pago.cajaId IN (:...cajaIds)', { cajaIds })
-      .groupBy('pago.cajaId')
+      .where('caja.id IN (:...cajaIds)', { cajaIds })
+      .setParameter('ahora', new Date())
+      .groupBy('caja.id')
       .getRawMany<TotalCajaRaw>();
 
     for (const row of rows) {

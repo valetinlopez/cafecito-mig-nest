@@ -19,9 +19,9 @@
 ## Reglas locales
 
 - **Sin controller propio**: no existen endpoints `/pagos`.
-- Un pedido tiene como máximo un pago (`pagos_pedido_id_key`).
+- Un pedido tiene como máximo un pago; lo garantiza el bloqueo del cobro, no la base (D-13).
 - El monto es `pedido.total`; no se acepta un monto del cliente.
-- La caja se resuelve en el servidor (la abierta); no se recibe `caja_id`.
+- La tabla no guarda la caja: un pago pertenece al período de una caja (ADR 0009).
 - El `Pago` se crea dentro de la transacción del cobro; eso vive en MIG-33.
 - `metodo_pago` sale siempre de `METODOS_PAGO`; no repetir literales.
 - `numericTransformer` y `utcTimestampTransformer` se importan de `common`.

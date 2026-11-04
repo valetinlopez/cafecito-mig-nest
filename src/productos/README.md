@@ -3,7 +3,7 @@
 | Campo        | Valor                                                |
 | ------------ | ---------------------------------------------------- |
 | Estado       | **Implementado**: GET/POST/PATCH (MIG-29), DELETE (MIG-38) |
-| Entity       | `Producto` → tabla `productos` (mapeo por validar en MIG-44) |
+| Entity       | `Producto` → tabla `productos` (validado en MIG-44)  |
 | Endpoints    | 5 implementados                                      |
 | Dependencias | `categorias`, `common/guards`; `DetallePedido` por adapter de lectura |
 | Tests        | Unitarios y e2e de los 5 endpoints                   |
@@ -19,10 +19,9 @@ de datos de `pedidos` para calcular subtotales y descontar stock.
 
 ## 2. Estado actual
 
-GET colección/detalle, POST, PATCH y DELETE están implementados. La relación ORM
-de categoría y el transformer numérico compartido esperan MIG-44.
-Mientras tanto, `categoria_id` es scalar, `CategoriasService` hidrata el objeto
-anidado y el response DTO convierte temporalmente `precio` a `number`.
+GET colección/detalle, POST, PATCH y DELETE están implementados. El transformer
+numérico compartido sigue pendiente, sin ticket asignado: el response DTO convierte
+`precio` a `number`. `CategoriasService` hidrata el objeto anidado.
 
 ---
 
@@ -54,13 +53,13 @@ src/productos/
 | ------------- | -------------- | ---------------- | ----------------------------- |
 | `id`          | `id`           | `serial`         | PK                            |
 | `nombre`      | `nombre`       | `varchar`        | not null                      |
-| `descripcion` | `descripcion`  | `varchar`/`text` | nullable (tipo físico por validar en MIG-44) |
+| `descripcion` | `descripcion`  | `varchar(255)`   | nullable                      |
 | `precio`      | `precio`       | `numeric(10,2)`  | `> 0`, conversión temporal en response DTO |
-| `stock`       | `stock`        | `int`            | `>= 0`, default 0             |
-| `stockMinimo` | `stock_minimo` | `int`            | `>= 0`, default 5             |
-| `disponible`  | `disponible`   | `boolean`        | default `true`                |
-| `categoriaId` | `categoria_id` | `int`            | scalar; validar contra esquema en MIG-44 |
-| `categoria`   | —              | propiedad DTO hidratada | sin relación ORM hasta MIG-44 |
+| `stock`       | `stock`        | `int`            | `>= 0`, el service asigna 0   |
+| `stockMinimo` | `stock_minimo` | `int`            | `>= 0`, el service asigna 5   |
+| `disponible`  | `disponible`   | `boolean`        | el service asigna `true`      |
+| `categoriaId` | `categoria_id` | `int`            | FK a `categorias`             |
+| `categoria`   | `categoria_id` | relación ORM     | declara la FK; la hidrata el service |
 
 ---
 
@@ -82,8 +81,8 @@ src/productos/
   categorias (service lookup)  →  productos (entity + service)  →  pedidos
 ```
 
-- `categoria_id` se valida e hidrata mediante `CategoriasService`; relación ORM
-  postergada hasta validar esquema y transformer en MIG-44.
+- `categoria_id` se valida e hidrata mediante `CategoriasService`; la relación ORM
+  solo declara la FK real.
 - `pedidos` consume `ProductosService` para validar disponibilidad y stock.
 
 ---
