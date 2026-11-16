@@ -26,6 +26,10 @@ src/database/
 ├── database.module.ts      # forRoot(): TypeOrmModule.forRootAsync
 ├── typeorm-options.ts      # opciones compartidas Nest + CLI
 ├── data-source.ts          # DataSource para el CLI de TypeORM
+├── seed.ts                 # entrada del comando `npm run seed`
+├── seed-runner.ts          # carga transaccional e idempotente
+├── seed-data.ts            # datos del legacy
+├── seed-guard.ts           # bloqueo de producción
 ├── typeorm-options.spec.ts
 ├── migrations/             # migraciones versionadas
 ├── README.md
@@ -89,6 +93,32 @@ npm run schema:log
 Los scripts compilan antes porque TypeORM necesita los decoradores en `dist/`.
 El `DataSource` del CLI (`src/database/data-source.ts`) carga `.env` si existe.
 
+### 5.1 Seed de desarrollo
+
+```bash
+npm run seed
+```
+
+Carga los mismos datos que `seed.py` del legacy: 2 usuarios (`admin@cafecito.com`
+y `mozo@cafecito.com`, contraseña `123456`), 4 categorías, 10 productos y 12
+mesas libres.
+
+- **Idempotente por tabla:** si una tabla ya tiene filas, se omite completa; no
+  actualiza ni borra nada.
+- **Transaccional:** toda la carga ocurre dentro de `dataSource.transaction`;
+  si una inserción falla, no queda nada a medias.
+- **Categorías por nombre:** los productos resuelven su FK por nombre, así una
+  base con ids distintos a los del legacy sigue funcionando.
+- **Producción bloqueada:** con `NODE_ENV=production` el comando no arranca
+  salvo `SEED_ALLOW_PRODUCTION=true`. La base de Neon es compartida con el
+  backend legacy: no se ejecuta el seed sin confirmación humana.
+- **Salida:** informa filas insertadas por tabla y tablas omitidas; no imprime
+  contraseñas ni hashes.
+
+El seed es un comando manual: la aplicación **no** lo ejecuta al arrancar. Los
+tests de la lógica no requieren PostgreSQL y usan el doble de
+`test/utils/in-memory-data-source.ts`.
+
 ---
 
 ## 6. Regla de oro
@@ -106,6 +136,9 @@ La base de Neon es **compartida con producción**. El esquema no se modifica sol
 | Archivo                     | Cubre                                                  |
 | --------------------------- | ------------------------------------------------------ |
 | `typeorm-options.spec.ts`   | URL obligatoria, SSL, pool, logging, `migrationsRun`.  |
+| `seed-data.spec.ts`         | Conteos, precios, categorías y mesas del legacy.       |
+| `seed-runner.spec.ts`       | Base vacía, idempotencia, tabla parcial y FK faltante. |
+| `seed-guard.spec.ts`        | Bloqueo de producción y confirmación explícita.        |
 | `test/database.e2e-spec.ts` | Smoke real con `E2E_DATABASE=true` (nunca producción). |
 
 ---

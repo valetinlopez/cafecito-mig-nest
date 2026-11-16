@@ -155,6 +155,16 @@ El CLI corre sobre `dist/` porque TypeORM necesita los decoradores compilados; p
 
 En el deploy, lo ideal es `npm run migration:run` como paso previo a levantar la nueva versión (o `DB_MIGRATIONS_RUN=true` si el proveedor no permite un paso aparte).
 
+### Seed de desarrollo
+
+```bash
+npm run seed
+```
+
+Carga los mismos datos que `seed.py` del legacy: 2 usuarios, 4 categorías, 10 productos y 12 mesas. Es idempotente **por tabla** (si una tabla ya tiene filas, se omite) y corre en una transacción.
+
+> **Producción:** el comando se bloquea con `NODE_ENV=production`. La base de Neon es compartida con el backend legacy; solo se habilita con `SEED_ALLOW_PRODUCTION=true` y confirmación humana. Detalle en [`src/database/README.md`](src/database/README.md) §5.1.
+
 ## Tests
 
 ```bash
@@ -235,6 +245,7 @@ Cada módulo de `src/` lleva su propia documentación junto al código:
 | `npm run migration:revert`   | Revierte la última migración                    |
 | `npm run migration:show`     | Lista migraciones y su estado                   |
 | `npm run schema:log`         | Muestra el SQL que faltaría aplicar             |
+| `npm run seed`               | Carga los datos de desarrollo (idempotente)     |
 
 ## Estructura
 

@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
 import { QueryFailedError } from 'typeorm';
 import { USER_NOT_FOUND_OR_INACTIVE_DETAIL } from '../common/auth/auth-messages.js';
+import { BCRYPT_ROUNDS } from '../common/auth/bcrypt.js';
 import type { AppConfig } from '../config/app.config.js';
 import { NodeEnvironment } from '../config/env.helpers.js';
 import type { Usuario } from '../users/entities/usuario.entity.js';
@@ -37,9 +38,6 @@ import {
   parseUserIdClaim,
 } from './jwt-payload.js';
 import type { AccessTokenPayload, ResetTokenPayload } from './jwt-payload.js';
-
-/** Costo de bcrypt. El legacy usa el default (10) y así se mantiene. */
-const BCRYPT_ROUNDS = 10;
 
 /**
  * Reglas de negocio de autenticación (MIG-23/25).

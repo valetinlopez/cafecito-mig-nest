@@ -295,6 +295,19 @@ export function createInMemoryDataSource(
         tables.set(target.name, kept);
         return { affected, raw: [] };
       }),
+    insert: (entityOrEntities: Row | Row[]) =>
+      attempt(() => {
+        const rows = Array.isArray(entityOrEntities)
+          ? entityOrEntities
+          : [entityOrEntities];
+        const saved = rows.map((row) => saveRow(target, { ...row }));
+
+        return {
+          identifiers: saved.map((row) => ({ id: row.id })),
+          generatedMaps: saved,
+          raw: saved,
+        };
+      }),
     createQueryBuilder: (alias: string) =>
       new InMemoryQueryBuilder(alias, resolveRawQuery),
   });

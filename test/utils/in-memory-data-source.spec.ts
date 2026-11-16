@@ -99,6 +99,20 @@ describe('createInMemoryDataSource', () => {
     expect(saved.fecha).toEqual(new Date('2026-11-03T12:00:00.000Z'));
   });
 
+  it('inserta varias filas y asigna ids consecutivos', async () => {
+    const repository = db.getRepository(Mesa);
+
+    const result = await repository.insert([
+      { numero: 3, estado: 'libre' as const },
+      { numero: 4, estado: 'reservada' as const },
+    ]);
+
+    expect(result.identifiers).toEqual([{ id: 3 }, { id: 4 }]);
+    await expect(
+      repository.find({ order: { numero: 'ASC' } }),
+    ).resolves.toHaveLength(4);
+  });
+
   it('guarda los hijos en cascada e hidrata solo las relaciones pedidas', async () => {
     const repository = db.getRepository(Pedido);
     const detalle = db
