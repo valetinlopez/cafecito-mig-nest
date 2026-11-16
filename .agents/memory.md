@@ -7,8 +7,8 @@
 | ----------- | -------------------------------------------------------------------------- |
 | Actualizado | 2026-11-16                                                                 |
 | Sprint      | S5 — Cutover & Deploy                                                      |
-| Epic        | MIG-11 — E10: Seed Script & Documentación                                  |
-| Foco actual | MIG-40 implementado (Swagger + README); PR y revisión humana pendientes     |
+| Epic        | MIG-10 — E11: Cutover & Deploy                                             |
+| Foco actual | MIG-41: backend listo para Render como `grupo1/migracion-nestjs/`          |
 
 ---
 
@@ -59,6 +59,7 @@
 | MIG-38 | Smoke de compatibilidad con el frontend + `DELETE /productos/{id}`    | Integrado; smoke real ejecutado en MIG-44 |
 | MIG-39 | Seed en TypeScript, idempotente por tabla y bloqueado en producción   | Implementado; gates OK; falta ejecución real |
 | MIG-44 | Validación contra el esquema real (ADR 0009)                          | Implementado; falta borrar la branch y revisión humana |
+| MIG-41 | Deploy en Render como `grupo1/migracion-nestjs/` (`engines`, build con dev deps) | En curso: falta crear el servicio en Render |
 | MIG-45 | Arnés DevelopAI: ADR 0008, skills, agentes, comandos, spec piloto y CI  | Cerrado                               |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs)  | Cerrado                               |
 
@@ -126,6 +127,9 @@
 
 ## 6. Próximo paso
 
+0. **MIG-41 / MIG-42:** copiar `develop` a `grupo1/migracion-nestjs/`, `git push deploy
+   develop`, crear el Web Service en Render (ver `docs/DEPLOY.md` de `grupo1`) y
+   después el cutover en Vercel con rollback probado.
 1. **MIG-40:** revisar el PR de Swagger + README, abrir `/docs` en local y
    aprobar el veredicto de `specs/046-swagger-readme/validate.md`.
 2. **MIG-39:** ejecutar `npm run seed` contra una base de desarrollo (local o
@@ -153,6 +157,7 @@ commit ni push; esperar confirmación explícita antes del push. El merge a
 
 | Fecha      | Cambio                                                                                                                                                                                                                                                                                                             |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-16 | MIG-41 en `feature/MIG-41-deploy-render`: `engines` `>=24.11.0 <25` (lo exige `typeorm`); simulado el build de Render en una copia limpia: con `NODE_ENV=production`, `npm ci` sin `--include=dev` falla (`nest` no existe), con `--include=dev` compila y arranca en modo producción hasta intentar conectar a la base. README con sección Deploy. Sin commit/push/Jira. |
 | 2026-11-16 | MIG-40: `SwaggerModule` en `common/http/swagger.setup.ts` antes del `init()`, UI en `/docs` y JSON en `/docs-json`; health documentado con `HealthResponseDto`; e2e `swagger.e2e-spec.ts` verifica 33 operaciones (32 + health), Bearer, tags y el fallback 404 fuera del prefijo. README con documentación interactiva y guía FastAPI→Nest. Gates OK (lint, typecheck, unitarios, e2e). Sin commit/push/Jira. |
 | 2026-11-04 | MIG-39: seed en `src/database/seed.ts` con datos del legacy, idempotencia por tabla, carga transaccional, categorías resueltas por nombre y guard `SEED_ALLOW_PRODUCTION`; `insert` agregado al doble en memoria. Gates OK (lint, typecheck, 524 unitarios, 129 e2e, build). La ejecución real no se pudo validar: PostgreSQL local rechazó la autenticación. Sin commit/push/Jira. |
 | 2026-11-03 | MIG-44 en `feature/MIG-44-validacion-esquema`: `schema:log` proponía 39 cambios; `pagos` no tiene `caja_id`, `usuario_id` ni unique, y la base no tiene defaults. ADR 0009: el backend sigue a la base, caja por período. `schema:log` limpio; login real y flujo completo contra branch de Neon OK. Sin commit/push/Jira. |

@@ -234,6 +234,23 @@ npm run seed
 
 Carga los mismos datos que `seed.py` del legacy: 2 usuarios, 4 categorías, 10 productos y 12 mesas. Es idempotente **por tabla** (si una tabla ya tiene filas, se omite) y corre en una transacción.
 
+## Deploy (Render)
+
+Este backend se publica como la carpeta `migracion-nestjs/` del repo del grupo
+(`SoftwareSegundo2026/grupo1`), que se copia a `alenapo57/cafecito-deploy` y Render
+despliega como un Web Service aparte del FastAPI (MIG-41). La configuración completa,
+las variables y la verificación están en `docs/DEPLOY.md` de ese repo. Tres cosas
+propias de este backend:
+
+- **Build:** `npm ci --include=dev && npm run build`. Con `NODE_ENV=production`,
+  `npm ci` omite las `devDependencies`, y `nest build` necesita `@nestjs/cli` y
+  `typescript`.
+- **Node:** fijado por `engines` en `package.json` (`>=24.11.0 <25`, lo que exige
+  `typeorm`). Render lo lee y elige la última 24.x.
+- **`DATABASE_URL`:** la URL de Neon **tal cual** (`postgresql://...?sslmode=require`).
+  `pg` entiende `sslmode`; no hace falta la conversión que necesitaba `asyncpg`.
+  Nunca `DB_SYNCHRONIZE` ni migraciones: el esquema lo manda la base (ADR 0009).
+
 > **Producción:** el comando se bloquea con `NODE_ENV=production`. La base de Neon es compartida con el backend legacy; solo se habilita con `SEED_ALLOW_PRODUCTION=true` y confirmación humana. Detalle en [`src/database/README.md`](src/database/README.md) §5.1.
 
 ## Tests
@@ -358,6 +375,6 @@ src/
 Sprint **S5 — Cutover & Deploy**. Los 32 endpoints del contrato están
 implementados y cubiertos por unitarios y e2e; el seed y la validación contra el
 esquema real (MIG-39 y MIG-44) están implementados. La API se publica documentada
-en `/docs` (MIG-40). Queda el cutover (MIG-42) y la revisión humana de los
+en `/docs` (MIG-40). Queda el deploy en Render (MIG-41), el cutover (MIG-42) y la revisión humana de los
 veredictos SDD pendientes; el seguimiento vivo está en
 [`.agents/memory.md`](.agents/memory.md).
