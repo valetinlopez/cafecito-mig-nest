@@ -5,10 +5,10 @@
 
 | Campo       | Valor                                                                      |
 | ----------- | -------------------------------------------------------------------------- |
-| Actualizado | 2026-11-03                                                                 |
-| Sprint      | S4 — Reportes & QA                                                         |
-| Epic        | MIG-9 — E9: Testing & QA                                                   |
-| Foco actual | MIG-44 validado contra branch de Neon; falta borrar la branch y revisión   |
+| Actualizado | 2026-11-04                                                                 |
+| Sprint      | S5 — Cutover & Deploy                                                      |
+| Epic        | MIG-11 — E10: Seed Script & Documentación                                  |
+| Foco actual | MIG-39 implementado; falta ejecución real contra una base de desarrollo     |
 
 ---
 
@@ -19,7 +19,7 @@
 | test       | Implementado (MIG-21); MIG-35/36; smoke MIG-38  | ✅    | ✅  | Guía ejecutada en MIG-44; falta el frontend visual   |
 | health     | Implementado                                   | ✅    | ✅  | —                                                    |
 | config     | Implementado                                   | ✅    | ✅  | —                                                    |
-| database   | Implementado                                   | ✅    | ✅  | `schema:log` limpio (MIG-44)                         |
+| database   | Implementado                                   | ✅    | ✅  | Seed MIG-39; ejecución real pendiente                |
 | categorias | Implementado (solo lectura + JWT)              | ✅    | ✅  | Relación `OneToMany` pendiente, sin ticket           |
 | common     | Implementado (MIG-20 + guards MIG-23)          | ✅    | ✅  | Aplicar a futuros controllers                        |
 | auth       | Implementado (MIG-23/25); tests MIG-36         | ✅    | ✅  | —                                                    |
@@ -57,6 +57,7 @@
 | MIG-36 | Tests de Auth Service: 19 casos + tokens JWT reales; cobertura 100 %   | Implementado; gates OK |
 | MIG-37 | Reporte de ventas por rango: 5 bloques, cajas y diferencia            | Implementado; gates OK, revisión SDD pendiente |
 | MIG-38 | Smoke de compatibilidad con el frontend + `DELETE /productos/{id}`    | Integrado; smoke real ejecutado en MIG-44 |
+| MIG-39 | Seed en TypeScript, idempotente por tabla y bloqueado en producción   | Implementado; gates OK; falta ejecución real |
 | MIG-44 | Validación contra el esquema real (ADR 0009)                          | Implementado; falta borrar la branch y revisión humana |
 | MIG-45 | Arnés DevelopAI: ADR 0008, skills, agentes, comandos, spec piloto y CI  | Cerrado                               |
 | —      | Harness de trabajo (constitución, arquitectura, docs por módulo, ADRs)  | Cerrado                               |
@@ -79,6 +80,7 @@
 | Fecha      | Decisión                                                                | Registro                   |
 | ---------- | ----------------------------------------------------------------------- | -------------------------- |
 | 2026-11-03 | `productos`: DELETE con chequeo explícito, port anti-ciclo y red de FK   | `src/productos/DECISIONS.md` D-08 |
+| 2026-11-04 | `database`: seed manual, idempotente por tabla y bloqueado en producción | `src/database/DECISIONS.md` D-09 |
 | 2026-11-03 | Smoke e2e: `AppModule` real con solo el `DataSource` en memoria          | `specs/038-smoke-e2e/plan.md` §4.4 |
 | 2026-11-03 | `reportes`: eje en `pagos.fecha`, ticket por cobros y top 20 productos   | `src/reportes/DECISIONS.md` |
 | 2026-11-03 | Rango de fechas del negocio compartido entre `dashboard` y `reportes`   | `src/common/time/business-timezone.ts` |
@@ -124,11 +126,14 @@
 
 ## 6. Próximo paso
 
-1. **MIG-44:** revisión humana de `specs/044-esquema-real/validate.md`, borrar la branch
+1. **MIG-39:** ejecutar `npm run seed` contra una base de desarrollo (local o
+   branch de Neon) y confirmar los dos criterios de aceptación. El intento local
+   falló por credenciales de PostgreSQL; no se tocó ninguna base.
+2. **MIG-44:** revisión humana de `specs/044-esquema-real/validate.md`, borrar la branch
    de Neon y sacar su URL del `.env`. Falta la sección 5 de la guía (frontend visual).
-2. **MIG-36:** tests de Auth Service cerrados (19 casos del legacy + JWT real,
+3. **MIG-36:** tests de Auth Service cerrados (19 casos del legacy + JWT real,
    cobertura del service 100 %). Falta revisión humana del PR.
-3. **MIG-37 / MIG-35 / MIG-34 / MIG-33:** revisar los veredictos SDD pendientes en
+4. **MIG-37 / MIG-35 / MIG-34 / MIG-33:** revisar los veredictos SDD pendientes en
    `specs/037-reportes/`, `specs/035-regresion-services/`,
    `specs/034-dashboard/` y `specs/033-pedidos/`.
 
@@ -146,6 +151,7 @@ commit ni push; esperar confirmación explícita antes del push. El merge a
 
 | Fecha      | Cambio                                                                                                                                                                                                                                                                                                             |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-04 | MIG-39: seed en `src/database/seed.ts` con datos del legacy, idempotencia por tabla, carga transaccional, categorías resueltas por nombre y guard `SEED_ALLOW_PRODUCTION`; `insert` agregado al doble en memoria. Gates OK (lint, typecheck, 524 unitarios, 129 e2e, build). La ejecución real no se pudo validar: PostgreSQL local rechazó la autenticación. Sin commit/push/Jira. |
 | 2026-11-03 | MIG-44 en `feature/MIG-44-validacion-esquema`: `schema:log` proponía 39 cambios; `pagos` no tiene `caja_id`, `usuario_id` ni unique, y la base no tiene defaults. ADR 0009: el backend sigue a la base, caja por período. `schema:log` limpio; login real y flujo completo contra branch de Neon OK. Sin commit/push/Jira. |
 | 2026-11-03 | MIG-38 en `feature/MIG-38-smoke-e2e`: `DELETE /productos/{id}` (breaking change detectado), smoke sobre el `AppModule` real con persistencia en memoria, 28 endpoints contra una copia de `frontend/types/api.ts` y guía manual. 483 unitarios y 129 e2e (2 omitidos), lint/typecheck/build OK. Sin ejecutar contra base real; sin commit/push/Jira. |
 | 2026-11-03 | MIG-36: migrados los 19 casos de `test_auth_service.py` a Vitest con `UsersService` mockeado; nuevo `auth.service.tokens.spec.ts` con `JwtService` real (3 partes, claims, firma alterada, vencido, secreto ajeno). Cobertura de `auth.service.ts` 100 % (stmts/branch/funcs/lines); 426 unitarios y 82 e2e (2 omitidos) en verde, lint y typecheck OK. Sin cambios de contrato, sin commit/push/Jira. |

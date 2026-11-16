@@ -21,10 +21,14 @@
 - Las opciones viven en `typeorm-options.ts`: no duplicarlas en el CLI.
 - `autoLoadEntities: true`; las entities se registran con `forFeature` en su módulo.
 - Mantener el pool preparado para Neon (`idleTimeoutMillis`, `keepAlive`).
+- El seed es manual, idempotente por tabla y **bloqueado en producción**
+  (`SEED_ALLOW_PRODUCTION=true` solo con confirmación humana). No borra ni
+  actualiza datos existentes.
 
 ## Verificación
 
 ```bash
 npm test -- typeorm-options
+npm test -- seed
 npm run schema:log   # sin diferencias inesperadas
 ```

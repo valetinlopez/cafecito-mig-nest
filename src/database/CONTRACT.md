@@ -62,4 +62,5 @@ createTypeOrmOptions(config: DatabaseConfig): TypeOrmModuleOptions
 
 - Endpoints de base de datos o health profundo.
 - Gestión de réplicas o read/write splitting.
-- Seeds de datos.
+- Seeds automáticos al arrancar la aplicación (el seed es un comando manual,
+  ver [`README.md`](./README.md) §5.1).

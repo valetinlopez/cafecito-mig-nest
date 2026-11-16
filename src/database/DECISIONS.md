@@ -78,3 +78,21 @@ puede eliminar columnas.
 
 **Motivo:** permite identificar las conexiones del backend en
 `pg_stat_activity` y distinguirlas del legacy Python durante la migración.
+
+---
+
+## D-09 — Seed manual, idempotente por tabla y bloqueado en producción
+
+**Decisión:** el seed vive en `src/database/seed.ts`, reutiliza el `DataSource`
+del CLI, corre dentro de una transacción y omite toda tabla que ya tenga filas.
+Con `NODE_ENV=production` se niega a ejecutar salvo
+`SEED_ALLOW_PRODUCTION=true`.
+
+**Motivo:** reemplaza `seed.py` sin duplicar configuración ni depender de ids
+fijos. La base de Neon es compartida con el backend legacy: actualizar o borrar
+datos existentes no es seguro, y duplicar filas rompería el login y los pedidos.
+La idempotencia por tabla replica el comportamiento del legacy (`solo si la
+tabla está vacía`) y permite recuperar una carga parcial tabla por tabla.
+
+**Verificación:** `seed-runner.spec.ts`, `seed-guard.spec.ts` y ejecución manual
+de `npm run seed` sobre una base de desarrollo.
