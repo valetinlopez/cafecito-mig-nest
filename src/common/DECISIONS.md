@@ -227,3 +227,35 @@ en lugar de inyectar `undefined`.
 **Motivo:** un controller que recibe `undefined` puede terminar consultando
 `id: undefined` y devolver el primer usuario de la tabla. Fallar en el borde es
 más seguro y hace evidente el guard faltante en los tests (constitución §8).
+
+---
+
+## D-19 — Swagger se monta antes del `init()`, no después
+
+**Decisión:** `setupSwagger(app)` vive en `common/http/swagger.setup.ts` y se
+invoca desde `configureApp` **antes** de `app.init()`; el fallback 404 se
+registra después, como hasta ahora.
+
+**Motivo:** el fallback responde `{ detail }` a todo path que no entró al router.
+Si la documentación quedara detrás, `/docs` y `/docs-json` devolverían el 404 en
+lugar de la UI. Montarla antes del `init()` deja las rutas de Swagger antes en el
+stack de Express y conserva el 404 de las rutas desconocidas (`test/swagger.e2e-spec.ts`).
+
+**Alternativa descartada:** registrar Swagger en `main.ts` solo para producción.
+Los e2e dejarían de probar el cableado real y el arranque tendría dos verdades.
+
+---
+
+## D-20 — El documento OpenAPI generado no reemplaza a `docs/openapi.yaml`
+
+**Decisión:** `/docs-json` publica el documento generado desde los decoradores y
+`docs/openapi.yaml` queda como la especificación congelada de MIG-17.
+
+**Motivo:** el YAML es el contrato firmado y la matriz de compatibilidad que usa
+el frontend; el documento generado es la vista viva y siempre refleja el código.
+Mantenerlos separados evita reescribir el contrato cada vez que se agrega un
+decorador, y cualquier divergencia se resuelve en el código (constitución §1).
+
+**Consecuencia:** si un endpoint cambia de shape, primero se actualiza el
+contrato (spec/ADR) y después los decoradores; nunca al revés.
+
