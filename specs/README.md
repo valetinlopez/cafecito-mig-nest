@@ -19,6 +19,7 @@ Cada carpeta es una funcionalidad entregable, nombrada con el número del ticket
 | [`038-smoke-e2e`](038-smoke-e2e/spec.md) | MIG-38 | Implementación completa; revisión pendiente | Gates OK; `APROBADO` por el agente; smoke contra base real pendiente |
 | [`039-seed-ts`](039-seed-ts/spec.md) | MIG-39 | Implementación completa; revisión pendiente | Gates OK; `APROBADO` por el agente; ejecución real pendiente de credenciales |
 | [`044-esquema-real`](044-esquema-real/spec.md) | MIG-44 | Implementación completa; revisión pendiente | Gates OK; `APROBADO` por el agente; falta borrar la branch de Neon |
+| [`046-swagger-readme`](046-swagger-readme/spec.md) | MIG-40 | Implementación completa; revisión pendiente | Gates OK; `APROBADO` por el agente; revisión humana pendiente |
 
 > Este índice se actualiza al cerrar cada fase. `/sdd-status` lo reconstruye
 > leyendo los archivos.

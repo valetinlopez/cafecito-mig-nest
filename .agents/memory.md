@@ -5,10 +5,10 @@
 
 | Campo       | Valor                                                                      |
 | ----------- | -------------------------------------------------------------------------- |
-| Actualizado | 2026-11-04                                                                 |
+| Actualizado | 2026-11-16                                                                 |
 | Sprint      | S5 — Cutover & Deploy                                                      |
 | Epic        | MIG-11 — E10: Seed Script & Documentación                                  |
-| Foco actual | MIG-39 implementado; falta ejecución real contra una base de desarrollo     |
+| Foco actual | MIG-40 implementado (Swagger + README); PR y revisión humana pendientes     |
 
 ---
 
@@ -69,7 +69,6 @@
 | Tema                                             | Impacto                                     | Ticket |
 | ------------------------------------------------ | ------------------------------------------- | ------ |
 | Guards pendientes en módulos scaffold            | Sin controllers que proteger aún            | MIG-24 |
-| Sin `SwaggerModule`                              | `/docs` no disponible                       | MIG-40 |
 | Transformer numérico sin adoptar en productos    | Conversión ad hoc en el DTO                 | Sin ticket |
 | Largo de textos sin validar en DTOs de productos | Texto largo probablemente responde `500`    | Sin ticket |
 
@@ -79,6 +78,7 @@
 
 | Fecha      | Decisión                                                                | Registro                   |
 | ---------- | ----------------------------------------------------------------------- | -------------------------- |
+| 2026-11-16 | Swagger antes del `init()` y documento generado vs YAML congelado       | `src/common/DECISIONS.md` D-19/D-20 |
 | 2026-11-03 | `productos`: DELETE con chequeo explícito, port anti-ciclo y red de FK   | `src/productos/DECISIONS.md` D-08 |
 | 2026-11-04 | `database`: seed manual, idempotente por tabla y bloqueado en producción | `src/database/DECISIONS.md` D-09 |
 | 2026-11-03 | Smoke e2e: `AppModule` real con solo el `DataSource` en memoria          | `specs/038-smoke-e2e/plan.md` §4.4 |
@@ -126,14 +126,16 @@
 
 ## 6. Próximo paso
 
-1. **MIG-39:** ejecutar `npm run seed` contra una base de desarrollo (local o
+1. **MIG-40:** revisar el PR de Swagger + README, abrir `/docs` en local y
+   aprobar el veredicto de `specs/046-swagger-readme/validate.md`.
+2. **MIG-39:** ejecutar `npm run seed` contra una base de desarrollo (local o
    branch de Neon) y confirmar los dos criterios de aceptación. El intento local
    falló por credenciales de PostgreSQL; no se tocó ninguna base.
-2. **MIG-44:** revisión humana de `specs/044-esquema-real/validate.md`, borrar la branch
+3. **MIG-44:** revisión humana de `specs/044-esquema-real/validate.md`, borrar la branch
    de Neon y sacar su URL del `.env`. Falta la sección 5 de la guía (frontend visual).
-3. **MIG-36:** tests de Auth Service cerrados (19 casos del legacy + JWT real,
+4. **MIG-36:** tests de Auth Service cerrados (19 casos del legacy + JWT real,
    cobertura del service 100 %). Falta revisión humana del PR.
-4. **MIG-37 / MIG-35 / MIG-34 / MIG-33:** revisar los veredictos SDD pendientes en
+5. **MIG-37 / MIG-35 / MIG-34 / MIG-33:** revisar los veredictos SDD pendientes en
    `specs/037-reportes/`, `specs/035-regresion-services/`,
    `specs/034-dashboard/` y `specs/033-pedidos/`.
 
@@ -151,6 +153,7 @@ commit ni push; esperar confirmación explícita antes del push. El merge a
 
 | Fecha      | Cambio                                                                                                                                                                                                                                                                                                             |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-16 | MIG-40: `SwaggerModule` en `common/http/swagger.setup.ts` antes del `init()`, UI en `/docs` y JSON en `/docs-json`; health documentado con `HealthResponseDto`; e2e `swagger.e2e-spec.ts` verifica 33 operaciones (32 + health), Bearer, tags y el fallback 404 fuera del prefijo. README con documentación interactiva y guía FastAPI→Nest. Gates OK (lint, typecheck, unitarios, e2e). Sin commit/push/Jira. |
 | 2026-11-04 | MIG-39: seed en `src/database/seed.ts` con datos del legacy, idempotencia por tabla, carga transaccional, categorías resueltas por nombre y guard `SEED_ALLOW_PRODUCTION`; `insert` agregado al doble en memoria. Gates OK (lint, typecheck, 524 unitarios, 129 e2e, build). La ejecución real no se pudo validar: PostgreSQL local rechazó la autenticación. Sin commit/push/Jira. |
 | 2026-11-03 | MIG-44 en `feature/MIG-44-validacion-esquema`: `schema:log` proponía 39 cambios; `pagos` no tiene `caja_id`, `usuario_id` ni unique, y la base no tiene defaults. ADR 0009: el backend sigue a la base, caja por período. `schema:log` limpio; login real y flujo completo contra branch de Neon OK. Sin commit/push/Jira. |
 | 2026-11-03 | MIG-38 en `feature/MIG-38-smoke-e2e`: `DELETE /productos/{id}` (breaking change detectado), smoke sobre el `AppModule` real con persistencia en memoria, 28 endpoints contra una copia de `frontend/types/api.ts` y guía manual. 483 unitarios y 129 e2e (2 omitidos), lint/typecheck/build OK. Sin ejecutar contra base real; sin commit/push/Jira. |

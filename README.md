@@ -41,6 +41,9 @@ El servidor queda disponible en `http://localhost:3000` y el health check respon
 }
 ```
 
+La documentación interactiva de la API está en `http://localhost:3000/docs`
+(ver [Documentación interactiva](#documentación-interactiva-swagger)).
+
 El health check no consulta la base: la conexión se valida al arrancar y `GET /` no depende de PostgreSQL para responder.
 
 ## Variables de entorno
@@ -106,6 +109,74 @@ Cableado definido en `src/app.setup.ts` y `src/common` (MIG-20):
 curl -i http://localhost:3000/api/v1/categorias/
 # X-Response-Time-ms: 3.42
 ```
+
+## Documentación interactiva (Swagger)
+
+La API se documenta desde los decoradores de `@nestjs/swagger` en controllers y
+DTOs (MIG-40). El cableado vive en `src/common/http/swagger.setup.ts` y se
+registra en `configureApp`, así que el arranque real y los e2e publican lo mismo.
+
+| Recurso      | URL                                | Para qué                                            |
+| ------------ | ---------------------------------- | --------------------------------------------------- |
+| Swagger UI   | `http://localhost:3000/docs`       | Explorar y probar los 32 endpoints + health.         |
+| OpenAPI JSON | `http://localhost:3000/docs-json`  | Consumir el documento desde herramientas o clientes. |
+
+- La UI queda **fuera** de `/api/v1`, igual que el `/docs` de FastAPI, y está
+  disponible también en producción: solo describe endpoints que ya existen.
+- Para probar endpoints protegidos, usá **Authorize** con `Bearer <access_token>`
+  (el token de `POST /api/v1/auth/login`). La UI conserva el token al recargar.
+- Los tags siguen el orden del contrato: Auth, Mesas, Productos, Categorías,
+  Pedidos, Caja, Dashboard, Empleados, Reportes y Health.
+- `docs/openapi.yaml` (MIG-17) sigue siendo el contrato congelado; el documento
+  de `/docs-json` es la vista viva generada desde el código. Si divergen, el
+  contrato manda y se corrige el código.
+
+## Guía de migración desde FastAPI
+
+El objetivo de la migración es que el frontend **no cambie**: se preservan paths,
+payloads en `snake_case`, códigos de estado, roles y el envelope de error. Lo que
+cambia es la implementación y las herramientas. Esta tabla resume las
+equivalencias y el porqué de cada decisión.
+
+| Pieza                   | Backend FastAPI (legacy)                     | Backend NestJS (actual)                                              | Por qué                                                                 |
+| ----------------------- | -------------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Organización            | `APIRouter` por dominio                       | Feature module: controller, service, entity y DTOs                   | Misma separación por dominio; el controller solo traduce HTTP.          |
+| Validación de entrada   | Pydantic (`422` con `loc`/`msg`)              | `class-validator` + `ValidationPipe` (`422` en español)              | El front ya espera `422`; el mensaje se traduce a `Campo 'x': ...` (ADR 0001). |
+| Errores HTTP            | `HTTPException` y handlers                    | `AllExceptionsFilter` con `{ "detail": "..." }`                       | Un solo envelope para todo no-2xx (ADR 0002).                           |
+| Persistencia            | SQLAlchemy sobre las tablas existentes        | TypeORM con entities `@Entity('<tabla>')` y `snake_case`             | Las entities siguen el esquema legacy, no al revés (ADR 0009).          |
+| Esquema en desarrollo   | `create_all`                                  | `synchronize` solo local; contra Neon, migraciones                    | La base de Neon es compartida con producción: nunca se altera sola.     |
+| Fechas                  | `datetime` del proceso                        | Proceso en UTC + transformer + `toIsoUtc()`                          | ISO-8601 con `Z` estable en todos los entornos (ADR 0003 y 0007).       |
+| Decimales               | `Decimal` serializado                         | `numericTransformer` y DTO con `Number()`                            | El contrato exige números JSON, no strings (ADR 0004).                  |
+| Barra final             | Redirect `307` de FastAPI                     | Acepta con y sin barra, sin redirect                                 | El front no debe seguir redirects ni perder el body (ADR 0005).         |
+| Autenticación           | `python-jose` + `passlib` (bcrypt)            | `@nestjs/jwt` + Passport + `bcrypt`                                  | Claims `sub`/`rol` y hashes del legacy siguen siendo válidos (MIG-25).  |
+| Tokens                  | Access token + reset token                    | Igual: HS256, 480 min; reset `purpose=password_reset`, 15 min         | El front y los usuarios existentes no se re-loguean ni re-resetean.     |
+| Documentación           | `/docs` y `/openapi.json` automáticos         | Swagger UI en `/docs` y JSON en `/docs-json`                         | Equivalencia directa para el equipo y para el cutover.                  |
+| Datos de desarrollo     | `seed.py`                                     | `npm run seed` idempotente y bloqueado en producción                 | Base reproducible sin riesgo para la base compartida (MIG-39).          |
+| Health check            | `GET /` con el mismo shape                    | `GET /` con `status`, `service`, `version`, `timestamp`, `uptime`     | Monitoreo y deploy no cambian (D-14).                                   |
+| CORS                    | `CORSMiddleware(allow_origins=...)`           | `CORS_ORIGINS` + credenciales                                        | Mismos orígenes permitidos, configurables por entorno.                  |
+| Header de performance   | `X-Response-Time-ms`                          | Mismo header en cada response                                        | El front y los tableros no cambian (D-11).                              |
+| Configuración           | `BaseSettings` (pydantic-settings)            | `@nestjs/config` + `env.validation.ts`                               | Falla al arrancar si falta una variable, en vez de fallar en runtime.   |
+| Tests                   | `pytest` + `TestClient`                       | Vitest + Supertest (unitarios sin base y e2e de contrato)            | Mismo alcance, sin PostgreSQL en CI (ADR 0006).                         |
+
+### Qué no cambió
+
+- Los **32 endpoints** y el health, con el prefijo `/api/v1` (contrato §6).
+- El JSON en `snake_case`, los enums y los códigos de estado.
+- El envelope `{ "detail": "..." }`, el `422` de validación y los roles
+  `admin`/`mozo`.
+- La ausencia de paginación (D-10) y las reglas de negocio (caja, pedidos,
+  stock, reportes).
+
+### Qué tiene que saber quien integra
+
+- Los **paths son los mismos**: si el front apunta al backend nuevo, no cambia
+  URLs ni tipos (la matriz completa está en `docs/api-contract.md` §8).
+- `GET /docs` reemplaza al `/docs` de FastAPI; `GET /docs-json`, al
+  `/openapi.json`.
+- Las fechas llegan con `Z` y los montos como números: mismo contrato, sin
+  conversiones nuevas del lado del front.
+- Cualquier diferencia se resuelve en el código, no cambiando el contrato
+  (constitución §1). El detalle de cada decisión está en `docs/adr/`.
 
 ## Base de datos
 
@@ -190,8 +261,12 @@ $env:E2E_DATABASE='true'; $env:DATABASE_URL='postgresql://...'; npm run test:e2e
 
 ## Documentación de API
 
+- [`GET /docs`](http://localhost:3000/docs) — Swagger UI interactiva generada
+  desde los decoradores (MIG-40). Incluye Authorize con Bearer.
+- [`GET /docs-json`](http://localhost:3000/docs-json) — documento OpenAPI 3.x
+  en JSON.
 - [`docs/api-contract.md`](docs/api-contract.md) — contrato de API (MIG-17): decisiones de diseño, inventario de los 32 endpoints + health check y matriz de compatibilidad con el frontend.
-- [`docs/openapi.yaml`](docs/openapi.yaml) — especificación OpenAPI 3.1 del contrato.
+- [`docs/openapi.yaml`](docs/openapi.yaml) — especificación OpenAPI 3.1 del contrato, congelada como referencia de MIG-17.
 - [`docs/conventions.md`](docs/conventions.md) — convenciones de código (MIG-18) y módulo de referencia `src/categorias` para el resto de los módulos.
 
 ## Harness de trabajo
@@ -280,4 +355,9 @@ src/
 
 ## Estado de la migración
 
-Sprint **S0 — Bootcamp**. La conexión a base de datos y la validación del entorno quedaron resueltas en MIG-19; CORS, validación global, autenticación y módulos de negocio se implementan en los tickets siguientes (MIG-20 a MIG-44).
+Sprint **S5 — Cutover & Deploy**. Los 32 endpoints del contrato están
+implementados y cubiertos por unitarios y e2e; el seed y la validación contra el
+esquema real (MIG-39 y MIG-44) están implementados. La API se publica documentada
+en `/docs` (MIG-40). Queda el cutover (MIG-42) y la revisión humana de los
+veredictos SDD pendientes; el seguimiento vivo está en
+[`.agents/memory.md`](.agents/memory.md).

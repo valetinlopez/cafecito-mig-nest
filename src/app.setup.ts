@@ -6,6 +6,7 @@ import {
   finishResponseTimer,
   responseTimeMiddleware,
 } from './common/http/response-time.js';
+import { setupSwagger } from './common/http/swagger.setup.js';
 
 /** Prefijo único de la API (D-01). El health queda fuera. */
 export const API_PREFIX = 'api/v1';
@@ -21,12 +22,12 @@ export interface AppSetupOptions {
 /**
  * Cableado HTTP compartido por `main.ts` y los e2e.
  *
- * Mantener el prefijo, CORS y el fallback en un solo lugar evita que el
- * arranque real y los tests de contrato se desincronicen.
+ * Mantener el prefijo, CORS, la documentación y el fallback en un solo lugar
+ * evita que el arranque real y los tests de contrato se desincronicen.
  *
  * Inicializa la app a propósito: el fallback tiene que quedar **después** del
- * router de Nest para no interceptar las rutas reales. Un `listen()` posterior
- * reutiliza la app ya inicializada.
+ * router de Nest y de Swagger para no interceptar las rutas reales ni `/docs`.
+ * Un `listen()` posterior reutiliza la app ya inicializada.
  */
 export async function configureApp(
   app: INestApplication,
@@ -37,6 +38,9 @@ export async function configureApp(
 
   app.setGlobalPrefix(API_PREFIX, { exclude: ['/'] });
   app.enableCors(buildCorsOptions(options.corsOrigins));
+
+  // Antes de init(): el fallback 404 se registra después y no debe tapar /docs.
+  setupSwagger(app);
 
   await app.init();
 
